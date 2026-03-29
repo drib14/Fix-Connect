@@ -121,7 +121,7 @@ const Home = () => {
               <div className="skeleton" style={{ height: '60px', width: '150px', margin: '0 auto' }}></div>
             ) : (
               <>
-                <StatNumber>{totalUsers.toLocaleString()}+</StatNumber>
+                <StatNumber>{(totalUsers || 0).toLocaleString()}+</StatNumber>
                 <StatLabel>Registered Users Trust Us</StatLabel>
               </>
             )}
