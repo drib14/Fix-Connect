@@ -24,12 +24,21 @@ const mockWorkers = [
   },
   {
     name: 'Pedro Penduko',
-    category: 'Physical Worker',
+    category: 'Carpenter',
     description: 'Skilled carpenter and all-around handyman.',
     imageUrl: 'https://i.pravatar.cc/150?u=pedro',
     rating: 4.5,
-    jobsOffered: ['Carpentry & Furniture Repair', 'Plumbing Basics', 'Painting', 'General Handyman Services'],
+    jobsOffered: ['Carpentry & Furniture Repair', 'Painting', 'General Handyman Services'],
     baseFee: 1000
+  },
+  {
+    name: 'Mario Tubero',
+    category: 'Plumber',
+    description: 'Expert in fixing pipes and leaks.',
+    imageUrl: 'https://i.pravatar.cc/150?u=mario',
+    rating: 4.6,
+    jobsOffered: ['Plumbing Basics', 'Pipe Repair', 'Drain Clogs'],
+    baseFee: 800
   },
   {
     name: 'Leonor Rivera',

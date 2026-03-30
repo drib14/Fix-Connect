@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/axios';
@@ -195,6 +196,7 @@ const PAYMENT_OPTIONS = [
 ];
 
 const Booking = () => {
+  const navigate = useNavigate();
   const [workers, setWorkers] = useState([]);
   const [formData, setFormData] = useState({
     workerId: '',
@@ -269,13 +271,11 @@ const Booking = () => {
         setPaymentLink(response.data.booking.paymentUrl);
         setStatus({ type: 'success', message: 'Booking submitted! Proceed to payment to confirm your professional.' });
       } else {
-        setStatus({ type: 'success', message: 'Booking confirmed! A professional will contact you soon.' });
-        // Optionally redirect or reset form entirely
+        setStatus({ type: 'success', message: 'Booking confirmed! Redirecting to Dashboard...' });
+        // Redirect to dashboard after a brief delay so they see the success message
         setTimeout(() => {
-          setFormData({ workerId: '', serviceCategory: '', date: '', time: '', address: '', details: '', paymentMethod: 'PayMongo' });
-          setCurrentPrice(0);
-          setStatus({ type: '', message: '' });
-        }, 3000);
+          navigate('/dashboard');
+        }, 2000);
       }
     } catch (error) {
       console.error('Booking failed:', error);
@@ -416,9 +416,14 @@ const Booking = () => {
               {loading ? 'Processing...' : 'Book Service'}
             </Button>
           ) : (
-            <Button type="button" onClick={() => window.open(paymentLink, '_blank')} style={{ background: '#4CAF50' }}>
-              Pay via {formData.paymentMethod === 'PayMongo' ? 'Credit/Debit' : formData.paymentMethod}
-            </Button>
+            <div style={{ display: 'flex', gap: '15px' }}>
+              <Button type="button" onClick={() => window.open(paymentLink, '_blank')} style={{ background: '#4CAF50', flex: 2 }}>
+                Open Payment Link ({formData.paymentMethod === 'PayMongo' ? 'Credit/Debit' : formData.paymentMethod})
+              </Button>
+              <Button type="button" onClick={() => navigate('/dashboard')} style={{ background: 'var(--bg-card)', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', flex: 1 }}>
+                View Dashboard
+              </Button>
+            </div>
           )}
         </form>
 
