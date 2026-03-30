@@ -53,9 +53,11 @@ const Workers = () => {
     const fetchWorkers = async () => {
       try {
         const response = await api.get('/workers');
-        setWorkers(response.data);
+        // Ensure workers is always an array
+        setWorkers(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error('Error fetching workers', error);
+        setWorkers([]); // Fallback to empty array on error
       } finally {
         setLoading(false);
       }
@@ -103,7 +105,7 @@ const Workers = () => {
               </SkeletonCard>
             ))}
           </Grid>
-        ) : (
+        ) : workers && workers.length > 0 ? (
           <Grid variants={containerVariants} initial="hidden" animate="show">
             {workers.map((worker) => (
               <motion.div key={worker._id} variants={itemVariants}>
@@ -111,6 +113,10 @@ const Workers = () => {
               </motion.div>
             ))}
           </Grid>
+        ) : (
+          <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '2rem' }}>
+            No workers available at the moment.
+          </div>
         )}
       </Container>
 

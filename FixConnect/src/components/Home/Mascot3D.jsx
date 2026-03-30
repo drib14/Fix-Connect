@@ -5,12 +5,16 @@ import { OrbitControls, Cylinder, Box } from '@react-three/drei';
 const AnimatedHammer = () => {
   const groupRef = useRef();
 
+  const timeRef = useRef(0);
+
   useFrame((state, delta) => {
     if (groupRef.current) {
       groupRef.current.rotation.x += delta * 0.5;
       groupRef.current.rotation.y += delta * 0.8;
+
+      timeRef.current += delta;
       // Make it slightly bob up and down
-      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 2) * 0.2;
+      groupRef.current.position.y = Math.sin(timeRef.current * 2) * 0.2;
     }
   });
 
