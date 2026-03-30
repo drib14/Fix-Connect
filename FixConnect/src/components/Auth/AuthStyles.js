@@ -30,6 +30,13 @@ export const Title = styled.h2`
 export const InputGroup = styled.div`
   position: relative;
   margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+`;
+
+export const InputWrapper = styled.div`
+  position: relative;
+  width: 100%;
 `;
 
 export const Input = styled.input`
@@ -55,6 +62,8 @@ export const IconWrapper = styled.div`
   transform: translateY(-50%);
   color: var(--text-muted);
   cursor: pointer;
+  display: flex;
+  align-items: center;
 
   &:hover {
     color: var(--text-main);

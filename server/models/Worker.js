@@ -21,6 +21,9 @@ const workerSchema = new mongoose.Schema({
     type: Number,
     default: 5.0,
   },
+  jobsOffered: [{
+    type: String
+  }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Worker', workerSchema);

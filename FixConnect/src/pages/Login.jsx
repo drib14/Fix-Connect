@@ -7,6 +7,7 @@ import {
   FormBox,
   Title,
   InputGroup,
+  InputWrapper,
   Input,
   IconWrapper,
   Button,
@@ -61,16 +62,18 @@ const Login = () => {
           </InputGroup>
 
           <InputGroup>
-            <Input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <IconWrapper onClick={() => setShowPassword(!showPassword)}>
-              {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
-            </IconWrapper>
+            <InputWrapper>
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <IconWrapper onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+              </IconWrapper>
+            </InputWrapper>
           </InputGroup>
 
           <div style={{ textAlign: 'right', marginBottom: '20px' }}>

@@ -52,6 +52,16 @@ const Description = styled.p`
   margin-bottom: 15px;
 `;
 
+const JobsList = styled.ul`
+  list-style-type: disc;
+  padding-left: 20px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 15px;
+  max-height: 60px;
+  overflow: hidden;
+`;
+
 const Footer = styled.div`
   display: flex;
   justify-content: space-between;
@@ -88,6 +98,14 @@ const WorkerCard = ({ worker, onClick }) => {
         <Name>{worker.name}</Name>
         <Category>{worker.category}</Category>
         <Description>{worker.description}</Description>
+        {worker.jobsOffered && worker.jobsOffered.length > 0 && (
+          <JobsList>
+            {worker.jobsOffered.slice(0, 3).map((job, idx) => (
+              <li key={idx}>{job}</li>
+            ))}
+            {worker.jobsOffered.length > 3 && <li>...and more</li>}
+          </JobsList>
+        )}
         <Footer>
           <Rating>★ {worker.rating}</Rating>
           <ContactBtn>Hire</ContactBtn>
