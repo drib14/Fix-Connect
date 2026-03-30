@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { createBooking, getBookings, getUserBookings } = require('../controllers/bookingController');
+const { protect } = require('../middleware/auth');
 
-// For now, no authentication middleware as we're establishing the mock functionality per user instructions
-router.post('/', createBooking);
-router.get('/', getBookings);
-router.get('/user/:userId', getUserBookings);
+router.post('/', protect, createBooking);
+router.get('/', protect, getBookings);
+router.get('/user/:userId', protect, getUserBookings);
 
 module.exports = router;

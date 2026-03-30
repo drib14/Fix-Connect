@@ -1,14 +1,23 @@
 const Booking = require('../models/Booking');
+const Worker = require('../models/Worker');
 const axios = require('axios');
 
 exports.createBooking = async (req, res) => {
   try {
-    const { workerId, serviceCategory, date, time, address, price, userId, paymentMethod } = req.body;
+    const { workerId, serviceCategory, date, time, address, userId, paymentMethod } = req.body;
 
     // Validate basic inputs
-    if (!workerId || !serviceCategory || !date || !time || !address || !price || !paymentMethod) {
+    if (!workerId || !serviceCategory || !date || !time || !address || !paymentMethod) {
       return res.status(400).json({ message: 'All fields are required.' });
     }
+
+    // Securely fetch price from database
+    const worker = await Worker.findById(workerId);
+    if (!worker) {
+      return res.status(404).json({ message: 'Selected worker not found.' });
+    }
+
+    const price = worker.baseFee;
 
     // Calculate tax and total amount
     const tax = price * 0.12;
@@ -17,8 +26,8 @@ exports.createBooking = async (req, res) => {
     let paymentUrl = null;
     let paymentReference = null;
 
-    // Create PayMongo link only if paymentMethod is PayMongo or GCash (PayMongo supports GCash via checkout)
-    if (paymentMethod === 'PayMongo' || paymentMethod === 'GCash') {
+    // Create PayMongo link only if paymentMethod is PayMongo, GCash, or Maya
+    if (paymentMethod === 'PayMongo' || paymentMethod === 'GCash' || paymentMethod === 'Maya') {
       try {
         const paymongoSecret = process.env.PAYMONGO_SECRET_KEY;
       const encodedSecret = Buffer.from(paymongoSecret).toString('base64');
@@ -53,7 +62,7 @@ exports.createBooking = async (req, res) => {
     }
 
     const newBooking = new Booking({
-      userId,
+      userId: req.user._id, // Use authenticated user's ID
       workerId,
       serviceCategory,
       date,

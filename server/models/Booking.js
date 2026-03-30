@@ -52,7 +52,7 @@ const bookingSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['PayMongo', 'GCash', 'Cash on Delivery'],
+    enum: ['PayMongo', 'GCash', 'Maya', 'Cash'],
     required: true,
     default: 'PayMongo'
   }

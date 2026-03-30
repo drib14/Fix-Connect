@@ -149,6 +149,51 @@ const StatusMessage = styled(motion.div)`
   border: 1px solid ${props => props.success ? 'var(--primary-color)' : '#f44336'};
 `;
 
+const PaymentMethodsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+`;
+
+const PaymentCard = styled.div`
+  background: ${props => props.selected ? 'rgba(76, 175, 80, 0.15)' : 'var(--bg-card)'};
+  border: 2px solid ${props => props.selected ? 'var(--primary-color)' : 'rgba(255,255,255,0.1)'};
+  border-radius: 12px;
+  padding: 15px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  &:hover {
+    border-color: var(--primary-color);
+    background: rgba(76, 175, 80, 0.05);
+  }
+
+  img {
+    height: 30px;
+    object-fit: contain;
+  }
+
+  span {
+    color: var(--text-main);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+`;
+
+const PAYMENT_OPTIONS = [
+  { id: 'PayMongo', name: 'Credit / Debit', icon: 'https://cdn-icons-png.flaticon.com/512/6001/6001368.png' },
+  { id: 'GCash', name: 'GCash', icon: 'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/gcash-logo-icon.png' },
+  { id: 'Maya', name: 'Maya', icon: 'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/maya-logo-icon.png' },
+  { id: 'Cash', name: 'Cash', icon: 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png' }
+];
+
 const Booking = () => {
   const [workers, setWorkers] = useState([]);
   const [formData, setFormData] = useState({
@@ -220,11 +265,11 @@ const Booking = () => {
 
       const response = await api.post('/bookings', payload);
 
-      if (response.data.booking?.paymentUrl && (formData.paymentMethod === 'PayMongo' || formData.paymentMethod === 'GCash')) {
+      if (response.data.booking?.paymentUrl && (formData.paymentMethod === 'PayMongo' || formData.paymentMethod === 'GCash' || formData.paymentMethod === 'Maya')) {
         setPaymentLink(response.data.booking.paymentUrl);
         setStatus({ type: 'success', message: 'Booking submitted! Proceed to payment to confirm your professional.' });
       } else {
-        setStatus({ type: 'success', message: 'Booking confirmed! A professional will contact you soon or you pay on delivery.' });
+        setStatus({ type: 'success', message: 'Booking confirmed! A professional will contact you soon.' });
         // Optionally redirect or reset form entirely
         setTimeout(() => {
           setFormData({ workerId: '', serviceCategory: '', date: '', time: '', address: '', details: '', paymentMethod: 'PayMongo' });
@@ -327,16 +372,18 @@ const Booking = () => {
 
           <InputGroup>
             <Label>Payment Method</Label>
-            <Select
-              name="paymentMethod"
-              value={formData.paymentMethod}
-              onChange={handleChange}
-              required
-            >
-              <option value="PayMongo">Online Payment (PayMongo)</option>
-              <option value="GCash">GCash (via PayMongo)</option>
-              <option value="Cash on Delivery">Cash on Delivery</option>
-            </Select>
+            <PaymentMethodsGrid>
+              {PAYMENT_OPTIONS.map(option => (
+                <PaymentCard
+                  key={option.id}
+                  selected={formData.paymentMethod === option.id}
+                  onClick={() => setFormData(prev => ({ ...prev, paymentMethod: option.id }))}
+                >
+                  <img src={option.icon} alt={option.name} />
+                  <span>{option.name}</span>
+                </PaymentCard>
+              ))}
+            </PaymentMethodsGrid>
           </InputGroup>
 
           <AnimatePresence>
@@ -370,7 +417,7 @@ const Booking = () => {
             </Button>
           ) : (
             <Button type="button" onClick={() => window.open(paymentLink, '_blank')} style={{ background: '#4CAF50' }}>
-              Pay via PayMongo
+              Pay via {formData.paymentMethod === 'PayMongo' ? 'Credit/Debit' : formData.paymentMethod}
             </Button>
           )}
         </form>
@@ -379,7 +426,7 @@ const Booking = () => {
           <div style={{ marginTop: '30px', padding: '20px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
             <h4 style={{ color: 'var(--primary-color)', marginBottom: '10px' }}>What's Next? Systematize Process:</h4>
             <ol style={{ color: 'var(--text-muted)', marginLeft: '20px', lineHeight: '1.6' }}>
-              <li><strong>Pay the Total Amount:</strong> Click the button above to safely complete your payment via PayMongo.</li>
+              <li><strong>Pay the Total Amount:</strong> Click the button above to safely complete your payment via {formData.paymentMethod}.</li>
               <li><strong>Confirmation:</strong> Once paid, your booking status will update to "Confirmed".</li>
               <li><strong>Worker Dispatch:</strong> A highly skilled professional will be assigned and dispatched to your address on the scheduled date.</li>
               <li><strong>Job Completion:</strong> Review the work and mark the job as completed in your Dashboard.</li>
