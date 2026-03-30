@@ -10,7 +10,8 @@ const mockWorkers = [
     description: 'Expert in MERN stack, 5 years experience.',
     imageUrl: 'https://i.pravatar.cc/150?u=juan',
     rating: 4.8,
-    jobsOffered: ['Full Stack Web Development', 'React Native App Development', 'API Integration', 'UI/UX Implementation']
+    jobsOffered: ['Full Stack Web Development', 'React Native App Development', 'API Integration', 'UI/UX Implementation'],
+    baseFee: 2500
   },
   {
     name: 'Maria Clara',
@@ -18,7 +19,8 @@ const mockWorkers = [
     description: 'Highly organized VA specializing in data entry and scheduling.',
     imageUrl: 'https://i.pravatar.cc/150?u=maria',
     rating: 4.9,
-    jobsOffered: ['Calendar Management', 'Email Sorting', 'Data Entry', 'Customer Support']
+    jobsOffered: ['Calendar Management', 'Email Sorting', 'Data Entry', 'Customer Support'],
+    baseFee: 1500
   },
   {
     name: 'Pedro Penduko',
@@ -26,7 +28,8 @@ const mockWorkers = [
     description: 'Skilled carpenter and all-around handyman.',
     imageUrl: 'https://i.pravatar.cc/150?u=pedro',
     rating: 4.5,
-    jobsOffered: ['Carpentry & Furniture Repair', 'Plumbing Basics', 'Painting', 'General Handyman Services']
+    jobsOffered: ['Carpentry & Furniture Repair', 'Plumbing Basics', 'Painting', 'General Handyman Services'],
+    baseFee: 1000
   },
   {
     name: 'Leonor Rivera',
@@ -34,7 +37,8 @@ const mockWorkers = [
     description: 'Creative designer specializing in UI/UX and branding.',
     imageUrl: 'https://i.pravatar.cc/150?u=leonor',
     rating: 4.7,
-    jobsOffered: ['Logo Design', 'Brand Identity', 'Social Media Graphics', 'UI Design mockups']
+    jobsOffered: ['Logo Design', 'Brand Identity', 'Social Media Graphics', 'UI Design mockups'],
+    baseFee: 2000
   },
   {
     name: 'Jose Rizal',
@@ -42,7 +46,8 @@ const mockWorkers = [
     description: 'Excellent writer with a knack for engaging articles.',
     imageUrl: 'https://i.pravatar.cc/150?u=jose',
     rating: 5.0,
-    jobsOffered: ['Blog Post Writing', 'Copywriting', 'Technical Writing', 'SEO Content Creation']
+    jobsOffered: ['Blog Post Writing', 'Copywriting', 'Technical Writing', 'SEO Content Creation'],
+    baseFee: 1200
   },
 ];
 

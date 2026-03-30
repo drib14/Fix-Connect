@@ -6,6 +6,11 @@ const bookingSchema = new mongoose.Schema({
     ref: 'User',
     required: false // Optional for testing/mock since frontend might not pass a token cleanly right away if not logged in
   },
+  workerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Worker',
+    required: true
+  },
   serviceCategory: {
     type: String,
     required: true,
@@ -44,6 +49,12 @@ const bookingSchema = new mongoose.Schema({
   },
   paymentReference: {
     type: String,
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['PayMongo', 'GCash', 'Cash on Delivery'],
+    required: true,
+    default: 'PayMongo'
   }
 }, { timestamps: true });
 

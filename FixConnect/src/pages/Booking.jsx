@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/axios';
@@ -149,65 +149,89 @@ const StatusMessage = styled(motion.div)`
   border: 1px solid ${props => props.success ? 'var(--primary-color)' : '#f44336'};
 `;
 
-const BASE_PRICES = {
-  'Plumber': 800,
-  'Carpenter': 1000,
-  'Electrician': 900,
-  'Web Developer': 2500,
-  'Virtual Assistant': 1500,
-  'Graphic Designer': 2000,
-  'Cleaner': 500
-};
-
 const Booking = () => {
+  const [workers, setWorkers] = useState([]);
   const [formData, setFormData] = useState({
+    workerId: '',
     serviceCategory: '',
     date: '',
     time: '',
     address: '',
-    details: ''
+    details: '',
+    paymentMethod: 'PayMongo'
   });
 
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
   const [paymentLink, setPaymentLink] = useState('');
+  const [currentPrice, setCurrentPrice] = useState(0);
 
-  const currentPrice = formData.serviceCategory ? BASE_PRICES[formData.serviceCategory] : 0;
+  useEffect(() => {
+    const fetchWorkers = async () => {
+      try {
+        const response = await api.get('/workers');
+        setWorkers(response.data);
+      } catch (error) {
+        console.error('Failed to fetch workers:', error);
+      }
+    };
+    fetchWorkers();
+  }, []);
   const currentTax = currentPrice * 0.12;
   const currentTotal = currentPrice + currentTax;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'workerId') {
+      const selectedWorker = workers.find(w => w._id === value);
+      if (selectedWorker) {
+        setFormData(prev => ({
+          ...prev,
+          workerId: value,
+          serviceCategory: selectedWorker.category
+        }));
+        setCurrentPrice(selectedWorker.baseFee || 0);
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.serviceCategory || !formData.date || !formData.time || !formData.address) {
+    if (!formData.workerId || !formData.date || !formData.time || !formData.address) {
       setStatus({ type: 'error', message: 'Please fill in all required fields.' });
       return;
     }
 
     setLoading(true);
     setStatus({ type: '', message: '' });
+    setPaymentLink(''); // Reset payment link
 
     try {
       // Simulate booking delay for UX
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      const response = await api.post('/bookings', {
+      const payload = {
         ...formData,
         price: currentPrice,
         userId: localStorage.getItem('userId') // Remove fallback string that breaks ObjectId cast
-      });
+      };
 
-      if (response.data.booking?.paymentUrl) {
+      const response = await api.post('/bookings', payload);
+
+      if (response.data.booking?.paymentUrl && (formData.paymentMethod === 'PayMongo' || formData.paymentMethod === 'GCash')) {
         setPaymentLink(response.data.booking.paymentUrl);
         setStatus({ type: 'success', message: 'Booking submitted! Proceed to payment to confirm your professional.' });
       } else {
-        setStatus({ type: 'success', message: 'Booking confirmed! A professional will contact you soon.' });
+        setStatus({ type: 'success', message: 'Booking confirmed! A professional will contact you soon or you pay on delivery.' });
+        // Optionally redirect or reset form entirely
+        setTimeout(() => {
+          setFormData({ workerId: '', serviceCategory: '', date: '', time: '', address: '', details: '', paymentMethod: 'PayMongo' });
+          setCurrentPrice(0);
+          setStatus({ type: '', message: '' });
+        }, 3000);
       }
-      setFormData({ serviceCategory: '', date: '', time: '', address: '', details: '' }); // reset form
     } catch (error) {
       console.error('Booking failed:', error);
       setStatus({ type: 'error', message: error.response?.data?.message || 'Failed to process booking. Please try again.' });
@@ -240,16 +264,18 @@ const Booking = () => {
 
         <form onSubmit={handleSubmit}>
           <InputGroup>
-            <Label>What service do you need?</Label>
+            <Label>Select a Professional Worker</Label>
             <Select
-              name="serviceCategory"
-              value={formData.serviceCategory}
+              name="workerId"
+              value={formData.workerId}
               onChange={handleChange}
               required
             >
-              <option value="" disabled>Select a professional...</option>
-              {Object.keys(BASE_PRICES).map(service => (
-                <option key={service} value={service}>{service}</option>
+              <option value="" disabled>Choose a skilled worker...</option>
+              {workers.map(worker => (
+                <option key={worker._id} value={worker._id}>
+                  {worker.name} - {worker.category} (Base: ₱{worker.baseFee?.toLocaleString()})
+                </option>
               ))}
             </Select>
           </InputGroup>
@@ -297,6 +323,20 @@ const Booking = () => {
               value={formData.details}
               onChange={handleChange}
             />
+          </InputGroup>
+
+          <InputGroup>
+            <Label>Payment Method</Label>
+            <Select
+              name="paymentMethod"
+              value={formData.paymentMethod}
+              onChange={handleChange}
+              required
+            >
+              <option value="PayMongo">Online Payment (PayMongo)</option>
+              <option value="GCash">GCash (via PayMongo)</option>
+              <option value="Cash on Delivery">Cash on Delivery</option>
+            </Select>
           </InputGroup>
 
           <AnimatePresence>

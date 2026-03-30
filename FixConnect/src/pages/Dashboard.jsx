@@ -129,6 +129,11 @@ const Dashboard = () => {
     const fetchBookings = async () => {
       try {
         const userId = localStorage.getItem('userId');
+        if (!userId) {
+          setBookings([]);
+          setLoading(false);
+          return;
+        }
         const response = await api.get(`/bookings/user/${userId}`);
         // Ensure array
         setBookings(Array.isArray(response.data) ? response.data : []);

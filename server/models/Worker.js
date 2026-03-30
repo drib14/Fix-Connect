@@ -24,6 +24,11 @@ const workerSchema = new mongoose.Schema({
   jobsOffered: [{
     type: String
   }],
+  baseFee: {
+    type: Number,
+    required: true,
+    default: 1000
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Worker', workerSchema);

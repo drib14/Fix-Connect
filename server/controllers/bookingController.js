@@ -3,10 +3,10 @@ const axios = require('axios');
 
 exports.createBooking = async (req, res) => {
   try {
-    const { serviceCategory, date, time, address, price, userId } = req.body;
+    const { workerId, serviceCategory, date, time, address, price, userId, paymentMethod } = req.body;
 
     // Validate basic inputs
-    if (!serviceCategory || !date || !time || !address || !price) {
+    if (!workerId || !serviceCategory || !date || !time || !address || !price || !paymentMethod) {
       return res.status(400).json({ message: 'All fields are required.' });
     }
 
@@ -17,9 +17,10 @@ exports.createBooking = async (req, res) => {
     let paymentUrl = null;
     let paymentReference = null;
 
-    // Create PayMongo link
-    try {
-      const paymongoSecret = process.env.PAYMONGO_SECRET_KEY;
+    // Create PayMongo link only if paymentMethod is PayMongo or GCash (PayMongo supports GCash via checkout)
+    if (paymentMethod === 'PayMongo' || paymentMethod === 'GCash') {
+      try {
+        const paymongoSecret = process.env.PAYMONGO_SECRET_KEY;
       const encodedSecret = Buffer.from(paymongoSecret).toString('base64');
 
       const paymentData = {
@@ -40,18 +41,20 @@ exports.createBooking = async (req, res) => {
         }
       });
 
-      if (response.data && response.data.data) {
-        paymentUrl = response.data.data.attributes.checkout_url;
-        paymentReference = response.data.data.attributes.reference_number;
+        if (response.data && response.data.data) {
+          paymentUrl = response.data.data.attributes.checkout_url;
+          paymentReference = response.data.data.attributes.reference_number;
+        }
+      } catch (paymentError) {
+        console.error('PayMongo link creation error:', paymentError.response?.data || paymentError.message);
+        // We can choose to fail the booking if payment link creation fails, or proceed without it
+        return res.status(500).json({ message: 'Failed to initialize payment gateway.' });
       }
-    } catch (paymentError) {
-      console.error('PayMongo link creation error:', paymentError.response?.data || paymentError.message);
-      // We can choose to fail the booking if payment link creation fails, or proceed without it
-      return res.status(500).json({ message: 'Failed to initialize payment gateway.' });
     }
 
     const newBooking = new Booking({
       userId,
+      workerId,
       serviceCategory,
       date,
       time,
@@ -60,11 +63,12 @@ exports.createBooking = async (req, res) => {
       tax,
       totalAmount,
       paymentUrl,
-      paymentReference
+      paymentReference,
+      paymentMethod
     });
 
     const savedBooking = await newBooking.save();
-    res.status(201).json({ message: 'Booking successfully created! Proceed to payment.', booking: savedBooking });
+    res.status(201).json({ message: 'Booking successfully created!', booking: savedBooking });
   } catch (error) {
     console.error('Create Booking Error:', error);
     res.status(500).json({ message: 'Failed to create booking.' });
