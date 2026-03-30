@@ -170,8 +170,11 @@ const Booking = () => {
 
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
+  const [paymentLink, setPaymentLink] = useState('');
 
   const currentPrice = formData.serviceCategory ? BASE_PRICES[formData.serviceCategory] : 0;
+  const currentTax = currentPrice * 0.12;
+  const currentTotal = currentPrice + currentTax;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -192,13 +195,18 @@ const Booking = () => {
       // Simulate booking delay for UX
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      await api.post('/bookings', {
+      const response = await api.post('/bookings', {
         ...formData,
         price: currentPrice,
-        userId: localStorage.getItem('userId') || null // send optional mock user ID if applicable
+        userId: localStorage.getItem('userId') // Remove fallback string that breaks ObjectId cast
       });
 
-      setStatus({ type: 'success', message: 'Booking confirmed! A professional will contact you soon.' });
+      if (response.data.booking?.paymentUrl) {
+        setPaymentLink(response.data.booking.paymentUrl);
+        setStatus({ type: 'success', message: 'Booking submitted! Proceed to payment to confirm your professional.' });
+      } else {
+        setStatus({ type: 'success', message: 'Booking confirmed! A professional will contact you soon.' });
+      }
       setFormData({ serviceCategory: '', date: '', time: '', address: '', details: '' }); // reset form
     } catch (error) {
       console.error('Booking failed:', error);
@@ -299,18 +307,45 @@ const Booking = () => {
                 exit={{ opacity: 0, scale: 0.95 }}
               >
                 <PriceDisplay>
-                  <h3>Estimated Base Price</h3>
-                  <p>₱ {currentPrice.toLocaleString()}</p>
-                  <small>Final price may vary based on actual assessment.</small>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Base Price:</span>
+                    <span style={{ color: 'var(--text-main)' }}>₱ {currentPrice.toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Tax (12%):</span>
+                    <span style={{ color: 'var(--text-main)' }}>₱ {currentTax.toLocaleString()}</span>
+                  </div>
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
+                    <h3>Total Amount Due</h3>
+                    <p>₱ {currentTotal.toLocaleString()}</p>
+                  </div>
                 </PriceDisplay>
               </motion.div>
             )}
           </AnimatePresence>
 
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Processing...' : 'Confirm Booking'}
-          </Button>
+          {!paymentLink ? (
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Processing...' : 'Book Service'}
+            </Button>
+          ) : (
+            <Button type="button" onClick={() => window.open(paymentLink, '_blank')} style={{ background: '#4CAF50' }}>
+              Pay via PayMongo
+            </Button>
+          )}
         </form>
+
+        {paymentLink && (
+          <div style={{ marginTop: '30px', padding: '20px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+            <h4 style={{ color: 'var(--primary-color)', marginBottom: '10px' }}>What's Next? Systematize Process:</h4>
+            <ol style={{ color: 'var(--text-muted)', marginLeft: '20px', lineHeight: '1.6' }}>
+              <li><strong>Pay the Total Amount:</strong> Click the button above to safely complete your payment via PayMongo.</li>
+              <li><strong>Confirmation:</strong> Once paid, your booking status will update to "Confirmed".</li>
+              <li><strong>Worker Dispatch:</strong> A highly skilled professional will be assigned and dispatched to your address on the scheduled date.</li>
+              <li><strong>Job Completion:</strong> Review the work and mark the job as completed in your Dashboard.</li>
+            </ol>
+          </div>
+        )}
       </FormBox>
     </Container>
   );

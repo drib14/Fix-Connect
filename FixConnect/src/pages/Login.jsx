@@ -32,6 +32,7 @@ const Login = () => {
     try {
       const response = await api.post('/auth/login', { email, password });
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('userId', response.data._id);
       navigate('/workers');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check credentials.');

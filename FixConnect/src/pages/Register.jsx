@@ -58,6 +58,7 @@ const Register = () => {
       });
 
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('userId', response.data._id);
       navigate('/workers');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed.');

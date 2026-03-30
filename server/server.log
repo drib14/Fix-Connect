@@ -1,4 +1,62 @@
-[dotenv@17.3.1] injecting env (7) from .env -- tip: ⚙️  enable debug logging with { debug: true }
-[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.3.1] injecting env (8) from .env -- tip: ⚙️  override existing env vars with { override: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
 Server running on port 5000
 Connected to MongoDB
+Get User Bookings Error: CastError: Cast to ObjectId failed for value "mockUser123" (type string) at path "userId" for model "Booking"
+    at SchemaObjectId.cast (/app/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
+    at SchemaType.applySetters (/app/server/node_modules/mongoose/lib/schemaType.js:1287:12)
+    at SchemaType.castForQuery (/app/server/node_modules/mongoose/lib/schemaType.js:1713:17)
+    at cast (/app/server/node_modules/mongoose/lib/cast.js:386:32)
+    at Query.cast (/app/server/node_modules/mongoose/lib/query.js:5127:12)
+    at Query._castConditions (/app/server/node_modules/mongoose/lib/query.js:2376:10)
+    at model.Query._find (/app/server/node_modules/mongoose/lib/query.js:2403:8)
+    at model.Query.exec (/app/server/node_modules/mongoose/lib/query.js:4726:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async exports.getUserBookings (/app/server/controllers/bookingController.js:87:22) {
+  stringValue: '"mockUser123"',
+  messageFormat: undefined,
+  kind: 'ObjectId',
+  value: 'mockUser123',
+  path: 'userId',
+  reason: BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
+      at new ObjectId (/app/server/node_modules/bson/lib/bson.cjs:2636:23)
+      at castObjectId (/app/server/node_modules/mongoose/lib/cast/objectid.js:25:12)
+      at SchemaObjectId.cast (/app/server/node_modules/mongoose/lib/schema/objectId.js:251:12)
+      at SchemaType.applySetters (/app/server/node_modules/mongoose/lib/schemaType.js:1287:12)
+      at SchemaType.castForQuery (/app/server/node_modules/mongoose/lib/schemaType.js:1713:17)
+      at cast (/app/server/node_modules/mongoose/lib/cast.js:386:32)
+      at Query.cast (/app/server/node_modules/mongoose/lib/query.js:5127:12)
+      at Query._castConditions (/app/server/node_modules/mongoose/lib/query.js:2376:10)
+      at model.Query._find (/app/server/node_modules/mongoose/lib/query.js:2403:8)
+      at model.Query.exec (/app/server/node_modules/mongoose/lib/query.js:4726:80),
+  valueType: 'string'
+}
+Get User Bookings Error: CastError: Cast to ObjectId failed for value "mockUser123" (type string) at path "userId" for model "Booking"
+    at SchemaObjectId.cast (/app/server/node_modules/mongoose/lib/schema/objectId.js:253:11)
+    at SchemaType.applySetters (/app/server/node_modules/mongoose/lib/schemaType.js:1287:12)
+    at SchemaType.castForQuery (/app/server/node_modules/mongoose/lib/schemaType.js:1713:17)
+    at cast (/app/server/node_modules/mongoose/lib/cast.js:386:32)
+    at Query.cast (/app/server/node_modules/mongoose/lib/query.js:5127:12)
+    at Query._castConditions (/app/server/node_modules/mongoose/lib/query.js:2376:10)
+    at model.Query._find (/app/server/node_modules/mongoose/lib/query.js:2403:8)
+    at model.Query.exec (/app/server/node_modules/mongoose/lib/query.js:4726:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async exports.getUserBookings (/app/server/controllers/bookingController.js:87:22) {
+  stringValue: '"mockUser123"',
+  messageFormat: undefined,
+  kind: 'ObjectId',
+  value: 'mockUser123',
+  path: 'userId',
+  reason: BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
+      at new ObjectId (/app/server/node_modules/bson/lib/bson.cjs:2636:23)
+      at castObjectId (/app/server/node_modules/mongoose/lib/cast/objectid.js:25:12)
+      at SchemaObjectId.cast (/app/server/node_modules/mongoose/lib/schema/objectId.js:251:12)
+      at SchemaType.applySetters (/app/server/node_modules/mongoose/lib/schemaType.js:1287:12)
+      at SchemaType.castForQuery (/app/server/node_modules/mongoose/lib/schemaType.js:1713:17)
+      at cast (/app/server/node_modules/mongoose/lib/cast.js:386:32)
+      at Query.cast (/app/server/node_modules/mongoose/lib/query.js:5127:12)
+      at Query._castConditions (/app/server/node_modules/mongoose/lib/query.js:2376:10)
+      at model.Query._find (/app/server/node_modules/mongoose/lib/query.js:2403:8)
+      at model.Query.exec (/app/server/node_modules/mongoose/lib/query.js:4726:80),
+  valueType: 'string'
+}

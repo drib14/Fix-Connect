@@ -2,9 +2,12 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import api from '../utils/axios';
+import { Link } from 'react-router-dom';
 import PageLayout from '../components/Common/PageLayout';
 import Mascot3D from '../components/Home/Mascot3D';
 import TourGuide from '../components/Common/TourGuide';
+import WorkerCard from '../components/Workers/WorkerCard';
+import WorkerPopup from '../components/Workers/WorkerPopup';
 
 const HeroSection = styled.section`
   display: flex;
@@ -70,10 +73,115 @@ const StatLabel = styled.div`
   letter-spacing: 2px;
 `;
 
+const SectionTitle = styled.h2`
+  text-align: center;
+  margin-top: 80px;
+  margin-bottom: 40px;
+  font-size: 2.2rem;
+  color: var(--primary-color);
+  background: linear-gradient(90deg, #81C784, #4CAF50);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+`;
+
+const Grid = styled(motion.div)`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 30px;
+  margin-bottom: 60px;
+`;
+
+const JobRequestCard = styled.div`
+  background: var(--bg-card);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+
+  h4 {
+    color: var(--text-main);
+    margin-bottom: 5px;
+    font-size: 1.2rem;
+  }
+
+  p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+    line-height: 1.5;
+  }
+
+  .budget {
+    color: var(--primary-color);
+    font-weight: bold;
+    margin-bottom: 15px;
+  }
+
+  button {
+    background: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+
+    &:hover {
+      background: var(--primary-color);
+      color: white;
+    }
+  }
+`;
+
+const CallToAction = styled.div`
+  text-align: center;
+  margin: 60px 0;
+  padding: 40px;
+  background: rgba(76, 175, 80, 0.05);
+  border: 1px dashed var(--primary-color);
+  border-radius: 15px;
+
+  h3 {
+    color: var(--text-main);
+    margin-bottom: 15px;
+    font-size: 1.8rem;
+  }
+  p {
+    color: var(--text-muted);
+    margin-bottom: 25px;
+  }
+  a {
+    display: inline-block;
+    background: var(--primary-color);
+    color: white;
+    padding: 12px 30px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: background 0.3s ease;
+
+    &:hover {
+      background: var(--primary-hover);
+    }
+  }
+`;
+
 const Home = () => {
   const [totalUsers, setTotalUsers] = useState(0);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [workers, setWorkers] = useState([]);
+  const [selectedWorker, setSelectedWorker] = useState(null);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [runTour, setRunTour] = useState(false);
+
+  // Mock users seeking jobs
+  const jobRequests = [
+    { id: 1, title: 'Need a Plumber ASAP', desc: 'Broken pipe in the kitchen sink. Need immediate repair.', budget: '₱ 800 - ₱ 1,500' },
+    { id: 2, title: 'React Developer for Startup', desc: 'Looking for a skilled MERN developer to build a booking app MVP.', budget: '₱ 15,000 - ₱ 25,000' },
+    { id: 3, title: 'Virtual Assistant (Data Entry)', desc: 'Part-time VA needed to sort emails and enter data into Excel.', budget: '₱ 10,000 / month' },
+  ];
 
   useEffect(() => {
     // Check if tour should run (only once per session/visit)
@@ -82,19 +190,28 @@ const Home = () => {
       localStorage.setItem('tourCompleted', 'true');
     }
 
-    const fetchStats = async () => {
+    const fetchStatsAndWorkers = async () => {
       try {
-        const response = await api.get('/stats');
-        setTotalUsers(response.data.totalUsers);
+        const [statsRes, workersRes] = await Promise.all([
+          api.get('/stats'),
+          api.get('/workers')
+        ]);
+        setTotalUsers(statsRes.data.totalUsers);
+        setWorkers(Array.isArray(workersRes.data) ? workersRes.data.slice(0, 3) : []); // Only show top 3
       } catch (error) {
-        console.error('Failed to fetch stats', error);
+        console.error('Failed to fetch initial data', error);
       } finally {
         setLoadingStats(false);
       }
     };
 
-    fetchStats();
+    fetchStatsAndWorkers();
   }, []);
+
+  const handleCardClick = (worker) => {
+    setSelectedWorker(worker);
+    setIsPopupOpen(true);
+  };
 
   return (
     <PageLayout>
@@ -137,6 +254,41 @@ const Home = () => {
           <Mascot3D />
         </MascotContainer>
       </HeroSection>
+
+      <SectionTitle>Top Available Professionals</SectionTitle>
+      {workers.length > 0 ? (
+        <Grid>
+          {workers.map(worker => (
+            <WorkerCard key={worker._id} worker={worker} onClick={handleCardClick} />
+          ))}
+        </Grid>
+      ) : (
+        <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Loading professionals...</p>
+      )}
+
+      <SectionTitle>Recent Job Requests</SectionTitle>
+      <Grid>
+        {jobRequests.map(job => (
+          <JobRequestCard key={job.id}>
+            <h4>{job.title}</h4>
+            <p>{job.desc}</p>
+            <div className="budget">Budget: {job.budget}</div>
+            <button onClick={() => setIsPopupOpen(true)}>Apply for Job</button>
+          </JobRequestCard>
+        ))}
+      </Grid>
+
+      <CallToAction>
+        <h3>Ready to streamline your workflow?</h3>
+        <p>Join thousands of users and professionals who trust FixConnect to get things done securely and systematically.</p>
+        <Link to="/book">Book a Service Now</Link>
+      </CallToAction>
+
+      <WorkerPopup
+        worker={selectedWorker}
+        isOpen={isPopupOpen}
+        onClose={() => setIsPopupOpen(false)}
+      />
     </PageLayout>
   );
 };

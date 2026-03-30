@@ -26,10 +26,24 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  tax: {
+    type: Number,
+    required: true,
+  },
+  totalAmount: {
+    type: Number,
+    required: true,
+  },
   status: {
     type: String,
     enum: ['Pending', 'Confirmed', 'Completed', 'Cancelled'],
     default: 'Pending'
+  },
+  paymentUrl: {
+    type: String,
+  },
+  paymentReference: {
+    type: String,
   }
 }, { timestamps: true });
 

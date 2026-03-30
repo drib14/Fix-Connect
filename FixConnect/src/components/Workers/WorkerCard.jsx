@@ -18,10 +18,25 @@ const Card = styled(motion.div)`
   }
 `;
 
-const Image = styled.img`
+const ImageContainer = styled.div`
   width: 100%;
   height: 200px;
+  background-color: rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+`;
+
+const Image = styled.img`
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+`;
+
+const DefaultIcon = styled.div`
+  font-size: 5rem;
+  color: var(--text-muted);
 `;
 
 const Content = styled.div`
@@ -93,7 +108,22 @@ const ContactBtn = styled.button`
 const WorkerCard = ({ worker, onClick }) => {
   return (
     <Card onClick={() => onClick(worker)}>
-      <Image src={worker.imageUrl} alt={worker.name} />
+      <ImageContainer>
+        {worker.imageUrl ? (
+          <Image
+            src={worker.imageUrl}
+            alt={worker.name}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'block';
+            }}
+          />
+        ) : null}
+        <DefaultIcon style={{ display: worker.imageUrl ? 'none' : 'block' }}>
+          👤
+        </DefaultIcon>
+      </ImageContainer>
       <Content>
         <Name>{worker.name}</Name>
         <Category>{worker.category}</Category>
@@ -108,7 +138,7 @@ const WorkerCard = ({ worker, onClick }) => {
         )}
         <Footer>
           <Rating>★ {worker.rating}</Rating>
-          <ContactBtn>Hire</ContactBtn>
+          <ContactBtn>Hire Me</ContactBtn>
         </Footer>
       </Content>
     </Card>

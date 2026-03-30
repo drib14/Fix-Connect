@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-const TourGuide = ({ run }) => {
+const TourGuide = () => {
   return null;
 };
 
