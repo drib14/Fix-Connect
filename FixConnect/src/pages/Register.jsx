@@ -111,12 +111,16 @@ const Register = () => {
               id="terms"
               checked={agreedToTerms}
               onChange={(e) => {
-                if (e.target.checked) setIsTermsOpen(true);
-                else setAgreedToTerms(false);
+                if (e.target.checked) {
+                  // Only open popup if they are trying to check it and haven't agreed yet
+                  if (!agreedToTerms) setIsTermsOpen(true);
+                } else {
+                  setAgreedToTerms(false);
+                }
               }}
             />
             <label htmlFor="terms" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>
-              I agree to the <span style={{ color: 'var(--primary-color)' }}>Terms & Privacy Policy</span>
+              I agree to the <Link to="/terms" style={{ color: 'var(--primary-color)' }}>Terms & Privacy Policy</Link>
             </label>
           </CheckboxGroup>
 
@@ -134,9 +138,11 @@ const Register = () => {
         isOpen={isTermsOpen}
         onClose={() => {
             setIsTermsOpen(false);
-            if(!agreedToTerms) setAgreedToTerms(false);
         }}
-        onAgree={() => setAgreedToTerms(true)}
+        onAgree={() => {
+            setAgreedToTerms(true);
+            setIsTermsOpen(false);
+        }}
       />
     </Container>
   );

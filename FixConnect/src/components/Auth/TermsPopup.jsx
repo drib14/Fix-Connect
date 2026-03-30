@@ -44,8 +44,14 @@ const Content = styled.div`
   }
 `;
 
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+`;
+
 const AgreeBtn = styled.button`
-  width: 100%;
+  flex: 1;
   padding: 15px;
   background: var(--primary-color);
   color: white;
@@ -58,6 +64,24 @@ const AgreeBtn = styled.button`
 
   &:hover {
     background: var(--primary-hover);
+  }
+`;
+
+const CancelBtn = styled.button`
+  flex: 1;
+  padding: 15px;
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--text-muted);
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: var(--bg-dark);
+    border-color: var(--text-main);
   }
 `;
 
@@ -85,7 +109,10 @@ const TermsPopup = ({ isOpen, onClose, onAgree }) => {
               <h3>3. User Conduct</h3>
               <p>You agree to use the platform respectfully and not engage in fraudulent activities.</p>
             </Content>
-            <AgreeBtn onClick={() => { onAgree(); onClose(); }}>I Agree</AgreeBtn>
+            <ButtonGroup>
+              <CancelBtn onClick={onClose}>Cancel</CancelBtn>
+              <AgreeBtn onClick={onAgree}>I Agree</AgreeBtn>
+            </ButtonGroup>
           </PopupBox>
         </Overlay>
       )}
