@@ -13,6 +13,8 @@ const Workers = lazy(() => import('./pages/Workers'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Booking = lazy(() => import('./pages/Booking'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
+const BookingTracking = lazy(() => import('./pages/BookingTracking'));
+const Profile = lazy(() => import('./pages/Profile'));
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/book" element={<Booking />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/booking/:id" element={<BookingTracking />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </Suspense>
     </Router>

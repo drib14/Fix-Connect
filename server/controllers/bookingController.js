@@ -4,7 +4,7 @@ const axios = require('axios');
 
 exports.createBooking = async (req, res) => {
   try {
-    const { workerId, serviceCategory, date, time, address, userId, paymentMethod } = req.body;
+    const { workerId, serviceCategory, date, time, address, userId, paymentMethod, paymentType } = req.body;
 
     // Validate basic inputs
     if (!workerId || !serviceCategory || !date || !time || !address || !paymentMethod) {
@@ -26,8 +26,8 @@ exports.createBooking = async (req, res) => {
     let paymentUrl = null;
     let paymentReference = null;
 
-    // Create PayMongo link only if paymentMethod is PayMongo, GCash, or Maya
-    if (paymentMethod === 'PayMongo' || paymentMethod === 'GCash' || paymentMethod === 'Maya') {
+    // Create PayMongo link only if paymentMethod is PayMongo, GCash, Maya, or Credit / Debit
+    if (paymentMethod === 'PayMongo' || paymentMethod === 'GCash' || paymentMethod === 'Maya' || paymentMethod === 'Credit / Debit') {
       try {
         const paymongoSecret = process.env.PAYMONGO_SECRET_KEY;
       const encodedSecret = Buffer.from(paymongoSecret).toString('base64');
@@ -73,7 +73,10 @@ exports.createBooking = async (req, res) => {
       totalAmount,
       paymentUrl,
       paymentReference,
-      paymentMethod
+      paymentMethod,
+      paymentType: paymentType || 'one-time',
+      paymentStatus: paymentMethod === 'Cash' ? 'pending' : (paymentUrl ? 'pending' : 'paid'), // Just a mock for logic
+      status: paymentMethod === 'Cash' ? 'Confirmed' : 'Pending'
     });
 
     const savedBooking = await newBooking.save();
@@ -97,10 +100,32 @@ exports.getBookings = async (req, res) => {
 exports.getUserBookings = async (req, res) => {
   try {
     const { userId } = req.params;
-    const bookings = await Booking.find({ userId }).sort({ createdAt: -1 });
+    const bookings = await Booking.find({ userId }).populate('workerId').sort({ createdAt: -1 });
     res.status(200).json(bookings);
   } catch (error) {
     console.error('Get User Bookings Error:', error);
     res.status(500).json({ message: 'Failed to fetch user bookings.' });
+  }
+};
+
+exports.updateBookingStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const validStatuses = ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status.' });
+    }
+
+    const booking = await Booking.findByIdAndUpdate(id, { status }, { new: true });
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found.' });
+    }
+
+    res.status(200).json({ message: 'Booking status updated successfully', booking });
+  } catch (error) {
+    console.error('Update Booking Status Error:', error);
+    res.status(500).json({ message: 'Failed to update booking status.' });
   }
 };

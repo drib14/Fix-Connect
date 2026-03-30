@@ -121,9 +121,58 @@ const EmptyState = styled.div`
   border: 1px dashed rgba(255,255,255,0.2);
 `;
 
+import { useNavigate } from 'react-router-dom';
+
+const TabContainer = styled.div`
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 15px;
+`;
+
+const Tab = styled.button`
+  background: transparent;
+  border: none;
+  color: ${props => props.active ? 'var(--primary-color)' : 'var(--text-muted)'};
+  font-size: 1.1rem;
+  font-weight: ${props => props.active ? 'bold' : 'normal'};
+  cursor: pointer;
+  position: relative;
+  padding: 5px 10px;
+
+  &:after {
+    content: '';
+    display: ${props => props.active ? 'block' : 'none'};
+    position: absolute;
+    bottom: -16px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--primary-color);
+  }
+`;
+
+const ViewButton = styled.button`
+  background: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: var(--primary-color);
+    color: white;
+  }
+`;
+
 const Dashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('Active');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -146,6 +195,16 @@ const Dashboard = () => {
     fetchBookings();
   }, []);
 
+  const filteredBookings = bookings.filter(booking => {
+    if (activeTab === 'Active') {
+      return ['Pending', 'Confirmed', 'In Progress'].includes(booking.status);
+    } else if (activeTab === 'Completed') {
+      return booking.status === 'Completed';
+    } else {
+      return booking.status === 'Cancelled';
+    }
+  });
+
   return (
     <Container>
       <Header>
@@ -153,11 +212,17 @@ const Dashboard = () => {
         <Subtitle>Track your service requests, payments, and system processes.</Subtitle>
       </Header>
 
+      <TabContainer>
+        <Tab active={activeTab === 'Active'} onClick={() => setActiveTab('Active')}>Active</Tab>
+        <Tab active={activeTab === 'Completed'} onClick={() => setActiveTab('Completed')}>Completed</Tab>
+        <Tab active={activeTab === 'Cancelled'} onClick={() => setActiveTab('Cancelled')}>Cancelled</Tab>
+      </TabContainer>
+
       {loading ? (
         <div style={{ textAlign: 'center', color: 'var(--primary-color)' }}>Loading your history...</div>
-      ) : bookings && bookings.length > 0 ? (
+      ) : filteredBookings && filteredBookings.length > 0 ? (
         <CardGrid>
-          {bookings.map((booking, index) => (
+          {filteredBookings.map((booking, index) => (
             <BookingCard
               key={booking._id}
               initial={{ opacity: 0, y: 20 }}
@@ -178,10 +243,14 @@ const Dashboard = () => {
               </BookingInfo>
               <ActionSection>
                 <TotalAmount>₱ {booking.totalAmount?.toLocaleString()}</TotalAmount>
-                {booking.status === 'Pending' && booking.paymentUrl && (
+                {booking.status === 'Pending' && booking.paymentUrl ? (
                   <PayButton href={booking.paymentUrl} target="_blank" rel="noopener noreferrer">
                     Pay Now
                   </PayButton>
+                ) : (
+                  <ViewButton onClick={() => navigate(`/booking/${booking._id}`)}>
+                    View Tracker
+                  </ViewButton>
                 )}
               </ActionSection>
             </BookingCard>

@@ -41,7 +41,7 @@ const bookingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Confirmed', 'Completed', 'Cancelled'],
+    enum: ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled'],
     default: 'Pending'
   },
   paymentUrl: {
@@ -52,9 +52,19 @@ const bookingSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['PayMongo', 'GCash', 'Maya', 'Cash'],
+    enum: ['PayMongo', 'GCash', 'Maya', 'Cash', 'Credit / Debit'],
     required: true,
     default: 'PayMongo'
+  },
+  paymentType: {
+    type: String,
+    enum: ['one-time', 'monthly'],
+    default: 'one-time'
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed'],
+    default: 'pending'
   }
 }, { timestamps: true });
 

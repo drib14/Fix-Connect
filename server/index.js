@@ -7,6 +7,9 @@ const authRoutes = require('./routes/auth');
 const workerRoutes = require('./routes/workers');
 const statsRoutes = require('./routes/stats');
 const bookingRoutes = require('./routes/bookings');
+const reviewRoutes = require('./routes/reviews');
+const userRoutes = require('./routes/users');
+const path = require('path');
 
 const app = express();
 
@@ -15,6 +18,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
@@ -24,6 +28,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/workers', workerRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/users', userRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

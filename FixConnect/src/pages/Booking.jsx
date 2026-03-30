@@ -205,7 +205,8 @@ const Booking = () => {
     time: '',
     address: '',
     details: '',
-    paymentMethod: 'PayMongo'
+    paymentMethod: 'PayMongo',
+    paymentType: 'one-time'
   });
 
   const [loading, setLoading] = useState(false);
@@ -368,6 +369,18 @@ const Booking = () => {
               value={formData.details}
               onChange={handleChange}
             />
+          </InputGroup>
+
+          <InputGroup>
+            <Label>Payment Type</Label>
+            <Select
+              name="paymentType"
+              value={formData.paymentType}
+              onChange={handleChange}
+            >
+              <option value="one-time">One-Time Service</option>
+              <option value="monthly">Monthly Retainer</option>
+            </Select>
           </InputGroup>
 
           <InputGroup>
