@@ -268,7 +268,7 @@ const Booking = () => {
 
       const response = await api.post('/bookings', payload);
 
-      if (response.data.booking?.paymentUrl && (formData.paymentMethod === 'PayMongo' || formData.paymentMethod === 'GCash' || formData.paymentMethod === 'Maya')) {
+      if (response.data.booking?.paymentUrl && (formData.paymentMethod === 'PayMongo' || formData.paymentMethod === 'GCash' || formData.paymentMethod === 'Maya' || formData.paymentMethod === 'Credit / Debit')) {
         setPaymentLink(response.data.booking.paymentUrl);
         setStatus({ type: 'success', message: 'Booking submitted! Proceed to payment to confirm your professional.' });
       } else {
@@ -429,11 +429,14 @@ const Booking = () => {
               {loading ? 'Processing...' : 'Book Service'}
             </Button>
           ) : (
-            <div style={{ display: 'flex', gap: '15px' }}>
-              <Button type="button" onClick={() => window.open(paymentLink, '_blank')} style={{ background: '#4CAF50', flex: 2 }}>
-                Open Payment Link ({formData.paymentMethod === 'PayMongo' ? 'Credit/Debit' : formData.paymentMethod})
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+              <Button type="button" onClick={() => window.open(paymentLink, '_blank')} style={{ background: '#4CAF50', flex: '1 1 100%' }}>
+                Pay with {formData.paymentMethod === 'PayMongo' ? 'Credit/Debit' : formData.paymentMethod}
               </Button>
-              <Button type="button" onClick={() => navigate('/dashboard')} style={{ background: 'var(--bg-card)', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', flex: 1 }}>
+              <Button type="button" onClick={() => window.open(paymentLink, '_blank')} style={{ background: '#333', border: '1px solid #555', color: '#fff', flex: '1 1 calc(50% - 7.5px)' }}>
+                Pay using other method
+              </Button>
+              <Button type="button" onClick={() => navigate('/dashboard')} style={{ background: 'var(--bg-card)', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', flex: '1 1 calc(50% - 7.5px)' }}>
                 View Dashboard
               </Button>
             </div>

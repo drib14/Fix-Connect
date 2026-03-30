@@ -30,7 +30,7 @@ exports.createBooking = async (req, res) => {
     if (paymentMethod === 'PayMongo' || paymentMethod === 'GCash' || paymentMethod === 'Maya' || paymentMethod === 'Credit / Debit') {
       try {
         const paymongoSecret = process.env.PAYMONGO_SECRET_KEY;
-      const encodedSecret = Buffer.from(paymongoSecret).toString('base64');
+      const encodedSecret = Buffer.from(`${paymongoSecret}:`).toString('base64');
 
       const paymentData = {
         data: {

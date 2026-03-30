@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import api from '../utils/axios';
 import { Link } from 'react-router-dom';
 import PageLayout from '../components/Common/PageLayout';
-import Mascot3D from '../components/Home/Mascot3D';
 import TourGuide from '../components/Common/TourGuide';
 import WorkerCard from '../components/Workers/WorkerCard';
 import WorkerPopup from '../components/Workers/WorkerPopup';
@@ -17,7 +16,7 @@ const HeroSection = styled.section`
   gap: 40px;
 
   @media (max-width: 768px) {
-    flex-direction: column-reverse;
+    flex-direction: column;
     text-align: center;
   }
 `;
@@ -29,10 +28,18 @@ const Content = styled(motion.div)`
 const Title = styled.h1`
   font-size: 3.5rem;
   font-weight: 800;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   background: linear-gradient(90deg, #4CAF50, #81C784);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+`;
+
+const Tagline = styled.h3`
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text-main);
+  margin-bottom: 20px;
+  letter-spacing: 1px;
 `;
 
 const Description = styled.p`
@@ -46,8 +53,17 @@ const MascotContainer = styled(motion.div)`
   flex: 1;
   width: 100%;
   max-width: 500px;
-  border-radius: 20px;
-  background: radial-gradient(circle, rgba(76,175,80,0.1) 0%, rgba(18,18,18,1) 70%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  img {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 0 20px rgba(76, 175, 80, 0.2));
+  }
 `;
 
 const StatsSection = styled(motion.div)`
@@ -176,12 +192,29 @@ const Home = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [runTour, setRunTour] = useState(false);
 
-  // Mock users seeking jobs
-  const jobRequests = [
-    { id: 1, title: 'Need a Plumber ASAP', desc: 'Broken pipe in the kitchen sink. Need immediate repair.', budget: '₱ 800 - ₱ 1,500' },
-    { id: 2, title: 'React Developer for Startup', desc: 'Looking for a skilled MERN developer to build a booking app MVP.', budget: '₱ 15,000 - ₱ 25,000' },
-    { id: 3, title: 'Virtual Assistant (Data Entry)', desc: 'Part-time VA needed to sort emails and enter data into Excel.', budget: '₱ 10,000 / month' },
-  ];
+  // FB feed state
+  const [jobRequests, setJobRequests] = useState([
+    { id: 1, title: 'Need a Plumber ASAP', desc: 'Broken pipe in the kitchen sink. Need immediate repair.', budget: '₱ 800 - ₱ 1,500', recommendations: 12 },
+    { id: 2, title: 'React Developer for Startup', desc: 'Looking for a skilled MERN developer to build a booking app MVP.', budget: '₱ 15,000 - ₱ 25,000', recommendations: 5 },
+    { id: 3, title: 'Virtual Assistant (Data Entry)', desc: 'Part-time VA needed to sort emails and enter data into Excel.', budget: '₱ 10,000 / month', recommendations: 20 },
+    { id: 4, title: 'Carpenter for Custom Cabinet', desc: 'Looking for a master carpenter to build a custom bookshelf.', budget: '₱ 5,000 - ₱ 10,000', recommendations: 2 },
+    { id: 5, title: 'Electrician needed for house rewiring', desc: 'Old house needs complete electrical rewiring.', budget: '₱ 20,000+', recommendations: 8 },
+  ]);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 3;
+
+  const handleRecommend = (id) => {
+    setJobRequests(prevJobs => {
+      return prevJobs.map(job => {
+        if (job.id === id) {
+          return { ...job, recommendations: job.recommendations + 1 };
+        }
+        return job;
+      }).sort((a, b) => b.recommendations - a.recommendations);
+    });
+  };
+
+  const paginatedJobs = jobRequests.slice(0, page * itemsPerPage);
 
   useEffect(() => {
     // Check if tour should run (only once per session/visit)
@@ -223,6 +256,7 @@ const Home = () => {
           transition={{ duration: 0.8 }}
         >
           <Title>FixConnect</Title>
+          <Tagline>Your Quick Fix, Just a Click Away.</Tagline>
           <Description>
             The premier platform connecting you with top-tier skilled professionals.
             Whether you need a Virtual Assistant, a Web Developer, or a master craftsman,
@@ -246,12 +280,16 @@ const Home = () => {
         </Content>
 
         <MascotContainer
-          className="mascot-container"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <Mascot3D />
+          <motion.img
+            src="/FC-logo.png"
+            alt="FixConnect Mascot"
+            animate={{ y: [0, -20, 0] }}
+            transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+          />
         </MascotContainer>
       </HeroSection>
 
@@ -266,17 +304,35 @@ const Home = () => {
         <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Loading professionals...</p>
       )}
 
-      <SectionTitle>Recent Job Requests</SectionTitle>
-      <Grid>
-        {jobRequests.map(job => (
-          <JobRequestCard key={job.id}>
-            <h4>{job.title}</h4>
-            <p>{job.desc}</p>
-            <div className="budget">Budget: {job.budget}</div>
-            <button onClick={() => setIsPopupOpen(true)}>Apply for Job</button>
+      <SectionTitle>Recent Job Requests Feed</SectionTitle>
+      <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {paginatedJobs.map(job => (
+          <JobRequestCard key={job.id} style={{ display: 'flex', flexDirection: 'column', padding: '25px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+              <h4>{job.title}</h4>
+              <span style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>{job.recommendations} Recommendations</span>
+            </div>
+            <p style={{ fontSize: '1.05rem', color: 'var(--text-main)', marginBottom: '15px' }}>{job.desc}</p>
+            <div className="budget" style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>Budget: <span style={{ color: 'var(--primary-color)' }}>{job.budget}</span></div>
+            <div style={{ display: 'flex', gap: '15px' }}>
+              <button style={{ flex: 1, background: 'transparent', border: '1px solid var(--text-muted)', color: 'var(--text-main)' }} onClick={() => handleRecommend(job.id)}>
+                👍 Recommend
+              </button>
+              <button style={{ flex: 2, background: 'var(--primary-color)', color: 'white', border: 'none' }} onClick={() => setIsPopupOpen(true)}>
+                View More / Apply
+              </button>
+            </div>
           </JobRequestCard>
         ))}
-      </Grid>
+        {paginatedJobs.length < jobRequests.length && (
+          <button
+            style={{ padding: '15px', background: 'transparent', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', borderRadius: '8px', cursor: 'pointer', marginTop: '10px' }}
+            onClick={() => setPage(p => p + 1)}
+          >
+            Load More Posts
+          </button>
+        )}
+      </div>
 
       <CallToAction>
         <h3>Ready to streamline your workflow?</h3>

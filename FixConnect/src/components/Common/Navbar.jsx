@@ -17,10 +17,25 @@ const NavContainer = styled(motion.nav)`
 `;
 
 const Logo = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 1.8rem;
   font-weight: 700;
   color: var(--primary-color);
   letter-spacing: 1px;
+
+  img {
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+  }
+
+  @media (max-width: 768px) {
+    span {
+      display: none;
+    }
+  }
 `;
 
 const NavLinks = styled.div`
@@ -82,7 +97,10 @@ const Button = styled(Link)`
 const Navbar = () => {
   return (
     <NavContainer initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
-      <Logo to="/">FixConnect</Logo>
+      <Logo to="/">
+        <img src="/FC-logo.png" alt="FixConnect Logo" />
+        <span>FixConnect</span>
+      </Logo>
       <NavLinks>
         <NavLink to="/">Home</NavLink>
         <NavLink to="/workers">Workers</NavLink>

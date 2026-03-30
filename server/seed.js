@@ -6,57 +6,57 @@ const Worker = require('./models/Worker');
 const mockWorkers = [
   {
     name: 'Juan Dela Cruz',
-    category: 'Web Developer',
-    description: 'Expert in MERN stack, 5 years experience.',
+    category: 'Carpenter',
+    description: 'Master carpenter with 10 years of experience in custom furniture and home repairs.',
     imageUrl: 'https://i.pravatar.cc/150?u=juan',
     rating: 4.8,
-    jobsOffered: ['Full Stack Web Development', 'React Native App Development', 'API Integration', 'UI/UX Implementation'],
-    baseFee: 2500
+    jobsOffered: ['Custom Furniture', 'Cabinet Repair', 'Door Installation', 'General Carpentry'],
+    baseFee: 1500 // Daily rate
   },
   {
     name: 'Maria Clara',
     category: 'Virtual Assistant',
-    description: 'Highly organized VA specializing in data entry and scheduling.',
+    description: 'Highly organized VA specializing in data entry, scheduling, and admin tasks.',
     imageUrl: 'https://i.pravatar.cc/150?u=maria',
     rating: 4.9,
     jobsOffered: ['Calendar Management', 'Email Sorting', 'Data Entry', 'Customer Support'],
-    baseFee: 1500
+    baseFee: 25000 // Monthly rate
   },
   {
     name: 'Pedro Penduko',
-    category: 'Carpenter',
-    description: 'Skilled carpenter and all-around handyman.',
+    category: 'Plumber',
+    description: 'Licensed plumber expert in pipe fitting, leak repairs, and drainage systems.',
     imageUrl: 'https://i.pravatar.cc/150?u=pedro',
     rating: 4.5,
-    jobsOffered: ['Carpentry & Furniture Repair', 'Painting', 'General Handyman Services'],
-    baseFee: 1000
+    jobsOffered: ['Pipe Leak Repair', 'Toilet Installation', 'Drain Cleaning'],
+    baseFee: 800 // One-time base fee
   },
   {
     name: 'Mario Tubero',
-    category: 'Plumber',
-    description: 'Expert in fixing pipes and leaks.',
+    category: 'Electrician',
+    description: 'Certified electrician for residential wiring and fixture installations.',
     imageUrl: 'https://i.pravatar.cc/150?u=mario',
     rating: 4.6,
-    jobsOffered: ['Plumbing Basics', 'Pipe Repair', 'Drain Clogs'],
-    baseFee: 800
+    jobsOffered: ['Wiring & Rewiring', 'Lighting Installation', 'Circuit Breaker Repair'],
+    baseFee: 1000 // One-time base fee
   },
   {
     name: 'Leonor Rivera',
-    category: 'Graphic Designer',
-    description: 'Creative designer specializing in UI/UX and branding.',
+    category: 'House Cleaner',
+    description: 'Meticulous house cleaner providing deep cleaning and organizing services.',
     imageUrl: 'https://i.pravatar.cc/150?u=leonor',
     rating: 4.7,
-    jobsOffered: ['Logo Design', 'Brand Identity', 'Social Media Graphics', 'UI Design mockups'],
-    baseFee: 2000
+    jobsOffered: ['Deep Cleaning', 'Move-in/Move-out Cleaning', 'Organization'],
+    baseFee: 1200 // Daily rate
   },
   {
     name: 'Jose Rizal',
-    category: 'Content Writer',
-    description: 'Excellent writer with a knack for engaging articles.',
+    category: 'Web Developer',
+    description: 'MERN stack expert building modern, responsive web applications.',
     imageUrl: 'https://i.pravatar.cc/150?u=jose',
     rating: 5.0,
-    jobsOffered: ['Blog Post Writing', 'Copywriting', 'Technical Writing', 'SEO Content Creation'],
-    baseFee: 1200
+    jobsOffered: ['Full Stack Development', 'E-commerce Sites', 'API Integration', 'UI/UX Implementation'],
+    baseFee: 40000 // Monthly rate
   },
 ];
 
