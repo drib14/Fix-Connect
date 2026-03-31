@@ -10,3 +10,4 @@
 12:27:03 PM [vite] (client) ✨ new dependencies optimized: lucide-react
 12:27:03 PM [vite] (client) ✨ optimized dependencies changed. reloading
 12:42:05 PM [vite] (client) hmr update /src/components/Common/Navbar.jsx
+9:52:48 AM [vite] (client) hmr update /src/pages/Home.jsx

@@ -29,7 +29,11 @@ exports.createBooking = async (req, res) => {
     // Create PayMongo link only if paymentMethod is PayMongo, GCash, Maya, or Credit / Debit
     if (paymentMethod === 'PayMongo' || paymentMethod === 'GCash' || paymentMethod === 'Maya' || paymentMethod === 'Credit / Debit') {
       try {
-        const paymongoSecret = process.env.PAYMONGO_SECRET_KEY;
+        let paymongoSecret = process.env.PAYMONGO_SECRET_KEY;
+        // In case the user swapped public and secret keys in .env
+        if (paymongoSecret && !paymongoSecret.startsWith('sk_') && process.env.PAYMONGO_PUBLIC_KEY && process.env.PAYMONGO_PUBLIC_KEY.startsWith('sk_')) {
+          paymongoSecret = process.env.PAYMONGO_PUBLIC_KEY;
+        }
       const encodedSecret = Buffer.from(`${paymongoSecret}:`).toString('base64');
 
       const paymentData = {

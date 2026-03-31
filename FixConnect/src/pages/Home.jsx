@@ -203,10 +203,23 @@ const Home = () => {
     { id: 4, title: 'Carpenter for Custom Cabinet', desc: 'Looking for a master carpenter to build a custom bookshelf.', budget: '₱ 5,000 - ₱ 10,000', recommendations: 2 },
     { id: 5, title: 'Electrician needed for house rewiring', desc: 'Old house needs complete electrical rewiring.', budget: '₱ 20,000+', recommendations: 8 },
   ]);
+  const [recommendedJobs, setRecommendedJobs] = useState(() => {
+    const saved = localStorage.getItem('recommendedJobs');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [page, setPage] = useState(1);
   const itemsPerPage = 3;
 
   const handleRecommend = (id) => {
+    if (recommendedJobs.includes(id)) {
+      alert("You have already recommended this job request.");
+      return;
+    }
+
+    const newRecommendedJobs = [...recommendedJobs, id];
+    setRecommendedJobs(newRecommendedJobs);
+    localStorage.setItem('recommendedJobs', JSON.stringify(newRecommendedJobs));
+
     setJobRequests(prevJobs => {
       return prevJobs.map(job => {
         if (job.id === id) {
@@ -312,9 +325,9 @@ const Home = () => {
                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{job.recommendations} Recommendations</span>
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => handleRecommend(job.id)}>
+              <button style={{ flex: 1, background: 'transparent', border: 'none', color: recommendedJobs.includes(job.id) ? 'var(--primary-color)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => handleRecommend(job.id)}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
-                Recommend
+                {recommendedJobs.includes(job.id) ? 'Recommended' : 'Recommend'}
               </button>
               <button style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => { setSelectedJob(job); setIsJobPopupOpen(true); }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>

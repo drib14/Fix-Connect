@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import api from '../utils/axios';
+import Navbar from '../components/Common/Navbar';
 
 const Container = styled.div`
   max-width: 1000px;
@@ -206,6 +207,8 @@ const Dashboard = () => {
   });
 
   return (
+    <>
+    <Navbar />
     <Container>
       <Header>
         <Title>Your Dashboard</Title>
@@ -263,6 +266,7 @@ const Dashboard = () => {
         </EmptyState>
       )}
     </Container>
+    </>
   );
 };
 
