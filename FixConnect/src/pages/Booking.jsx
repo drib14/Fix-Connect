@@ -189,9 +189,7 @@ const PaymentCard = styled.div`
 `;
 
 const PAYMENT_OPTIONS = [
-  { id: 'PayMongo', name: 'Credit / Debit', icon: 'https://cdn-icons-png.flaticon.com/512/6001/6001368.png' },
-  { id: 'GCash', name: 'GCash', icon: 'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/gcash-logo-icon.png' },
-  { id: 'Maya', name: 'Maya', icon: 'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/maya-logo-icon.png' },
+  { id: 'PayMongo', name: 'Online Payment (PayMongo, GCash, Maya, Cards)', icon: 'https://cdn-icons-png.flaticon.com/512/6001/6001368.png' },
   { id: 'Cash', name: 'Cash', icon: 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png' }
 ];
 
@@ -429,14 +427,11 @@ const Booking = () => {
               {loading ? 'Processing...' : 'Book Service'}
             </Button>
           ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
-              <Button type="button" onClick={() => window.open(paymentLink, '_blank')} style={{ background: '#4CAF50', flex: '1 1 100%' }}>
-                Pay with {formData.paymentMethod === 'PayMongo' ? 'Credit/Debit' : formData.paymentMethod}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <Button type="button" onClick={() => window.open(paymentLink, '_blank')} style={{ background: '#4CAF50', width: '100%' }}>
+                Pay via PayMongo checkout page
               </Button>
-              <Button type="button" onClick={() => window.open(paymentLink, '_blank')} style={{ background: '#333', border: '1px solid #555', color: '#fff', flex: '1 1 calc(50% - 7.5px)' }}>
-                Pay using other method
-              </Button>
-              <Button type="button" onClick={() => navigate('/dashboard')} style={{ background: 'var(--bg-card)', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', flex: '1 1 calc(50% - 7.5px)' }}>
+              <Button type="button" onClick={() => navigate('/dashboard')} style={{ background: 'var(--bg-card)', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', width: '100%' }}>
                 View Dashboard
               </Button>
             </div>

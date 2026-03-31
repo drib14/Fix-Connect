@@ -5,8 +5,8 @@ import api from '../utils/axios';
 import { Link } from 'react-router-dom';
 import PageLayout from '../components/Common/PageLayout';
 import TourGuide from '../components/Common/TourGuide';
-import WorkerCard from '../components/Workers/WorkerCard';
 import WorkerPopup from '../components/Workers/WorkerPopup';
+import Mascot3D from '../components/Home/Mascot3D';
 
 const HeroSection = styled.section`
   display: flex;
@@ -192,6 +192,9 @@ const Home = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [runTour, setRunTour] = useState(false);
 
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [isJobPopupOpen, setIsJobPopupOpen] = useState(false);
+
   // FB feed state
   const [jobRequests, setJobRequests] = useState([
     { id: 1, title: 'Need a Plumber ASAP', desc: 'Broken pipe in the kitchen sink. Need immediate repair.', budget: '₱ 800 - ₱ 1,500', recommendations: 12 },
@@ -284,55 +287,56 @@ const Home = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <motion.img
-            src="/FC-logo.png"
-            alt="FixConnect Mascot"
-            animate={{ y: [0, -20, 0] }}
-            transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-          />
+          <Mascot3D />
         </MascotContainer>
       </HeroSection>
 
-      <SectionTitle>Top Available Professionals</SectionTitle>
-      {workers.length > 0 ? (
-        <Grid>
-          {workers.map(worker => (
-            <WorkerCard key={worker._id} worker={worker} onClick={handleCardClick} />
-          ))}
-        </Grid>
-      ) : (
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Loading professionals...</p>
-      )}
-
       <SectionTitle>Recent Job Requests Feed</SectionTitle>
-      <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <Grid style={{ maxWidth: '1000px', margin: '0 auto 60px auto' }}>
         {paginatedJobs.map(job => (
-          <JobRequestCard key={job.id} style={{ display: 'flex', flexDirection: 'column', padding: '25px' }}>
+          <JobRequestCard key={job.id} style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-              <h4>{job.title}</h4>
-              <span style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>{job.recommendations} Recommendations</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-main)', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+                  {job.title.charAt(0)}
+                </div>
+                <div>
+                  <h4 style={{ margin: 0 }}>{job.title}</h4>
+                  <small style={{ color: 'var(--text-muted)' }}>2 hours ago</small>
+                </div>
+              </div>
             </div>
-            <p style={{ fontSize: '1.05rem', color: 'var(--text-main)', marginBottom: '15px' }}>{job.desc}</p>
+            <p style={{ fontSize: '1.05rem', color: 'var(--text-main)', marginBottom: '15px', flexGrow: 1 }}>{job.desc}</p>
             <div className="budget" style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>Budget: <span style={{ color: 'var(--primary-color)' }}>{job.budget}</span></div>
-            <div style={{ display: 'flex', gap: '15px' }}>
-              <button style={{ flex: 1, background: 'transparent', border: '1px solid var(--text-muted)', color: 'var(--text-main)' }} onClick={() => handleRecommend(job.id)}>
-                👍 Recommend
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>
+               <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{job.recommendations} Recommendations</span>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => handleRecommend(job.id)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                Recommend
               </button>
-              <button style={{ flex: 2, background: 'var(--primary-color)', color: 'white', border: 'none' }} onClick={() => setIsPopupOpen(true)}>
-                View More / Apply
+              <button style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => { setSelectedJob(job); setIsJobPopupOpen(true); }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                View More
               </button>
             </div>
           </JobRequestCard>
         ))}
-        {paginatedJobs.length < jobRequests.length && (
+      </Grid>
+
+      {paginatedJobs.length < jobRequests.length && (
+        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
           <button
-            style={{ padding: '15px', background: 'transparent', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', borderRadius: '8px', cursor: 'pointer', marginTop: '10px' }}
+            style={{ padding: '12px 30px', background: 'transparent', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', borderRadius: '25px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.3s ease' }}
             onClick={() => setPage(p => p + 1)}
+            onMouseOver={(e) => { e.target.style.background = 'var(--primary-color)'; e.target.style.color = 'white'; }}
+            onMouseOut={(e) => { e.target.style.background = 'transparent'; e.target.style.color = 'var(--primary-color)'; }}
           >
             Load More Posts
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <CallToAction>
         <h3>Ready to streamline your workflow?</h3>
@@ -345,6 +349,24 @@ const Home = () => {
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
       />
+
+      {isJobPopupOpen && selectedJob && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }} onClick={() => setIsJobPopupOpen(false)}>
+          <div style={{ background: 'var(--bg-card)', padding: '30px', borderRadius: '12px', maxWidth: '600px', width: '90%', border: '1px solid var(--primary-color)' }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginBottom: '15px', color: 'var(--text-main)' }}>{selectedJob.title}</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '20px', lineHeight: '1.6' }}>{selectedJob.desc}</p>
+            <div style={{ marginBottom: '20px' }}>
+              <strong>Budget: </strong><span style={{ color: 'var(--primary-color)' }}>{selectedJob.budget}</span>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <strong>Recommendations: </strong><span style={{ color: 'var(--text-main)' }}>{selectedJob.recommendations}</span>
+            </div>
+            <button style={{ width: '100%', padding: '12px', background: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => setIsJobPopupOpen(false)}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </PageLayout>
   );
 };

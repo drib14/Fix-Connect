@@ -73,9 +73,9 @@ const StatusBadge = styled.span`
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
-  background: ${props => props.status === 'Pending' ? 'rgba(255, 152, 0, 0.1)' : props.status === 'Confirmed' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(158, 158, 158, 0.1)'};
-  color: ${props => props.status === 'Pending' ? '#ff9800' : props.status === 'Confirmed' ? '#4CAF50' : '#9e9e9e'};
-  border: 1px solid ${props => props.status === 'Pending' ? '#ff9800' : props.status === 'Confirmed' ? '#4CAF50' : '#9e9e9e'};
+  background: ${props => props.$status === 'Pending' ? 'rgba(255, 152, 0, 0.1)' : props.$status === 'Confirmed' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(158, 158, 158, 0.1)'};
+  color: ${props => props.$status === 'Pending' ? '#ff9800' : props.$status === 'Confirmed' ? '#4CAF50' : '#9e9e9e'};
+  border: 1px solid ${props => props.$status === 'Pending' ? '#ff9800' : props.$status === 'Confirmed' ? '#4CAF50' : '#9e9e9e'};
 `;
 
 const ActionSection = styled.div`
@@ -134,16 +134,16 @@ const TabContainer = styled.div`
 const Tab = styled.button`
   background: transparent;
   border: none;
-  color: ${props => props.active ? 'var(--primary-color)' : 'var(--text-muted)'};
+  color: ${props => props.$active ? 'var(--primary-color)' : 'var(--text-muted)'};
   font-size: 1.1rem;
-  font-weight: ${props => props.active ? 'bold' : 'normal'};
+  font-weight: ${props => props.$active ? 'bold' : 'normal'};
   cursor: pointer;
   position: relative;
   padding: 5px 10px;
 
   &:after {
     content: '';
-    display: ${props => props.active ? 'block' : 'none'};
+    display: ${props => props.$active ? 'block' : 'none'};
     position: absolute;
     bottom: -16px;
     left: 0;
@@ -213,9 +213,9 @@ const Dashboard = () => {
       </Header>
 
       <TabContainer>
-        <Tab active={activeTab === 'Active'} onClick={() => setActiveTab('Active')}>Active</Tab>
-        <Tab active={activeTab === 'Completed'} onClick={() => setActiveTab('Completed')}>Completed</Tab>
-        <Tab active={activeTab === 'Cancelled'} onClick={() => setActiveTab('Cancelled')}>Cancelled</Tab>
+        <Tab $active={activeTab === 'Active'} onClick={() => setActiveTab('Active')}>Active</Tab>
+        <Tab $active={activeTab === 'Completed'} onClick={() => setActiveTab('Completed')}>Completed</Tab>
+        <Tab $active={activeTab === 'Cancelled'} onClick={() => setActiveTab('Cancelled')}>Cancelled</Tab>
       </TabContainer>
 
       {loading ? (
@@ -232,7 +232,7 @@ const Dashboard = () => {
               <BookingInfo>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
                   <ServiceName>{booking.serviceCategory}</ServiceName>
-                  <StatusBadge status={booking.status}>{booking.status}</StatusBadge>
+                  <StatusBadge $status={booking.status}>{booking.status}</StatusBadge>
                 </div>
                 <Detail><strong>Date:</strong> {booking.date}</Detail>
                 <Detail><strong>Time:</strong> {booking.time}</Detail>

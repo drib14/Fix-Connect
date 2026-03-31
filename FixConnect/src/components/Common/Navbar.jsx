@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
+import { Home, Users, Briefcase, LayoutDashboard, User, LogOut } from 'lucide-react';
 
 const NavContainer = styled(motion.nav)`
   display: flex;
@@ -41,6 +42,10 @@ const Logo = styled(Link)`
 const NavLinks = styled.div`
   display: flex;
   gap: 30px;
+
+  @media (max-width: 768px) {
+    gap: 15px;
+  }
 `;
 
 const NavLink = styled(Link)`
@@ -48,6 +53,9 @@ const NavLink = styled(Link)`
   font-weight: 500;
   font-size: 1rem;
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 
   &:after {
     content: '';
@@ -63,11 +71,37 @@ const NavLink = styled(Link)`
   &:hover:after {
     width: 100%;
   }
+
+  span {
+    display: inline;
+  }
+
+  svg {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    span {
+      display: none;
+    }
+    svg {
+      display: inline;
+      width: 24px;
+      height: 24px;
+      color: var(--primary-color);
+    }
+  }
 `;
 
 const AuthButtons = styled.div`
   display: flex;
   gap: 15px;
+
+  @media (max-width: 768px) {
+    .hide-on-mobile {
+      display: none;
+    }
+  }
 `;
 
 const Button = styled(Link)`
@@ -95,22 +129,48 @@ const Button = styled(Link)`
 `;
 
 const Navbar = () => {
+  const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
+
   return (
     <NavContainer initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
       <Logo to="/">
-        <img src="/FC-logo.png" alt="FixConnect Logo" />
+        <div style={{ width: '40px', height: '40px', position: 'relative' }}>
+          {/* Simple 3D CSS representation or keep icon if desired, returning 3D Mascot is too complex here, let's just make the image have 3D effect */}
+          <img src="/FC-logo.png" alt="FixConnect Logo" style={{ filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.5))', transform: 'perspective(100px) rotateY(-10deg) rotateX(10deg)' }} />
+        </div>
         <span>FixConnect</span>
       </Logo>
       <NavLinks>
-        <NavLink to="/">Home</NavLink>
-        <NavLink to="/workers">Workers</NavLink>
-        <NavLink to="/book">Book Service</NavLink>
-        <NavLink to="/dashboard">Dashboard</NavLink>
-        <NavLink to="/profile">Profile</NavLink>
+        <NavLink to="/"><Home /><span>Home</span></NavLink>
+        <NavLink to="/workers"><Users /><span>Workers</span></NavLink>
+        <NavLink to="/book"><Briefcase /><span>Book Service</span></NavLink>
+        <NavLink to="/dashboard"><LayoutDashboard /><span>Dashboard</span></NavLink>
       </NavLinks>
       <AuthButtons>
-        <Button to="/login" className="login">Log In</Button>
-        <Button to="/register" className="register">Sign Up</Button>
+        {token ? (
+          <>
+            <NavLink to="/profile" style={{ marginRight: '10px' }}>
+              <User /><span>Profile</span>
+            </NavLink>
+            <button onClick={handleLogout} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', color: '#f44336' }}>
+              <LogOut width={24} height={24} />
+              <span className="hide-on-mobile" style={{ fontWeight: '500', fontSize: '1rem' }}>Logout</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <Button to="/login" className="login">Log In</Button>
+            <Button to="/register" className="register">Sign Up</Button>
+          </>
+        )}
       </AuthButtons>
     </NavContainer>
   );

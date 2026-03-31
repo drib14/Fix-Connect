@@ -43,7 +43,7 @@ const StarsContainer = styled.div`
 const Star = styled.span`
   font-size: 2rem;
   cursor: pointer;
-  color: ${props => props.active ? '#FFD700' : 'rgba(255,255,255,0.2)'};
+  color: ${props => props.$active ? '#FFD700' : 'rgba(255,255,255,0.2)'};
   transition: color 0.2s;
 
   &:hover {
@@ -155,7 +155,7 @@ const ReviewModal = ({ isOpen, onClose, workerId, bookingId, onSuccess }) => {
             {[1, 2, 3, 4, 5].map(star => (
               <Star
                 key={star}
-                active={star <= (hoverRating || rating)}
+                $active={star <= (hoverRating || rating)}
                 onMouseEnter={() => setHoverRating(star)}
                 onMouseLeave={() => setHoverRating(0)}
                 onClick={() => setRating(star)}

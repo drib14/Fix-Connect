@@ -53,21 +53,21 @@ const Circle = styled.div`
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: ${props => props.active ? 'var(--primary-color)' : 'var(--bg-main)'};
-  border: 4px solid ${props => props.active ? 'var(--primary-color)' : 'rgba(255, 255, 255, 0.2)'};
+  background: ${props => props.$active ? 'var(--primary-color)' : 'var(--bg-main)'};
+  border: 4px solid ${props => props.$active ? 'var(--primary-color)' : 'rgba(255, 255, 255, 0.2)'};
   display: flex;
   justify-content: center;
   align-items: center;
   font-weight: bold;
-  color: ${props => props.active ? '#fff' : 'var(--text-muted)'};
+  color: ${props => props.$active ? '#fff' : 'var(--text-muted)'};
   margin-bottom: 10px;
   transition: all 0.3s;
 `;
 
 const StepLabel = styled.span`
-  color: ${props => props.active ? 'var(--text-main)' : 'var(--text-muted)'};
+  color: ${props => props.$active ? 'var(--text-main)' : 'var(--text-muted)'};
   font-size: 0.9rem;
-  font-weight: ${props => props.active ? 'bold' : 'normal'};
+  font-weight: ${props => props.$active ? 'bold' : 'normal'};
 `;
 
 const DetailsBox = styled.div`
@@ -174,10 +174,10 @@ const BookingTracking = () => {
         <TimelineContainer>
           {STATUSES.map((status, index) => (
             <Step key={status}>
-              <Circle active={index <= currentStepIndex}>
+              <Circle $active={index <= currentStepIndex}>
                 {index < currentStepIndex ? '✓' : index + 1}
               </Circle>
-              <StepLabel active={index <= currentStepIndex}>{status}</StepLabel>
+              <StepLabel $active={index <= currentStepIndex}>{status}</StepLabel>
             </Step>
           ))}
         </TimelineContainer>
