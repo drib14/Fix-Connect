@@ -39,14 +39,25 @@ exports.createBooking = async (req, res) => {
       const paymentData = {
         data: {
           attributes: {
-            amount: Math.round(totalAmount * 100), // PayMongo accepts amount in cents
-            description: `FixConnect Booking: ${serviceCategory}`,
-            remarks: `Booking for ${date} at ${time}`
+            send_email_receipt: true,
+            show_description: true,
+            show_line_items: true,
+            line_items: [
+              {
+                currency: 'PHP',
+                amount: Math.round(totalAmount * 100), // PayMongo accepts amount in cents
+                description: `FixConnect Booking: ${serviceCategory} on ${date} at ${time}`,
+                name: `Service: ${serviceCategory}`,
+                quantity: 1
+              }
+            ],
+            payment_method_types: ['gcash', 'paymaya', 'card', 'dob', 'dob_ubp', 'qrph'],
+            description: `FixConnect Booking: ${serviceCategory}`
           }
         }
       };
 
-      const response = await axios.post('https://api.paymongo.com/v1/links', paymentData, {
+      const response = await axios.post('https://api.paymongo.com/v1/checkout_sessions', paymentData, {
         headers: {
           accept: 'application/json',
           'content-type': 'application/json',
@@ -56,7 +67,7 @@ exports.createBooking = async (req, res) => {
 
         if (response.data && response.data.data) {
           paymentUrl = response.data.data.attributes.checkout_url;
-          paymentReference = response.data.data.attributes.reference_number;
+          paymentReference = response.data.data.id;
         }
       } catch (paymentError) {
         console.error('PayMongo link creation error:', paymentError.response?.data || paymentError.message);
