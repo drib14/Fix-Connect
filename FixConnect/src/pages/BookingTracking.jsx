@@ -125,6 +125,24 @@ const BookingTracking = () => {
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+
+  const handleCancelBooking = async () => {
+    if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+    try {
+      setCanceling(true);
+      const token = localStorage.getItem('token');
+      await api.put(`/bookings/${id}/status`, { status: 'Cancelled' }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBooking(prev => ({ ...prev, status: 'Cancelled' }));
+    } catch (error) {
+      console.error('Failed to cancel the booking.', error);
+      alert('Failed to cancel the booking. Please try again.');
+    } finally {
+      setCanceling(false);
+    }
+  };
 
   useEffect(() => {
     // In a real app we'd have a GET /bookings/:id
@@ -211,6 +229,15 @@ const BookingTracking = () => {
 
         <ButtonGroup>
           <Button variant="outline" onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+          {(booking.status === 'Pending' || booking.status === 'Confirmed') && (
+            <Button
+              onClick={handleCancelBooking}
+              disabled={canceling}
+              style={{ background: '#e53935' }}
+            >
+              {canceling ? 'Canceling...' : 'Cancel Booking'}
+            </Button>
+          )}
           {booking.status !== 'Completed' && booking.status !== 'Cancelled' && (
             <Button onClick={handleMockStatusUpdate}>
               Mock Update Status (Admin)

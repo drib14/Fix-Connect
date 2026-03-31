@@ -14,3 +14,9 @@
 10:35:03 AM [vite] (client) hmr update /src/components/Home/Mascot3D.jsx
 10:37:52 AM [vite] (client) ✨ new dependencies optimized: three
 10:37:52 AM [vite] (client) ✨ optimized dependencies changed. reloading
+11:55:13 AM [vite] (client) hmr update /src/pages/Home.jsx
+11:58:07 AM [vite] (client) hmr update /src/pages/Home.jsx
+12:03:39 PM [vite] (client) hmr update /src/pages/Home.jsx
+12:26:54 PM [vite] (client) hmr update /src/pages/Home.jsx
+12:59:05 PM [vite] (client) hmr update /src/pages/Home.jsx
+1:05:46 PM [vite] (client) hmr update /src/pages/Home.jsx

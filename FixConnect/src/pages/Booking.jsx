@@ -258,9 +258,11 @@ const Booking = () => {
       // Simulate booking delay for UX
       await new Promise(resolve => setTimeout(resolve, 800));
 
+      const selectedWorker = workers.find(w => w._id === formData.workerId);
       const payload = {
         ...formData,
         price: currentPrice,
+        paymentType: selectedWorker?.rateType?.toLowerCase() || 'one-time',
         userId: localStorage.getItem('userId') // Remove fallback string that breaks ObjectId cast
       };
 
@@ -308,21 +310,50 @@ const Booking = () => {
 
         <form onSubmit={handleSubmit}>
           <InputGroup>
-            <Label>Select a Professional Worker</Label>
+            <Label>Select Job Category</Label>
             <Select
-              name="workerId"
-              value={formData.workerId}
-              onChange={handleChange}
+              name="categoryFilter"
+              value={formData.serviceCategory || ''}
+              onChange={(e) => {
+                const category = e.target.value;
+                setFormData(prev => ({ ...prev, serviceCategory: category, workerId: '' }));
+                setCurrentPrice(0);
+              }}
               required
             >
-              <option value="" disabled>Choose a skilled worker...</option>
-              {workers.map(worker => (
-                <option key={worker._id} value={worker._id}>
-                  {worker.name} - {worker.category} (Base: ₱{worker.baseFee?.toLocaleString()})
-                </option>
+              <option value="" disabled>Choose a job category...</option>
+              {Array.from(new Set(workers.map(w => w.category))).map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
               ))}
             </Select>
           </InputGroup>
+
+          {formData.serviceCategory && (
+            <InputGroup>
+              <Label>Select Professional (Prices based on {formData.serviceCategory})</Label>
+              <PaymentMethodsGrid style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+                {workers.filter(w => w.category === formData.serviceCategory).map(worker => (
+                  <PaymentCard
+                    key={worker._id}
+                    selected={formData.workerId === worker._id}
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, workerId: worker._id }));
+                      setCurrentPrice(worker.baseFee || 0);
+                    }}
+                    style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}
+                  >
+                    <strong>{worker.name}</strong>
+                    <span style={{ color: 'var(--primary-color)', fontSize: '1.1rem', fontWeight: 'bold' }}>
+                      ₱{worker.baseFee?.toLocaleString()}
+                    </span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      Rate: {worker.rateType || 'One-time'}
+                    </span>
+                  </PaymentCard>
+                ))}
+              </PaymentMethodsGrid>
+            </InputGroup>
+          )}
 
           <InputGroup style={{ flexDirection: 'row', gap: '20px' }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -369,17 +400,7 @@ const Booking = () => {
             />
           </InputGroup>
 
-          <InputGroup>
-            <Label>Payment Type</Label>
-            <Select
-              name="paymentType"
-              value={formData.paymentType}
-              onChange={handleChange}
-            >
-              <option value="one-time">One-Time Service</option>
-              <option value="monthly">Monthly Retainer</option>
-            </Select>
-          </InputGroup>
+          {/* Payment Type is now determined by the worker's rateType */}
 
           <InputGroup>
             <Label>Payment Method</Label>

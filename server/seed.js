@@ -11,7 +11,8 @@ const mockWorkers = [
     imageUrl: 'https://i.pravatar.cc/150?u=juan',
     rating: 4.8,
     jobsOffered: ['Custom Furniture', 'Cabinet Repair', 'Door Installation', 'General Carpentry'],
-    baseFee: 1500 // Daily rate
+    baseFee: 1500,
+    rateType: 'Daily'
   },
   {
     name: 'Maria Clara',
@@ -20,7 +21,8 @@ const mockWorkers = [
     imageUrl: 'https://i.pravatar.cc/150?u=maria',
     rating: 4.9,
     jobsOffered: ['Calendar Management', 'Email Sorting', 'Data Entry', 'Customer Support'],
-    baseFee: 25000 // Monthly rate
+    baseFee: 25000,
+    rateType: 'Monthly'
   },
   {
     name: 'Pedro Penduko',
@@ -29,7 +31,8 @@ const mockWorkers = [
     imageUrl: 'https://i.pravatar.cc/150?u=pedro',
     rating: 4.5,
     jobsOffered: ['Pipe Leak Repair', 'Toilet Installation', 'Drain Cleaning'],
-    baseFee: 800 // One-time base fee
+    baseFee: 800,
+    rateType: 'One-time'
   },
   {
     name: 'Mario Tubero',
@@ -38,7 +41,8 @@ const mockWorkers = [
     imageUrl: 'https://i.pravatar.cc/150?u=mario',
     rating: 4.6,
     jobsOffered: ['Wiring & Rewiring', 'Lighting Installation', 'Circuit Breaker Repair'],
-    baseFee: 1000 // One-time base fee
+    baseFee: 1000,
+    rateType: 'One-time'
   },
   {
     name: 'Leonor Rivera',
@@ -47,7 +51,8 @@ const mockWorkers = [
     imageUrl: 'https://i.pravatar.cc/150?u=leonor',
     rating: 4.7,
     jobsOffered: ['Deep Cleaning', 'Move-in/Move-out Cleaning', 'Organization'],
-    baseFee: 1200 // Daily rate
+    baseFee: 1200,
+    rateType: 'Daily'
   },
   {
     name: 'Jose Rizal',
@@ -56,7 +61,8 @@ const mockWorkers = [
     imageUrl: 'https://i.pravatar.cc/150?u=jose',
     rating: 5.0,
     jobsOffered: ['Full Stack Development', 'E-commerce Sites', 'API Integration', 'UI/UX Implementation'],
-    baseFee: 40000 // Monthly rate
+    baseFee: 40000,
+    rateType: 'Monthly'
   },
 ];
 

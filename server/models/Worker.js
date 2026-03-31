@@ -28,6 +28,11 @@ const workerSchema = new mongoose.Schema({
     type: Number,
     required: true,
     default: 1000
+  },
+  rateType: {
+    type: String,
+    enum: ['Daily', 'Monthly', 'One-time'],
+    default: 'One-time'
   }
 }, { timestamps: true });
 

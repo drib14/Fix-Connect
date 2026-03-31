@@ -6,7 +6,6 @@ import { Link } from 'react-router-dom';
 import PageLayout from '../components/Common/PageLayout';
 import TourGuide from '../components/Common/TourGuide';
 import WorkerPopup from '../components/Workers/WorkerPopup';
-import Mascot3D from '../components/Home/Mascot3D';
 
 const HeroSection = styled.section`
   display: flex;
@@ -47,23 +46,6 @@ const Description = styled.p`
   color: var(--text-muted);
   margin-bottom: 30px;
   line-height: 1.8;
-`;
-
-const MascotContainer = styled(motion.div)`
-  flex: 1;
-  width: 100%;
-  max-width: 500px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  img {
-    width: 100%;
-    max-width: 400px;
-    height: auto;
-    object-fit: contain;
-    filter: drop-shadow(0 0 20px rgba(76, 175, 80, 0.2));
-  }
 `;
 
 const StatsSection = styled(motion.div)`
@@ -197,12 +179,21 @@ const Home = () => {
 
   // FB feed state
   const [jobRequests, setJobRequests] = useState([
-    { id: 1, title: 'Need a Plumber ASAP', desc: 'Broken pipe in the kitchen sink. Need immediate repair.', budget: '₱ 800 - ₱ 1,500', recommendations: 12 },
-    { id: 2, title: 'React Developer for Startup', desc: 'Looking for a skilled MERN developer to build a booking app MVP.', budget: '₱ 15,000 - ₱ 25,000', recommendations: 5 },
-    { id: 3, title: 'Virtual Assistant (Data Entry)', desc: 'Part-time VA needed to sort emails and enter data into Excel.', budget: '₱ 10,000 / month', recommendations: 20 },
-    { id: 4, title: 'Carpenter for Custom Cabinet', desc: 'Looking for a master carpenter to build a custom bookshelf.', budget: '₱ 5,000 - ₱ 10,000', recommendations: 2 },
-    { id: 5, title: 'Electrician needed for house rewiring', desc: 'Old house needs complete electrical rewiring.', budget: '₱ 20,000+', recommendations: 8 },
+    { id: 1, title: 'Need a Plumber ASAP', desc: 'Broken pipe in the kitchen sink. Need immediate repair.', budget: '₱ 800 - ₱ 1,500', recommendations: 12, postedAt: '2 hours ago', poster: 'Nico Santos' },
+    { id: 2, title: 'React Developer for Startup', desc: 'Looking for a skilled MERN developer to build a booking app MVP.', budget: '₱ 15,000 - ₱ 25,000', recommendations: 5, postedAt: '5 hours ago', poster: 'Rafael Mendoza' },
+    { id: 3, title: 'Virtual Assistant (Data Entry)', desc: 'Part-time VA needed to sort emails and enter data into Excel.', budget: '₱ 10,000 / month', recommendations: 20, postedAt: '1 day ago', poster: 'Valerie Garcia' },
+    { id: 4, title: 'Carpenter for Custom Cabinet', desc: 'Looking for a master carpenter to build a custom bookshelf.', budget: '₱ 5,000 - ₱ 10,000', recommendations: 2, postedAt: '2 days ago', poster: 'Carlos Rivera' },
+    { id: 5, title: 'Electrician needed for house rewiring', desc: 'Old house needs complete electrical rewiring.', budget: '₱ 20,000+', recommendations: 8, postedAt: '3 days ago', poster: 'Emmanuel Diaz' },
   ]);
+
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const names = name.split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+    }
+    return name[0].toUpperCase();
+  };
   const [recommendedJobs, setRecommendedJobs] = useState(() => {
     const saved = localStorage.getItem('recommendedJobs');
     return saved ? JSON.parse(saved) : [];
@@ -212,22 +203,34 @@ const Home = () => {
 
   const handleRecommend = (id) => {
     if (recommendedJobs.includes(id)) {
-      alert("You have already recommended this job request.");
-      return;
+      // Retract recommendation
+      const newRecommendedJobs = recommendedJobs.filter(jobId => jobId !== id);
+      setRecommendedJobs(newRecommendedJobs);
+      localStorage.setItem('recommendedJobs', JSON.stringify(newRecommendedJobs));
+
+      setJobRequests(prevJobs => {
+        return prevJobs.map(job => {
+          if (job.id === id) {
+            return { ...job, recommendations: Math.max(0, job.recommendations - 1) };
+          }
+          return job;
+        }).sort((a, b) => b.recommendations - a.recommendations);
+      });
+    } else {
+      // Add recommendation
+      const newRecommendedJobs = [...recommendedJobs, id];
+      setRecommendedJobs(newRecommendedJobs);
+      localStorage.setItem('recommendedJobs', JSON.stringify(newRecommendedJobs));
+
+      setJobRequests(prevJobs => {
+        return prevJobs.map(job => {
+          if (job.id === id) {
+            return { ...job, recommendations: job.recommendations + 1 };
+          }
+          return job;
+        }).sort((a, b) => b.recommendations - a.recommendations);
+      });
     }
-
-    const newRecommendedJobs = [...recommendedJobs, id];
-    setRecommendedJobs(newRecommendedJobs);
-    localStorage.setItem('recommendedJobs', JSON.stringify(newRecommendedJobs));
-
-    setJobRequests(prevJobs => {
-      return prevJobs.map(job => {
-        if (job.id === id) {
-          return { ...job, recommendations: job.recommendations + 1 };
-        }
-        return job;
-      }).sort((a, b) => b.recommendations - a.recommendations);
-    });
   };
 
   const paginatedJobs = jobRequests.slice(0, page * itemsPerPage);
@@ -294,14 +297,6 @@ const Home = () => {
             )}
           </StatsSection>
         </Content>
-
-        <MascotContainer
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          <Mascot3D />
-        </MascotContainer>
       </HeroSection>
 
       <SectionTitle>Recent Job Requests Feed</SectionTitle>
@@ -311,11 +306,12 @@ const Home = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-main)', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold', color: 'var(--primary-color)' }}>
-                  {job.title.charAt(0)}
+                  {getInitials(job.poster)}
                 </div>
                 <div>
-                  <h4 style={{ margin: 0 }}>{job.title}</h4>
-                  <small style={{ color: 'var(--text-muted)' }}>2 hours ago</small>
+                  <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-main)' }}>{job.poster}</h4>
+                  <h5 style={{ margin: 0, fontWeight: 'normal', color: 'var(--primary-color)' }}>{job.title}</h5>
+                  <small style={{ color: 'var(--text-muted)' }}>{job.postedAt}</small>
                 </div>
               </div>
             </div>
