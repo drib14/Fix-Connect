@@ -24,15 +24,30 @@ const workerSchema = new mongoose.Schema({
   jobsOffered: [{
     type: String
   }],
-  baseFee: {
+  dailyRate: {
     type: Number,
-    required: true,
-    default: 1000
+    default: null
   },
-  rateType: {
+  monthlyRate: {
+    type: Number,
+    default: null
+  },
+  oneTimeRate: {
+    type: Number,
+    default: null
+  },
+  status: {
     type: String,
-    enum: ['Daily', 'Monthly', 'One-time'],
-    default: 'One-time'
+    enum: ['Pending', 'Active', 'Rejected'],
+    default: 'Active'
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false // For now, allow mock workers without userIds
+  },
+  documentUrl: {
+    type: String
   }
 }, { timestamps: true });
 

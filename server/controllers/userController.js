@@ -24,7 +24,7 @@ exports.updateProfile = async (req, res) => {
     if (address) updateData.address = address;
 
     if (req.file) {
-      updateData.avatar = `/uploads/avatars/${req.file.filename}`;
+      updateData.avatar = req.file.path; // Cloudinary URL
     }
 
     const updatedUser = await User.findByIdAndUpdate(

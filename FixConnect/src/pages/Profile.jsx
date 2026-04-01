@@ -274,7 +274,8 @@ const Profile = () => {
     return <PageLayout><Container>Loading profile...</Container></PageLayout>;
   }
 
-  const displayAvatar = previewUrl || (user.avatar ? `http://localhost:5000${user.avatar}` : null);
+  // user.avatar is now a full Cloudinary URL
+  const displayAvatar = previewUrl || user.avatar || null;
 
   return (
     <PageLayout>

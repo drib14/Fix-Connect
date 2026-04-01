@@ -178,13 +178,7 @@ const Home = () => {
   const [isJobPopupOpen, setIsJobPopupOpen] = useState(false);
 
   // FB feed state
-  const [jobRequests, setJobRequests] = useState([
-    { id: 1, title: 'Need a Plumber ASAP', desc: 'Broken pipe in the kitchen sink. Need immediate repair.', budget: '₱ 800 - ₱ 1,500', recommendations: 12, postedAt: '2 hours ago', poster: 'Nico Santos' },
-    { id: 2, title: 'React Developer for Startup', desc: 'Looking for a skilled MERN developer to build a booking app MVP.', budget: '₱ 15,000 - ₱ 25,000', recommendations: 5, postedAt: '5 hours ago', poster: 'Rafael Mendoza' },
-    { id: 3, title: 'Virtual Assistant (Data Entry)', desc: 'Part-time VA needed to sort emails and enter data into Excel.', budget: '₱ 10,000 / month', recommendations: 20, postedAt: '1 day ago', poster: 'Valerie Garcia' },
-    { id: 4, title: 'Carpenter for Custom Cabinet', desc: 'Looking for a master carpenter to build a custom bookshelf.', budget: '₱ 5,000 - ₱ 10,000', recommendations: 2, postedAt: '2 days ago', poster: 'Carlos Rivera' },
-    { id: 5, title: 'Electrician needed for house rewiring', desc: 'Old house needs complete electrical rewiring.', budget: '₱ 20,000+', recommendations: 8, postedAt: '3 days ago', poster: 'Emmanuel Diaz' },
-  ]);
+  const [jobRequests, setJobRequests] = useState([]);
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -244,12 +238,28 @@ const Home = () => {
 
     const fetchStatsAndWorkers = async () => {
       try {
-        const [statsRes, workersRes] = await Promise.all([
+        const [statsRes, workersRes, postsRes] = await Promise.all([
           api.get('/stats'),
-          api.get('/workers')
+          api.get('/workers'),
+          api.get('/service-posts')
         ]);
         setTotalUsers(statsRes.data.totalUsers);
         setWorkers(Array.isArray(workersRes.data) ? workersRes.data.slice(0, 3) : []); // Only show top 3
+
+        // Map ServicePosts to jobRequests feed format
+        const fetchedPosts = postsRes.data.map(post => ({
+          id: post._id,
+          title: post.title,
+          desc: post.description,
+          budget: `₱ ${post.price?.toLocaleString()} / ${post.rateType}`,
+          recommendations: post.recommendations || 0,
+          postedAt: new Date(post.createdAt).toLocaleDateString(),
+          poster: post.workerId?.name || 'Unknown Worker',
+          type: post.type, // 'Booking' or 'Hire'
+          imageUrl: post.imageUrl
+        }));
+        setJobRequests(fetchedPosts);
+
       } catch (error) {
         console.error('Failed to fetch initial data', error);
       } finally {
@@ -299,9 +309,11 @@ const Home = () => {
         </Content>
       </HeroSection>
 
-      <SectionTitle>Recent Job Requests Feed</SectionTitle>
+      <SectionTitle>Service Posts</SectionTitle>
       <Grid style={{ maxWidth: '1000px', margin: '0 auto 60px auto' }}>
-        {paginatedJobs.map(job => (
+        {paginatedJobs.length === 0 && !loadingStats ? (
+          <p style={{ textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>No service posts available yet. Be the first to post!</p>
+        ) : paginatedJobs.map(job => (
           <JobRequestCard key={job.id} style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -314,9 +326,19 @@ const Home = () => {
                   <small style={{ color: 'var(--text-muted)' }}>{job.postedAt}</small>
                 </div>
               </div>
+              <span style={{ background: job.type === 'Booking' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(33, 150, 243, 0.2)', color: job.type === 'Booking' ? '#4CAF50' : '#2196F3', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                {job.type}
+              </span>
             </div>
+
+            {job.imageUrl && (
+              <div style={{ margin: '15px 0', borderRadius: '8px', overflow: 'hidden', height: '200px' }}>
+                <img src={job.imageUrl} alt={job.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            )}
+
             <p style={{ fontSize: '1.05rem', color: 'var(--text-main)', marginBottom: '15px', flexGrow: 1 }}>{job.desc}</p>
-            <div className="budget" style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>Budget: <span style={{ color: 'var(--primary-color)' }}>{job.budget}</span></div>
+            <div className="budget" style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>Rate: <span style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>{job.budget}</span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>
                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{job.recommendations} Recommendations</span>
             </div>
@@ -325,10 +347,12 @@ const Home = () => {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
                 {recommendedJobs.includes(job.id) ? 'Recommended' : 'Recommend'}
               </button>
-              <button style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => { setSelectedJob(job); setIsJobPopupOpen(true); }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                View More
-              </button>
+
+              <Link to="/book" style={{ flex: 1, textDecoration: 'none' }}>
+                <button style={{ width: '100%', background: job.type === 'Booking' ? 'var(--primary-color)' : '#2196F3', color: 'white', border: 'none', padding: '10px', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  {job.type === 'Booking' ? 'Book Now' : 'Hire Now'}
+                </button>
+              </Link>
             </div>
           </JobRequestCard>
         ))}

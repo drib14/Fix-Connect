@@ -9,6 +9,7 @@ const statsRoutes = require('./routes/stats');
 const bookingRoutes = require('./routes/bookings');
 const reviewRoutes = require('./routes/reviews');
 const userRoutes = require('./routes/users');
+const servicePostRoutes = require('./routes/servicePosts');
 const path = require('path');
 
 const app = express();
@@ -30,6 +31,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/service-posts', servicePostRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
