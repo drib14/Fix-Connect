@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import PageLayout from '../components/Common/PageLayout';
 import TourGuide from '../components/Common/TourGuide';
 import WorkerPopup from '../components/Workers/WorkerPopup';
+import HireContractModal from '../components/Contracts/HireContractModal';
 
 const HeroSection = styled.section`
   display: flex;
@@ -176,6 +177,8 @@ const Home = () => {
 
   const [selectedJob, setSelectedJob] = useState(null);
   const [isJobPopupOpen, setIsJobPopupOpen] = useState(false);
+  const [showContract, setShowContract] = useState(false);
+  const [contractPost, setContractPost] = useState(null);
 
   // FB feed state
   const [jobRequests, setJobRequests] = useState([]);
@@ -280,38 +283,8 @@ const Home = () => {
   return (
     <PageLayout>
       <TourGuide run={runTour} />
-      <HeroSection>
-        <Content
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <Title>FixConnect</Title>
-          <Tagline>Your Quick Fix, Just a Click Away.</Tagline>
-          <Description>
-            The premier platform connecting you with top-tier skilled professionals.
-            Whether you need a Virtual Assistant, a Web Developer, or a master craftsman,
-            FixConnect bridges the gap between your needs and their expertise with seamless precision.
-          </Description>
 
-          <StatsSection
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            {loadingStats ? (
-              <div className="skeleton" style={{ height: '60px', width: '150px', margin: '0 auto' }}></div>
-            ) : (
-              <>
-                <StatNumber>{(totalUsers || 0).toLocaleString()}+</StatNumber>
-                <StatLabel>Registered Users Trust Us</StatLabel>
-              </>
-            )}
-          </StatsSection>
-        </Content>
-      </HeroSection>
-
-      <SectionTitle>Service Posts</SectionTitle>
+      <SectionTitle style={{ marginTop: '40px' }}>Service Posts</SectionTitle>
       <Grid style={{ maxWidth: '1000px', margin: '0 auto 60px auto' }}>
         {paginatedJobs.length === 0 && !loadingStats ? (
           <p style={{ textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>No service posts available yet. Be the first to post!</p>
@@ -350,11 +323,16 @@ const Home = () => {
                 {recommendedJobs.includes(job.id) ? 'Recommended' : 'Recommend'}
               </button>
 
-              <Link to="/book" style={{ flex: 1, textDecoration: 'none' }}>
-                <button style={{ width: '100%', background: job.type === 'Booking' ? 'var(--primary-color)' : '#2196F3', color: 'white', border: 'none', padding: '10px', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>
+              <div style={{ flex: 1, textDecoration: 'none' }}>
+                <button
+                  onClick={() => {
+                    setContractPost(job);
+                    setShowContract(true);
+                  }}
+                  style={{ width: '100%', background: job.type === 'Booking' ? 'var(--primary-color)' : '#2196F3', color: 'white', border: 'none', padding: '10px', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>
                   {job.type === 'Booking' ? 'Book Now' : 'Hire Now'}
                 </button>
-              </Link>
+              </div>
             </div>
           </JobRequestCard>
         ))}
@@ -401,6 +379,10 @@ const Home = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {showContract && contractPost && (
+        <HireContractModal onClose={() => setShowContract(false)} servicePost={contractPost} />
       )}
     </PageLayout>
   );

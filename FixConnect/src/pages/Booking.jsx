@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/axios';
@@ -196,6 +196,7 @@ const PAYMENT_OPTIONS = [
 
 const Booking = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [workers, setWorkers] = useState([]);
   const [formData, setFormData] = useState({
     workerId: '',
@@ -218,12 +219,27 @@ const Booking = () => {
       try {
         const response = await api.get('/workers');
         setWorkers(response.data);
+
+        // Auto-select worker if passed via query param (e.g. from Hire Contract)
+        const presetWorkerId = searchParams.get('workerId');
+        if (presetWorkerId) {
+          const worker = response.data.find(w => w._id === presetWorkerId);
+          if (worker) {
+            setFormData(prev => ({
+              ...prev,
+              workerId: worker._id,
+              serviceCategory: worker.category
+            }));
+            const rateInfo = getWorkerRate(worker);
+            setCurrentPrice(rateInfo.price);
+          }
+        }
       } catch (error) {
         console.error('Failed to fetch workers:', error);
       }
     };
     fetchWorkers();
-  }, []);
+  }, [searchParams]);
   const currentTax = currentPrice * 0.12;
   const currentTotal = currentPrice + currentTax;
 

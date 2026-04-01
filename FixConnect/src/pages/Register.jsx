@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import api from '../utils/axios';
 import PasswordStrength from '../components/Auth/PasswordStrength';
@@ -30,6 +30,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const routeLocation = useLocation();
 
   const handleLocationChange = useCallback((newLocation) => {
     setLocation(newLocation);
@@ -59,7 +60,12 @@ const Register = () => {
 
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('userId', response.data._id);
-      navigate('/workers');
+
+      if (routeLocation.state?.redirectToApply) {
+        navigate('/apply');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed.');
     } finally {

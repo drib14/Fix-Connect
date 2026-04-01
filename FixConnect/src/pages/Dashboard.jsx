@@ -175,6 +175,19 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [isWorker, setIsWorker] = useState(false);
   const [servicePostForm, setServicePostForm] = useState({ title: '', type: 'Booking', description: '', price: '', rateType: 'One-time', image: null });
+  const [myServicePosts, setMyServicePosts] = useState([]);
+
+  const fetchMyServicePosts = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await api.get('/service-posts/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMyServicePosts(res.data);
+    } catch(err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     // Check if user is a worker efficiently
@@ -239,10 +252,47 @@ const Dashboard = () => {
         <Tab $active={activeTab === 'Active'} onClick={() => setActiveTab('Active')}>Active</Tab>
         <Tab $active={activeTab === 'Completed'} onClick={() => setActiveTab('Completed')}>Completed</Tab>
         <Tab $active={activeTab === 'Cancelled'} onClick={() => setActiveTab('Cancelled')}>Cancelled</Tab>
-        {isWorker && <Tab $active={activeTab === 'CreatePost'} onClick={() => setActiveTab('CreatePost')}>Create Service Post</Tab>}
+        {isWorker && (
+          <>
+            <Tab $active={activeTab === 'CreatePost'} onClick={() => setActiveTab('CreatePost')}>Create Service Post</Tab>
+            <Tab $active={activeTab === 'MyPosts'} onClick={() => { setActiveTab('MyPosts'); fetchMyServicePosts(); }}>My Service Posts</Tab>
+          </>
+        )}
       </TabContainer>
 
-      {activeTab === 'CreatePost' ? (
+      {activeTab === 'MyPosts' ? (
+        <CardGrid>
+          {myServicePosts.length === 0 ? (
+            <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>You haven't created any service posts yet.</p>
+          ) : myServicePosts.map(post => (
+            <BookingCard key={post._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ color: 'var(--primary-color)', margin: 0 }}>{post.title}</h3>
+                <p style={{ color: 'var(--text-muted)', margin: '5px 0' }}>{post.type} - ₱ {post.price?.toLocaleString()} ({post.rateType})</p>
+                <small style={{ color: 'var(--text-main)' }}>{post.recommendations} Recommendations</small>
+              </div>
+              <button
+                onClick={async () => {
+                  if(window.confirm('Are you sure you want to delete this post?')) {
+                    try {
+                      const token = localStorage.getItem('token');
+                      await api.delete(`/service-posts/${post._id}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      });
+                      fetchMyServicePosts();
+                    } catch(err) {
+                      alert('Failed to delete post.');
+                    }
+                  }
+                }}
+                style={{ padding: '8px 15px', background: '#ff5252', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+              >
+                Delete Post
+              </button>
+            </BookingCard>
+          ))}
+        </CardGrid>
+      ) : activeTab === 'CreatePost' ? (
         <div style={{ background: 'var(--bg-card)', padding: '30px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <h2 style={{ marginBottom: '20px', color: 'var(--primary-color)' }}>Create a Service Post</h2>
           <form onSubmit={async (e) => {

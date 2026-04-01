@@ -1,10 +1,11 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { GlobalStyles } from './styles/GlobalStyles';
 import Loader from './components/Loader';
 
 // Lazy loading pages for suspense skeleton loader
 const Home = lazy(() => import('./pages/Home'));
+const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
@@ -18,12 +19,14 @@ const Profile = lazy(() => import('./pages/Profile'));
 const ApplyWorker = lazy(() => import('./pages/ApplyWorker'));
 
 function App() {
+  const isAuthenticated = !!localStorage.getItem('token');
+
   return (
     <Router>
       <GlobalStyles />
       <Suspense fallback={<Loader />}>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={isAuthenticated ? <Home /> : <Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

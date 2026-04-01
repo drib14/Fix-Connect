@@ -32,3 +32,9 @@
 1:04:20 PM [vite] (client) hmr update /src/components/Common/PageLayout.jsx
 1:08:10 PM [vite] (client) hmr update /src/pages/Booking.jsx
 1:11:27 PM [vite] (client) hmr update /src/pages/Booking.jsx
+2:14:19 PM [vite] (client) hmr update /src/pages/Home.jsx
+2:15:33 PM [vite] (client) hmr update /src/App.jsx
+2:34:35 PM [vite] (client) hmr update /src/pages/Home.jsx
+2:40:29 PM [vite] (client) hmr update /src/pages/Booking.jsx
+2:46:30 PM [vite] (client) hmr update /src/pages/Dashboard.jsx
+2:59:09 PM [vite] (client) hmr update /src/components/Contracts/WorkerContractModal.jsx
