@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/axios';
+import Navbar from '../components/Common/Navbar';
 
 const Container = styled.div`
   min-height: calc(100vh - 80px);
@@ -226,17 +227,25 @@ const Booking = () => {
   const currentTax = currentPrice * 0.12;
   const currentTotal = currentPrice + currentTax;
 
+  const getWorkerRate = (worker) => {
+    if (worker.oneTimeRate) return { price: worker.oneTimeRate, type: 'One-time' };
+    if (worker.dailyRate) return { price: worker.dailyRate, type: 'Daily' };
+    if (worker.monthlyRate) return { price: worker.monthlyRate, type: 'Monthly' };
+    return { price: 0, type: 'Unknown' };
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'workerId') {
       const selectedWorker = workers.find(w => w._id === value);
       if (selectedWorker) {
+        const { price } = getWorkerRate(selectedWorker);
         setFormData(prev => ({
           ...prev,
           workerId: value,
           serviceCategory: selectedWorker.category
         }));
-        setCurrentPrice(selectedWorker.baseFee || 0);
+        setCurrentPrice(price);
       }
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -259,10 +268,11 @@ const Booking = () => {
       await new Promise(resolve => setTimeout(resolve, 800));
 
       const selectedWorker = workers.find(w => w._id === formData.workerId);
+      const rateInfo = getWorkerRate(selectedWorker);
       const payload = {
         ...formData,
         price: currentPrice,
-        paymentType: selectedWorker?.rateType?.toLowerCase() || 'one-time',
+        paymentType: rateInfo.type.toLowerCase(),
         userId: localStorage.getItem('userId') // Remove fallback string that breaks ObjectId cast
       };
 
@@ -287,6 +297,8 @@ const Booking = () => {
   };
 
   return (
+    <>
+    <Navbar />
     <Container>
       <FormBox
         initial={{ opacity: 0, y: 30 }}
@@ -332,25 +344,28 @@ const Booking = () => {
             <InputGroup>
               <Label>Select Professional (Prices based on {formData.serviceCategory})</Label>
               <PaymentMethodsGrid style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
-                {workers.filter(w => w.category === formData.serviceCategory).map(worker => (
-                  <PaymentCard
-                    key={worker._id}
-                    selected={formData.workerId === worker._id}
-                    onClick={() => {
-                      setFormData(prev => ({ ...prev, workerId: worker._id }));
-                      setCurrentPrice(worker.baseFee || 0);
-                    }}
-                    style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}
-                  >
-                    <strong>{worker.name}</strong>
-                    <span style={{ color: 'var(--primary-color)', fontSize: '1.1rem', fontWeight: 'bold' }}>
-                      ₱{worker.baseFee?.toLocaleString()}
-                    </span>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      Rate: {worker.rateType || 'One-time'}
-                    </span>
-                  </PaymentCard>
-                ))}
+                {workers.filter(w => w.category === formData.serviceCategory).map(worker => {
+                  const rateInfo = getWorkerRate(worker);
+                  return (
+                    <PaymentCard
+                      key={worker._id}
+                      selected={formData.workerId === worker._id}
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, workerId: worker._id }));
+                        setCurrentPrice(rateInfo.price);
+                      }}
+                      style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}
+                    >
+                      <strong>{worker.name}</strong>
+                      <span style={{ color: 'var(--primary-color)', fontSize: '1.1rem', fontWeight: 'bold' }}>
+                        ₱{rateInfo.price.toLocaleString()}
+                      </span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Rate: {rateInfo.type}
+                      </span>
+                    </PaymentCard>
+                  );
+                })}
               </PaymentMethodsGrid>
             </InputGroup>
           )}
@@ -472,6 +487,7 @@ const Booking = () => {
         )}
       </FormBox>
     </Container>
+    </>
   );
 };
 

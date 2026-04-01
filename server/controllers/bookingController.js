@@ -17,7 +17,22 @@ exports.createBooking = async (req, res) => {
       return res.status(404).json({ message: 'Selected worker not found.' });
     }
 
-    const price = worker.baseFee;
+    // Secure price calculation instead of trusting frontend payload
+    let price = 0;
+    if (paymentType === 'daily' && worker.dailyRate) {
+      price = worker.dailyRate;
+    } else if (paymentType === 'monthly' && worker.monthlyRate) {
+      price = worker.monthlyRate;
+    } else if (paymentType === 'one-time' && worker.oneTimeRate) {
+      price = worker.oneTimeRate;
+    } else {
+      // Fallback
+      price = worker.oneTimeRate || worker.dailyRate || worker.monthlyRate || 0;
+    }
+
+    if (!price) {
+        return res.status(400).json({ message: 'Valid rate not found for this worker.' });
+    }
 
     // Calculate tax and total amount
     const tax = price * 0.12;
@@ -115,7 +130,16 @@ exports.getBookings = async (req, res) => {
 exports.getUserBookings = async (req, res) => {
   try {
     const { userId } = req.params;
-    const bookings = await Booking.find({ userId }).populate('workerId').sort({ createdAt: -1 });
+    // For workers, we might want to see bookings where they are the worker
+    const workerProfile = await Worker.findOne({ userId });
+
+    let query = { userId };
+    if (workerProfile) {
+        // If they are a worker, fetch both bookings they made and bookings they received
+        query = { $or: [{ userId: userId }, { workerId: workerProfile._id }] };
+    }
+
+    const bookings = await Booking.find(query).populate('workerId userId').sort({ createdAt: -1 });
     res.status(200).json(bookings);
   } catch (error) {
     console.error('Get User Bookings Error:', error);

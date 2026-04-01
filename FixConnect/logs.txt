@@ -25,3 +25,10 @@
 11:09:27 AM [vite] (client) hmr update /src/pages/Home.jsx
 11:27:06 AM [vite] (client) hmr update /src/pages/Home.jsx
 11:48:38 AM [vite] (client) hmr update /src/components/Home/Mascot3D.jsx
+12:26:35 PM [vite] (client) hmr update /src/components/Common/Navbar.jsx
+12:28:38 PM [vite] (client) hmr update /src/pages/Booking.jsx
+12:30:14 PM [vite] (client) hmr update /src/pages/Booking.jsx
+12:31:59 PM [vite] (client) hmr update /src/pages/Home.jsx
+1:04:20 PM [vite] (client) hmr update /src/components/Common/PageLayout.jsx
+1:08:10 PM [vite] (client) hmr update /src/pages/Booking.jsx
+1:11:27 PM [vite] (client) hmr update /src/pages/Booking.jsx

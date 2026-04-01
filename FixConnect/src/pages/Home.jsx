@@ -246,18 +246,20 @@ const Home = () => {
         setTotalUsers(statsRes.data.totalUsers);
         setWorkers(Array.isArray(workersRes.data) ? workersRes.data.slice(0, 3) : []); // Only show top 3
 
-        // Map ServicePosts to jobRequests feed format
-        const fetchedPosts = postsRes.data.map(post => ({
-          id: post._id,
-          title: post.title,
-          desc: post.description,
-          budget: `₱ ${post.price?.toLocaleString()} / ${post.rateType}`,
-          recommendations: post.recommendations || 0,
-          postedAt: new Date(post.createdAt).toLocaleDateString(),
-          poster: post.workerId?.name || 'Unknown Worker',
-          type: post.type, // 'Booking' or 'Hire'
-          imageUrl: post.imageUrl
-        }));
+        // Map ServicePosts to jobRequests feed format, only showing Hire type
+        const fetchedPosts = postsRes.data
+          .filter(post => post.type === 'Hire')
+          .map(post => ({
+            id: post._id,
+            title: post.title,
+            desc: post.description,
+            budget: `₱ ${post.price?.toLocaleString()} / ${post.rateType}`,
+            recommendations: post.recommendations || 0,
+            postedAt: new Date(post.createdAt).toLocaleDateString(),
+            poster: post.workerId?.name || 'Unknown Worker',
+            type: post.type, // 'Booking' or 'Hire'
+            imageUrl: post.imageUrl
+          }));
         setJobRequests(fetchedPosts);
 
       } catch (error) {

@@ -317,17 +317,46 @@ const Dashboard = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
                   <ServiceName>{booking.serviceCategory}</ServiceName>
                   <StatusBadge $status={booking.status}>{booking.status}</StatusBadge>
+                  {isWorker && booking.workerId?.userId === localStorage.getItem('userId') && (
+                    <span style={{ fontSize: '0.8rem', background: 'rgba(33, 150, 243, 0.2)', color: '#2196F3', padding: '4px 8px', borderRadius: '4px' }}>Worker View</span>
+                  )}
                 </div>
                 <Detail><strong>Date:</strong> {booking.date}</Detail>
                 <Detail><strong>Time:</strong> {booking.time}</Detail>
                 <Detail><strong>Address:</strong> {booking.address}</Detail>
-                <Detail style={{ marginTop: '10px', color: 'var(--primary-color)', fontSize: '0.85rem' }}>
-                  {booking.status === 'Pending' ? "System Process: Awaiting Payment Confirmation. Please pay to dispatch worker." : "System Process: Worker dispatch in progress."}
-                </Detail>
+
+                {isWorker && booking.workerId?.userId === localStorage.getItem('userId') ? (
+                  <div style={{ marginTop: '15px', padding: '15px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <h4 style={{ color: 'var(--text-main)', marginBottom: '10px', fontSize: '0.9rem' }}>Earnings Breakdown:</h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                      <span>Base Price:</span> <span>₱ {booking.price?.toLocaleString()}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                      <span>Tax Paid By User (12%):</span> <span>₱ {booking.tax?.toLocaleString()}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#ff5252' }}>
+                      <span>Platform Commission (-20%):</span> <span>- ₱ {(booking.price * 0.20).toLocaleString()}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', color: '#4CAF50', fontWeight: 'bold', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                      <span>Net Earnings:</span> <span>₱ {(booking.price * 0.80).toLocaleString()}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <Detail style={{ marginTop: '10px', color: 'var(--primary-color)', fontSize: '0.85rem' }}>
+                    {booking.status === 'Pending' ? "System Process: Awaiting Payment Confirmation. Please pay to dispatch worker." : "System Process: Worker dispatch in progress."}
+                  </Detail>
+                )}
               </BookingInfo>
               <ActionSection>
-                <TotalAmount>₱ {booking.totalAmount?.toLocaleString()}</TotalAmount>
-                {booking.status === 'Pending' && booking.paymentUrl ? (
+                <TotalAmount>
+                  {isWorker && booking.workerId?.userId === localStorage.getItem('userId')
+                    ? `₱ ${(booking.price * 0.80).toLocaleString()}`
+                    : `₱ ${booking.totalAmount?.toLocaleString()}`}
+                </TotalAmount>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {isWorker && booking.workerId?.userId === localStorage.getItem('userId') ? 'Net Earning' : 'Total Paid'}
+                </div>
+                {booking.status === 'Pending' && booking.paymentUrl && (!isWorker || booking.workerId?.userId !== localStorage.getItem('userId')) ? (
                   <PayButton href={booking.paymentUrl} target="_blank" rel="noopener noreferrer">
                     Pay Now
                   </PayButton>
