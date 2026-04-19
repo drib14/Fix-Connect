@@ -67,3 +67,13 @@ exports.getCategories = async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to fetch categories.' });
     }
 };
+
+exports.getWorkerLocations = async (req, res) => {
+    try {
+        const workers = await Worker.find({ status: 'Active' }, 'name currentLocation category');
+        res.status(200).json({ success: true, data: workers });
+    } catch (error) {
+        console.error('Error fetching worker locations:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch worker locations.' });
+    }
+};

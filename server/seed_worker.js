@@ -33,12 +33,15 @@ const seedWorker = async () => {
                 category: 'Plumbing',
                 description: 'Expert Plumber',
                 jobsOffered: ['Pipe repair', 'Installations'],
-                status: 'Active'
+                status: 'Active',
+                currentLocation: { lat: 14.6091, lng: 120.9822 } // Mock Manila location
             });
             await worker.save();
             console.log('Mock worker seeded.');
         } else {
-            console.log('Worker already exists.');
+            existingWorker.currentLocation = { lat: 14.6091, lng: 120.9822 };
+            await existingWorker.save();
+            console.log('Worker already exists. Updated location.');
         }
 
         process.exit();
