@@ -1,161 +1,113 @@
-import React, { useState, useCallback } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import api from '../utils/axios';
-import PasswordStrength from '../components/Auth/PasswordStrength';
-import PHLocationPicker from '../components/Auth/PHLocationPicker';
-import TermsPopup from '../components/Auth/TermsPopup';
-import {
-  Container,
-  FormBox,
-  Title,
-  InputGroup,
-  InputWrapper,
-  Input,
-  IconWrapper,
-  Button,
-  CheckboxGroup,
-  ErrorMsg,
-  LinkText,
-} from '../components/Auth/AuthStyles';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { Loader2, Mail, Lock, User } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Button } from '../components/ui/button';
 
-const Register = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [location, setLocation] = useState({ region: '', province: '', city: '' });
-  const [showPassword, setShowPassword] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [isTermsOpen, setIsTermsOpen] = useState(false);
-  const [error, setError] = useState('');
+export default function Register() {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
   const [loading, setLoading] = useState(false);
-
+  const [error, setError] = useState('');
   const navigate = useNavigate();
-  const routeLocation = useLocation();
 
-  const handleLocationChange = useCallback((newLocation) => {
-    setLocation(newLocation);
-  }, []);
+  const handleChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
-    if (!agreedToTerms) {
-      setError('You must agree to the Terms and Conditions.');
-      return;
-    }
-
-    if (!location.region || !location.province || !location.city) {
-      setError('Please select your complete location.');
-      return;
+    if (formData.password !== formData.confirmPassword) {
+      return setError('Passwords do not match');
     }
 
     setLoading(true);
-    try {
-      const response = await api.post('/auth/register', {
-        email,
-        password,
-        location,
-      });
+    setError('');
 
+    try {
+      const response = await axios.post('/api/auth/register', formData);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('userId', response.data._id);
-
-      if (routeLocation.state?.redirectToApply) {
-        navigate('/apply');
-      } else {
-        navigate('/');
-      }
+      navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed.');
+      setError(err.response?.data?.message || 'Failed to register');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Container>
-      <FormBox
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <Title>Create Account</Title>
-        {error && <ErrorMsg>{error}</ErrorMsg>}
+    <Card className="w-full bg-card/60 backdrop-blur-xl border-border/50 shadow-2xl">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold tracking-tight text-center">Create an account</CardTitle>
+        <CardDescription className="text-center text-muted-foreground">
+          Enter your details to get started
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
+          {error && <div className="p-3 text-sm text-destructive-foreground bg-destructive/90 rounded-md">{error}</div>}
 
-        <form onSubmit={handleSubmit}>
-          <InputGroup>
-            <Input
-              type="email"
-              placeholder="Email Address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </InputGroup>
-
-          <InputGroup>
-            <InputWrapper>
-              <Input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <IconWrapper onClick={() => setShowPassword(!showPassword)}>
-                {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
-              </IconWrapper>
-            </InputWrapper>
-            <PasswordStrength password={password} />
-          </InputGroup>
-
-          <div style={{ marginBottom: '20px' }}>
-            <h4 style={{ color: 'var(--text-muted)', marginBottom: '10px' }}>Select Location</h4>
-            <PHLocationPicker onLocationChange={handleLocationChange} />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First name</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input id="firstName" className="pl-9 bg-background/50 border-border/50 focus:bg-background" value={formData.firstName} onChange={handleChange} required />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last name</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input id="lastName" className="pl-9 bg-background/50 border-border/50 focus:bg-background" value={formData.lastName} onChange={handleChange} required />
+              </div>
+            </div>
           </div>
 
-          <CheckboxGroup>
-            <input
-              type="checkbox"
-              id="terms"
-              checked={agreedToTerms}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  // Only open popup if they are trying to check it and haven't agreed yet
-                  if (!agreedToTerms) setIsTermsOpen(true);
-                } else {
-                  setAgreedToTerms(false);
-                }
-              }}
-            />
-            <label htmlFor="terms" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>
-              I agree to the <Link to="/terms" style={{ color: 'var(--primary-color)' }}>Terms & Privacy Policy</Link>
-            </label>
-          </CheckboxGroup>
+          <div className="space-y-2 relative">
+            <Label htmlFor="email">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input id="email" type="email" placeholder="m@example.com" className="pl-9 bg-background/50 border-border/50 focus:bg-background" value={formData.email} onChange={handleChange} required />
+            </div>
+          </div>
 
-          <Button type="submit" disabled={loading || !agreedToTerms}>
-            {loading ? 'Creating...' : 'Register'}
+          <div className="space-y-2 relative">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input id="password" type="password" className="pl-9 bg-background/50 border-border/50 focus:bg-background" value={formData.password} onChange={handleChange} required />
+            </div>
+          </div>
+
+          <div className="space-y-2 relative">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input id="confirmPassword" type="password" className="pl-9 bg-background/50 border-border/50 focus:bg-background" value={formData.confirmPassword} onChange={handleChange} required />
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col space-y-4">
+          <Button type="submit" className="w-full font-semibold shadow-lg shadow-primary/25" disabled={loading}>
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Sign Up
           </Button>
-
-          <LinkText>
-            Already have an account? <Link to="/login">Log In</Link>
-          </LinkText>
-        </form>
-      </FormBox>
-
-      <TermsPopup
-        isOpen={isTermsOpen}
-        onClose={() => {
-            setIsTermsOpen(false);
-        }}
-        onAgree={() => {
-            setAgreedToTerms(true);
-            setIsTermsOpen(false);
-        }}
-      />
-    </Container>
+          <div className="text-sm text-center text-muted-foreground">
+            Already have an account?{' '}
+            <Link to="/login" className="font-medium text-primary hover:underline">
+              Sign in
+            </Link>
+          </div>
+        </CardFooter>
+      </form>
+    </Card>
   );
-};
-
-export default Register;
+}

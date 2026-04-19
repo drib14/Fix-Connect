@@ -1,99 +1,95 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import api from '../utils/axios';
-import {
-  Container,
-  FormBox,
-  Title,
-  InputGroup,
-  InputWrapper,
-  Input,
-  IconWrapper,
-  Button,
-  ErrorMsg,
-  LinkText,
-} from '../components/Auth/AuthStyles';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { Loader2, Mail, Lock } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Button } from '../components/ui/button';
 
-const Login = () => {
+export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
+    setError('');
 
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await axios.post('/api/auth/login', { email, password });
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('userId', response.data._id);
-      navigate('/workers');
+      navigate('/'); // Or dashboard
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check credentials.');
+      setError(err.response?.data?.message || 'Failed to login');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Container>
-      <FormBox
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Title>Welcome Back</Title>
-        {error && <ErrorMsg>{error}</ErrorMsg>}
-
-        <form onSubmit={handleSubmit}>
-          <InputGroup>
-            <Input
-              type="email"
-              placeholder="Email Address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </InputGroup>
-
-          <InputGroup>
-            <InputWrapper>
+    <Card className="w-full bg-card/60 backdrop-blur-xl border-border/50 shadow-2xl">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold tracking-tight text-center">Welcome back</CardTitle>
+        <CardDescription className="text-center text-muted-foreground">
+          Enter your email to sign in to your account
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
+          {error && <div className="p-3 text-sm text-destructive-foreground bg-destructive/90 rounded-md">{error}</div>}
+          <div className="space-y-2 relative">
+            <Label htmlFor="email">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Password"
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                className="pl-9 bg-background/50 border-border/50 focus:bg-background"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          <div className="space-y-2 relative">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="password"
+                type="password"
+                className="pl-9 bg-background/50 border-border/50 focus:bg-background"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <IconWrapper onClick={() => setShowPassword(!showPassword)}>
-                {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
-              </IconWrapper>
-            </InputWrapper>
-          </InputGroup>
-
-          <div style={{ textAlign: 'right', marginBottom: '20px' }}>
-            <Link to="/forgot-password" style={{ color: 'var(--primary-color)', fontSize: '0.9rem' }}>
-              Forgot Password?
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col space-y-4">
+          <Button type="submit" className="w-full font-semibold shadow-lg shadow-primary/25" disabled={loading}>
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Sign In
+          </Button>
+          <div className="text-sm text-center text-muted-foreground">
+            Don't have an account?{' '}
+            <Link to="/register" className="font-medium text-primary hover:underline">
+              Sign up
             </Link>
           </div>
-
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Logging in...' : 'Log In'}
-          </Button>
-
-          <LinkText>
-            Don't have an account? <Link to="/register">Sign Up</Link>
-          </LinkText>
-        </form>
-      </FormBox>
-    </Container>
+        </CardFooter>
+      </form>
+    </Card>
   );
-};
-
-export default Login;
+}

@@ -1,108 +1,78 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import api from '../utils/axios';
-import OtpInput from '../components/Auth/OtpInput';
-import {
-  Container,
-  FormBox,
-  Title,
-  InputGroup,
-  Input,
-  Button,
-  ErrorMsg,
-  LinkText,
-} from '../components/Auth/AuthStyles';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { Loader2, Mail, ArrowLeft } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Button } from '../components/ui/button';
 
-const ForgotPassword = () => {
+export default function ForgotPassword() {
   const [email, setEmail] = useState('');
-  const [step, setStep] = useState(1); // 1: Email, 2: OTP
-  const [otp, setOtp] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
-  const handleRequestOtp = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
+    setError('');
+    setSuccess('');
 
     try {
-      await api.post('/auth/forgot-password', { email });
-      setStep(2);
+      await axios.post('/api/auth/forgot-password', { email });
+      setSuccess('OTP sent successfully!');
+      setTimeout(() => navigate('/reset-password', { state: { email } }), 2000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (otp.length !== 6) {
-      setError('Please enter the 6-digit OTP.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await api.post('/auth/verify-otp', { email, otp });
-      navigate('/reset-password', { state: { email, otp } });
-    } catch (err) {
-      setError(err.response?.data?.message || 'Invalid or expired OTP.');
+      setError(err.response?.data?.message || 'Failed to send OTP');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Container>
-      <FormBox
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Title>{step === 1 ? 'Forgot Password' : 'Enter OTP'}</Title>
-        {error && <ErrorMsg>{error}</ErrorMsg>}
+    <Card className="w-full bg-card/60 backdrop-blur-xl border-border/50 shadow-2xl">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold tracking-tight text-center">Forgot password?</CardTitle>
+        <CardDescription className="text-center text-muted-foreground">
+          Enter your email address and we'll send you an OTP to reset your password.
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
+          {error && <div className="p-3 text-sm text-destructive-foreground bg-destructive/90 rounded-md">{error}</div>}
+          {success && <div className="p-3 text-sm text-primary-foreground bg-primary/90 rounded-md">{success}</div>}
 
-        {step === 1 ? (
-          <form onSubmit={handleRequestOtp}>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '20px', textAlign: 'center' }}>
-              Enter your email address to receive a 6-digit verification code.
-            </p>
-            <InputGroup>
+          <div className="space-y-2 relative">
+            <Label htmlFor="email">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
+                id="email"
                 type="email"
-                placeholder="Email Address"
+                placeholder="m@example.com"
+                className="pl-9 bg-background/50 border-border/50 focus:bg-background"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-            </InputGroup>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Sending...' : 'Send OTP'}
-            </Button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifyOtp}>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '20px', textAlign: 'center' }}>
-              Code sent to <strong>{email}</strong>
-            </p>
-            <OtpInput length={6} onComplete={(val) => setOtp(val)} />
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Verifying...' : 'Verify OTP'}
-            </Button>
-          </form>
-        )}
-
-        <LinkText>
-          Remembered your password? <Link to="/login">Log In</Link>
-        </LinkText>
-      </FormBox>
-    </Container>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col space-y-4">
+          <Button type="submit" className="w-full font-semibold shadow-lg shadow-primary/25" disabled={loading}>
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Send OTP
+          </Button>
+          <div className="text-sm text-center">
+            <Link to="/login" className="flex items-center justify-center font-medium text-muted-foreground hover:text-primary transition-colors">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to login
+            </Link>
+          </div>
+        </CardFooter>
+      </form>
+    </Card>
   );
-};
-
-export default ForgotPassword;
+}
