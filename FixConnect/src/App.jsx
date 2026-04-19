@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AuthLayout from './components/AuthLayout';
 import ProtectedRoute from './components/ProtectedRoute';
+import { SocketProvider } from './contexts/SocketContext';
 import Landing from './pages/Landing';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -11,8 +12,9 @@ import ResetPassword from './pages/ResetPassword';
 
 function App() {
   return (
-    <Router>
-      <Routes>
+    <SocketProvider>
+      <Router>
+        <Routes>
         {/* Public Landing Page */}
         <Route path="/landing" element={<Landing />} />
 
@@ -45,8 +47,9 @@ function App() {
           </AuthLayout>
         } />
 
-      </Routes>
-    </Router>
+        </Routes>
+      </Router>
+    </SocketProvider>
   );
 }
 

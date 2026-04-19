@@ -2,8 +2,10 @@
 > FixConnect@0.0.0 dev
 > vite
 
+Port 5173 is in use, trying another one...
+7:53:22 AM [vite] (client) Re-optimizing dependencies because lockfile has changed
 
-  VITE v8.0.3  ready in 294 ms
+  VITE v8.0.3  ready in 1582 ms
 
-  ➜  Local:   http://localhost:5173/
+  ➜  Local:   http://localhost:5174/
   ➜  Network: use --host to expose

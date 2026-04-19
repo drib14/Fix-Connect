@@ -1,0 +1,2 @@
+◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+Error: MONGO_URI is not defined in .env file!
