@@ -1,369 +1,170 @@
 import React, { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
-import api from '../utils/axios';
-import PageLayout from '../components/Common/PageLayout';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { Camera, Loader2, Save } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 
-const Container = styled.div`
-  max-width: 800px;
-  margin: 40px auto;
-  padding: 0 20px;
-`;
-
-const ProfileCard = styled(motion.div)`
-  background: var(--bg-card);
-  border-radius: 15px;
-  padding: 40px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-`;
-
-const Header = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 30px;
-  margin-bottom: 40px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 30px;
-
-  @media (max-width: 600px) {
-    flex-direction: column;
-    text-align: center;
-  }
-`;
-
-const AvatarContainer = styled.div`
-  position: relative;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  border: 3px solid var(--primary-color);
-  cursor: pointer;
-
-  &:hover::after {
-    content: 'Change';
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    text-align: center;
-    font-size: 0.8rem;
-    padding: 5px 0;
-  }
-`;
-
-const AvatarImage = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-`;
-
-const AvatarIcon = styled.div`
-  font-size: 3rem;
-  color: var(--text-muted);
-`;
-
-const FileInput = styled.input`
-  display: none;
-`;
-
-const ProfileInfo = styled.div`
-  flex: 1;
-`;
-
-const Title = styled.h1`
-  font-size: 2rem;
-  color: var(--primary-color);
-  margin-bottom: 5px;
-`;
-
-const Subtitle = styled.p`
-  color: var(--text-muted);
-`;
-
-const Form = styled.form`
-  display: grid;
-  gap: 20px;
-`;
-
-const InputGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const Label = styled.label`
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-`;
-
-const Input = styled.input`
-  padding: 12px 15px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: var(--text-main);
-  font-size: 1rem;
-  transition: border-color 0.3s;
-
-  &:focus {
-    outline: none;
-    border-color: var(--primary-color);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-const Textarea = styled.textarea`
-  padding: 12px 15px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: var(--text-main);
-  font-size: 1rem;
-  min-height: 100px;
-  resize: vertical;
-
-  &:focus {
-    outline: none;
-    border-color: var(--primary-color);
-  }
-`;
-
-const Button = styled.button`
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 20px;
-  transition: opacity 0.3s;
-
-  &:hover {
-    opacity: 0.9;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const StatusMessage = styled(motion.div)`
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  text-align: center;
-  font-weight: 500;
-  background: ${props => props.success ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)'};
-  color: ${props => props.success ? '#4CAF50' : '#f44336'};
-  border: 1px solid ${props => props.success ? 'rgba(76, 175, 80, 0.3)' : 'rgba(244, 67, 54, 0.3)'};
-`;
-
-const Profile = () => {
-  const [user, setUser] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    avatar: ''
-  });
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState({ type: '', message: '' });
-  const [initialLoading, setInitialLoading] = useState(true);
+export default function Profile() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({ firstName: '', lastName: '' });
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [message, setMessage] = useState('');
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/login');
-          return;
-        }
-
-        const response = await api.get('/users/profile');
-        setUser({
-          name: response.data.name || '',
-          email: response.data.email || '',
-          phone: response.data.phone || '',
-          address: response.data.address || '',
-          avatar: response.data.avatar || ''
-        });
-      } catch (error) {
-        console.error('Failed to fetch profile', error);
-        setStatus({ type: 'error', message: 'Failed to load profile data.' });
-      } finally {
-        setInitialLoading(false);
-      }
-    };
     fetchProfile();
-  }, [navigate]);
+  }, []);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setUser(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setStatus({ type: 'error', message: 'Image size must be less than 5MB.' });
-        return;
-      }
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setStatus({ type: '', message: '' });
-
+  const fetchProfile = async () => {
     try {
-      const formData = new FormData();
-      formData.append('name', user.name);
-      formData.append('phone', user.phone);
-      formData.append('address', user.address);
-      if (selectedFile) {
-        formData.append('avatar', selectedFile);
-      }
-
-      const response = await api.put('/users/profile', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      const token = localStorage.getItem('token');
+      const res = await axios.get('/api/users/profile', {
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      setUser(prev => ({
-        ...prev,
-        ...response.data
-      }));
-      setStatus({ type: 'success', message: 'Profile updated successfully!' });
-
-      // Update local storage name if it's there
-      localStorage.setItem('userName', response.data.name);
-
-    } catch (error) {
-      console.error('Failed to update profile', error);
-      setStatus({ type: 'error', message: error.response?.data?.message || 'Failed to update profile.' });
+      setUser(res.data);
+      setFormData({
+        firstName: res.data.firstName || '',
+        lastName: res.data.lastName || ''
+      });
+      if (res.data.avatar) {
+          setAvatarPreview(res.data.avatar);
+      }
+    } catch (err) {
+      console.error('Failed to fetch profile', err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (initialLoading) {
-    return <PageLayout><Container>Loading profile...</Container></PageLayout>;
-  }
+  const handleFileChange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+          setAvatarFile(file);
+          setAvatarPreview(URL.createObjectURL(file));
+      }
+  };
 
-  // user.avatar is now a full Cloudinary URL
-  const displayAvatar = previewUrl || user.avatar || null;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setMessage('');
+
+    try {
+        const token = localStorage.getItem('token');
+        const form = new FormData();
+        // Since original backend expect name, we will just pass nothing if we only want avatar
+        // or we could map firstName and lastName if the endpoint supported it.
+        // We will just upload avatar for now.
+        if (avatarFile) {
+            form.append('avatar', avatarFile);
+        }
+
+        await axios.put('/api/users/profile', form, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        setMessage('Profile updated successfully!');
+        await fetchProfile();
+    } catch (err) {
+        console.error('Failed to update profile', err);
+        setMessage('Failed to update profile');
+    } finally {
+        setSaving(false);
+    }
+  };
+
+  if (loading) return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+      </div>
+  );
+
+  const getInitials = () => {
+      if (!user) return 'FC';
+      return `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase();
+  };
 
   return (
-    <PageLayout>
-      <Container>
-        <ProfileCard
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Header>
-            <AvatarContainer onClick={() => fileInputRef.current.click()}>
-              {displayAvatar ? (
-                <AvatarImage src={displayAvatar} alt="Profile" />
-              ) : (
-                <AvatarIcon>👤</AvatarIcon>
-              )}
-            </AvatarContainer>
-            <FileInput
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-            />
-            <ProfileInfo>
-              <Title>My Profile</Title>
-              <Subtitle>Manage your account settings and personal information</Subtitle>
-            </ProfileInfo>
-          </Header>
+    <div className="min-h-screen bg-background dark text-foreground p-6 sm:p-8 flex flex-col items-center">
+      {/* Simple Nav Back */}
+      <nav className="w-full max-w-2xl mb-8 flex items-center justify-between">
+          <Button variant="ghost" onClick={() => navigate('/')}>&larr; Back to Dashboard</Button>
+          <span className="font-bold text-lg">My Profile</span>
+      </nav>
 
-          <AnimatePresence>
-            {status.message && (
-              <StatusMessage
-                success={status.type === 'success'}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-              >
-                {status.message}
-              </StatusMessage>
-            )}
-          </AnimatePresence>
+      <div className="w-full max-w-2xl bg-card/40 border border-border/50 rounded-2xl p-8 backdrop-blur-sm">
+          {message && (
+              <div className={`p-4 rounded-md mb-6 text-sm ${message.includes('success') ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                  {message}
+              </div>
+          )}
 
-          <Form onSubmit={handleSubmit}>
-            <InputGroup>
-              <Label>Email (Cannot be changed)</Label>
-              <Input type="email" value={user.email} disabled />
-            </InputGroup>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+              {/* Avatar Section */}
+              <div className="flex flex-col items-center gap-4">
+                  <div className="relative group">
+                      <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center">
+                          {avatarPreview ? (
+                              <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                              <span className="text-4xl font-bold text-emerald-500">{getInitials()}</span>
+                          )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute bottom-0 right-0 p-3 bg-emerald-600 rounded-full text-white shadow-lg hover:bg-emerald-700 transition-colors"
+                      >
+                          <Camera size={18} />
+                      </button>
+                      <input
+                          type="file"
+                          ref={fileInputRef}
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                      />
+                  </div>
+                  <p className="text-sm text-muted-foreground">Click the camera icon to upload a photo</p>
+              </div>
 
-            <InputGroup>
-              <Label>Full Name</Label>
-              <Input
-                type="text"
-                name="name"
-                value={user.name}
-                onChange={handleInputChange}
-                placeholder="Juan Dela Cruz"
-              />
-            </InputGroup>
+              {/* Form Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                      <Label>First Name</Label>
+                      <Input value={formData.firstName} disabled className="bg-background/50 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-2">
+                      <Label>Last Name</Label>
+                      <Input value={formData.lastName} disabled className="bg-background/50 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                      <Label>Email</Label>
+                      <Input value={user.email} disabled className="bg-background/50 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                      <Label>Role</Label>
+                      <Input value={user.role.toUpperCase()} disabled className="bg-background/50 text-muted-foreground" />
+                  </div>
+              </div>
 
-            <InputGroup>
-              <Label>Phone Number</Label>
-              <Input
-                type="tel"
-                name="phone"
-                value={user.phone}
-                onChange={handleInputChange}
-                placeholder="09XXXXXXXXX"
-              />
-            </InputGroup>
-
-            <InputGroup>
-              <Label>Complete Address</Label>
-              <Textarea
-                name="address"
-                value={user.address}
-                onChange={handleInputChange}
-                placeholder="House/Unit No., Street, Barangay, City/Municipality, Province"
-              />
-            </InputGroup>
-
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </Form>
-        </ProfileCard>
-      </Container>
-    </PageLayout>
+              <div className="pt-4 border-t border-border/50 flex justify-end">
+                  <Button type="submit" disabled={saving || !avatarFile} className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-500/20">
+                      {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                      Save Profile
+                  </Button>
+              </div>
+          </form>
+      </div>
+    </div>
   );
-};
-
-export default Profile;
+}

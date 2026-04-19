@@ -6,17 +6,22 @@ import { NotificationsDropdown } from '../components/NotificationsDropdown';
 import { ResponsiveModal } from '../components/ResponsiveModal';
 import { CreateBookingForm } from '../components/CreateBookingForm';
 import { WorkerJobPool } from '../components/WorkerJobPool';
+import { AdminDashboard } from '../components/AdminDashboard';
 import { useSocket } from '../contexts/SocketContext';
+import { Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function Home() {
   const navigate = useNavigate();
   const socket = useSocket();
+  const [userRole, setUserRole] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const userId = localStorage.getItem('userId');
 
   useEffect(() => {
-    fetchBookings();
+    fetchUserDataAndBookings();
   }, []);
 
   useEffect(() => {
@@ -35,15 +40,27 @@ export default function Home() {
     };
   }, [socket]);
 
-  const fetchBookings = async () => {
+  const fetchUserDataAndBookings = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`/api/bookings/user/${userId}`, {
+
+      // Fetch User Role
+      const userRes = await axios.get(`/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setBookings(res.data);
+      setUserRole(userRes.data.role);
+
+      // Fetch Bookings
+      if (userRes.data.role !== 'admin') {
+          const res = await axios.get(`/api/bookings/user/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setBookings(res.data);
+      }
     } catch (err) {
-      console.error("Failed to fetch bookings", err);
+      console.error("Failed to fetch data", err);
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -87,15 +104,27 @@ export default function Home() {
           <span className="text-xl font-bold tracking-tight text-white hidden sm:block">FixConnect</span>
         </div>
         <div className="flex items-center gap-3">
+          <Link to="/profile" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors mr-2">
+              Profile
+          </Link>
           <NotificationsDropdown />
           <Button variant="outline" size="sm" onClick={handleLogout}>Logout</Button>
         </div>
       </nav>
 
+      {loading ? (
+          <div className="flex flex-col items-center justify-center flex-1">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+      ) : (
       <main className="w-full max-w-4xl p-6 flex flex-col gap-8 mt-6">
-        <div className="flex justify-between items-end">
-            <div>
-                <h1 className="text-3xl font-bold mb-2">My Bookings</h1>
+        {userRole === 'admin' ? (
+            <AdminDashboard />
+        ) : (
+          <>
+            <div className="flex justify-between items-end">
+                <div>
+                    <h1 className="text-3xl font-bold mb-2">My Bookings</h1>
                 <p className="text-muted-foreground">Manage your service requests</p>
             </div>
 
@@ -170,10 +199,13 @@ export default function Home() {
                     </div>
                 ))
             )}
-        </div>
+            </div>
 
-        <WorkerJobPool />
+            {userRole === 'worker' && <WorkerJobPool />}
+          </>
+        )}
       </main>
+      )}
     </div>
   );
 }

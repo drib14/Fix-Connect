@@ -20,11 +20,13 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center overflow-hidden dark bg-background">
-      <ThreeBackground />
+    <div className="relative h-screen flex flex-col items-center overflow-hidden dark bg-background">
+      <div className="absolute inset-0 pointer-events-none z-0">
+         <ThreeBackground />
+      </div>
 
       {/* Navbar */}
-      <nav className="relative z-10 w-full max-w-6xl mx-auto p-6 flex justify-between items-center">
+      <nav className="relative z-20 w-full max-w-6xl mx-auto p-6 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20 overflow-hidden p-1">
             <img src="/FC-logo.png" alt="FixConnect Logo" className="w-full h-full object-cover rounded-full" />
@@ -32,17 +34,17 @@ export default function Landing() {
           <span className="text-2xl font-bold tracking-tight text-white">FixConnect</span>
         </div>
         <div className="flex items-center gap-4">
-          <Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">
+          <Link to="/login" className="text-sm font-medium text-white hover:text-emerald-400 transition-colors z-30 relative px-4 py-2">
             Sign In
           </Link>
-          <Button asChild className="font-semibold shadow-lg shadow-primary/25">
+          <Button asChild className="font-semibold shadow-lg shadow-primary/25 z-30 relative">
             <Link to="/register">Get Started</Link>
           </Button>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <main className="relative z-10 flex-1 w-full max-w-6xl mx-auto p-6 flex flex-col items-center justify-center text-center mt-[-80px]" ref={contentRef}>
+      <main className="relative z-10 flex-1 w-full max-w-6xl mx-auto p-6 flex flex-col items-center justify-center text-center pb-20" ref={contentRef}>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary mb-6 border border-primary/20">
           <Wrench size={16} />
           <span className="text-sm font-medium">Your Trusted Repair Partners</span>
@@ -56,19 +58,19 @@ export default function Landing() {
           FixConnect is the modern platform for booking reliable, skilled workers on demand. Track your worker's location in real-time, just like your favorite ride-hailing app.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center max-w-md">
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center max-w-md z-30 relative">
           <Button asChild size="lg" className="w-full sm:w-auto font-semibold text-lg px-8 shadow-xl shadow-primary/25">
             <Link to="/register">
               Find a Worker <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
-          <Button asChild size="lg" variant="outline" className="w-full sm:w-auto font-semibold text-lg px-8">
+          <Button asChild size="lg" variant="outline" className="w-full sm:w-auto font-semibold text-lg px-8 text-white hover:text-emerald-400">
             <Link to="/login">Sign In</Link>
           </Button>
         </div>
 
         {/* Features Preview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-24 max-w-5xl w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-5xl w-full">
           <div className="flex flex-col items-center p-6 bg-card/40 backdrop-blur-sm rounded-2xl border border-border/50">
             <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mb-4 text-primary">
               <Clock size={24} />

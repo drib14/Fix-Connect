@@ -33,6 +33,10 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'worker', 'admin'],
     default: 'user',
   },
+  avatar: {
+    type: String,
+    default: null
+  },
   resetPasswordOtp: {
     type: String,
   },

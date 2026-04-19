@@ -1,2 +1,4 @@
-◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
-Error: MONGO_URI is not defined in .env file!
+◇ injected env (10) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+Server running on port 5000
+Connected to MongoDB
