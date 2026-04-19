@@ -16,18 +16,21 @@ const bookingSchema = new mongoose.Schema({
     required: true,
   },
   date: {
+    type: Date,
+    required: true,
+  },
+  startTime: {
     type: String,
     required: true,
   },
-  time: {
+  endTime: {
     type: String,
-    required: true,
   },
   address: {
     type: String,
     required: true,
   },
-  price: {
+  priceAtBooking: {
     type: Number,
     required: true,
   },
@@ -41,8 +44,25 @@ const bookingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Searching', 'Accepted', 'EnRoute', 'InProgress', 'Completed', 'Cancelled'],
-    default: 'Searching'
+    enum: ['pending', 'accepted', 'in_progress', 'completed', 'cancelled', 'rejected'],
+    default: 'pending'
+  },
+  paymentUrl: {
+    type: String,
+  },
+  paymentReference: {
+    type: String,
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['PayMongo', 'GCash', 'Maya', 'Cash', 'Credit / Debit'],
+    required: true,
+    default: 'PayMongo'
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed'],
+    default: 'pending'
   },
   // Real-time location tracking for worker heading to user
   workerLocation: {
@@ -50,13 +70,14 @@ const bookingSchema = new mongoose.Schema({
     lng: { type: Number }
   },
   // Request coordinates (where the user needs the worker)
-  jobLocation: {
+  coordinates: {
     lat: { type: Number },
     lng: { type: Number }
   },
-  expiresAt: {
-    type: Date
-  }
+  acceptedAt: { type: Date },
+  completedAt: { type: Date },
+  cancelledAt: { type: Date },
+  expiresAt: { type: Date }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Booking', bookingSchema);
