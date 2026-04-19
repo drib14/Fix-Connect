@@ -20,13 +20,26 @@ const workerIcon = new L.Icon({
 });
 
 function getCustomerIcon() {
-    const avatarUrl = localStorage.getItem('userAvatar') || `https://ui-avatars.com/api/?name=Me&background=10b981&color=fff`;
-    return new L.Icon({
-        iconUrl: avatarUrl,
-        iconSize: [40, 40],
-        iconAnchor: [20, 40],
-        popupAnchor: [0, -40],
-        className: 'rounded-full border-2 border-primary bg-white object-cover'
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    const initials = user ? `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase() : 'ME';
+    const avatarUrl = localStorage.getItem('userAvatar') || `https://ui-avatars.com/api/?name=${initials}&background=10b981&color=fff`;
+
+    // Instead of using just the image as the map pin, we use a custom divIcon that looks like a map pin pointing down,
+    // with the user's avatar inside it.
+    return new L.DivIcon({
+        html: `
+            <div style="position: relative; width: 40px; height: 50px; display: flex; flex-direction: column; align-items: center;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 3px solid #10b981; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 2;">
+                    <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;" />
+                </div>
+                <div style="width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 12px solid #10b981; margin-top: -4px; z-index: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));"></div>
+            </div>
+        `,
+        className: '',
+        iconSize: [40, 50],
+        iconAnchor: [20, 50],
+        popupAnchor: [0, -50]
     });
 }
 
@@ -48,6 +61,7 @@ export function CustomerHome() {
   // Searching flow states
   const [isSearching, setIsSearching] = useState(false);
   const [activeBookingId, setActiveBookingId] = useState(null);
+  const [activeBookingDetails, setActiveBookingDetails] = useState(null);
 
   useEffect(() => {
       fetchWorkerLocations();
@@ -77,6 +91,7 @@ export function CustomerHome() {
               setHasActiveBooking(true);
               if (active.status === 'pending') {
                   setActiveBookingId(active._id);
+                  setActiveBookingDetails(active);
                   setIsSearching(true);
               }
           }
@@ -182,6 +197,7 @@ export function CustomerHome() {
                                 setIsBookingModalOpen(false);
                                 setHasActiveBooking(true);
                                 setActiveBookingId(newBooking._id);
+                                setActiveBookingDetails(newBooking);
                                 setIsSearching(true);
                             }}
                             onCancel={() => setIsBookingModalOpen(false)}
@@ -196,6 +212,7 @@ export function CustomerHome() {
             isOpen={isSearching}
             setIsOpen={setIsSearching}
             bookingId={activeBookingId}
+            bookingDetails={activeBookingDetails}
         />
     </div>
   );

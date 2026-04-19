@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { Home, Users, Briefcase, LayoutDashboard, User, LogOut } from 'lucide-react';
 
 const NavContainer = styled(motion.nav)`
@@ -132,6 +133,20 @@ const Navbar = () => {
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
+  const [avatar, setAvatar] = useState(localStorage.getItem('userAvatar'));
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setAvatar(localStorage.getItem('userAvatar'));
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const getInitials = () => {
+    if (!user) return 'Me';
+    return `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase() || 'Me';
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -158,7 +173,12 @@ const Navbar = () => {
         {token ? (
           <>
             <NavLink to="/profile" style={{ marginRight: '10px' }}>
-              <User /><span>Profile</span>
+              {avatar ? (
+                 <img src={avatar} alt="Profile" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                 <img src={`https://ui-avatars.com/api/?name=${getInitials()}&background=10b981&color=fff`} alt="Profile" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
+              )}
+              <span>Profile</span>
             </NavLink>
             <button onClick={handleLogout} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', color: '#f44336' }}>
               <LogOut width={24} height={24} />

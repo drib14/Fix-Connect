@@ -1,5 +1,6 @@
 const Booking = require('../models/Booking');
 const Worker = require('../models/Worker');
+const mongoose = require('mongoose');
 const Notification = require('../models/Notification');
 const socket = require('../socket');
 const axios = require('axios');
@@ -54,7 +55,7 @@ exports.createBooking = async (req, res) => {
     let paymentUrl = null;
     let paymentReference = null;
 
-    const bookingId = new require('mongoose').Types.ObjectId();
+    const bookingId = new mongoose.Types.ObjectId();
 
     // Handle digital payments
     if (paymentMethod && paymentMethod !== 'Cash') {
