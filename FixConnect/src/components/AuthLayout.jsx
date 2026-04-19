@@ -25,13 +25,11 @@ export default function AuthLayout({ children }) {
 
       <div className="relative z-10 w-full max-w-md p-6" ref={containerRef}>
         <div className="flex justify-center mb-8">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
-              </svg>
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20 overflow-hidden p-1">
+              <img src="/FC-logo.png" alt="FixConnect Logo" className="w-full h-full object-cover rounded-full" />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-white">FixConnect</span>
+            <span className="text-3xl font-bold tracking-tight text-white">FixConnect</span>
           </div>
         </div>
 

@@ -1,6 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AuthLayout from './components/AuthLayout';
+import ProtectedRoute from './components/ProtectedRoute';
+import Landing from './pages/Landing';
+import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -10,7 +13,13 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* Public Landing Page */}
+        <Route path="/landing" element={<Landing />} />
+
+        {/* Protected Dashboard/Home Route */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/" element={<Home />} />
+        </Route>
 
         <Route path="/login" element={
           <AuthLayout>

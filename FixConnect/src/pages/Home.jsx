@@ -1,181 +1,34 @@
-import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import api from '../utils/axios';
-import { Link } from 'react-router-dom';
-import PageLayout from '../components/Common/PageLayout';
-import TourGuide from '../components/Common/TourGuide';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../components/ui/button';
 
-const HeroSection = styled.section`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 50px;
-  gap: 40px;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    text-align: center;
-  }
-`;
-
-const Content = styled(motion.div)`
-  flex: 1;
-`;
-
-const Title = styled.h1`
-  font-size: 3.5rem;
-  font-weight: 800;
-  margin-bottom: 10px;
-  background: linear-gradient(90deg, #4CAF50, #81C784);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-`;
-
-const Tagline = styled.h3`
-  font-size: 1.5rem;
-  font-weight: 500;
-  color: var(--text-main);
-  margin-bottom: 20px;
-  letter-spacing: 1px;
-`;
-
-const Description = styled.p`
-  font-size: 1.2rem;
-  color: var(--text-muted);
-  margin-bottom: 30px;
-  line-height: 1.8;
-`;
-
-const StatsSection = styled(motion.div)`
-  margin-top: 60px;
-  background: var(--bg-card);
-  padding: 30px 40px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  display: inline-block;
-`;
-
-const StatNumber = styled.div`
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: var(--primary-color);
-  margin-bottom: 5px;
-`;
-
-const StatLabel = styled.div`
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-`;
-
-const CTAContainer = styled.div`
-  display: flex;
-  gap: 20px;
-  margin-top: 40px;
-
-  @media (max-width: 768px) {
-    justify-content: center;
-  }
-
-  a {
-    padding: 15px 30px;
-    border-radius: 30px;
-    font-weight: 600;
-    font-size: 1.1rem;
-    text-decoration: none;
-    transition: all 0.3s ease;
-
-    &.primary {
-      background: var(--primary-color);
-      color: white;
-      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-
-      &:hover {
-        background: var(--primary-hover);
-        transform: translateY(-2px);
-      }
-    }
-
-    &.secondary {
-      background: transparent;
-      color: var(--text-main);
-      border: 2px solid rgba(255, 255, 255, 0.1);
-
-      &:hover {
-        border-color: var(--primary-color);
-        color: var(--primary-color);
-      }
-    }
-  }
-`;
-
-const Home = () => {
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [loadingStats, setLoadingStats] = useState(true);
-  const [runTour, setRunTour] = useState(false);
-
-  useEffect(() => {
-    if (!localStorage.getItem('tourCompleted')) {
-      setRunTour(true);
-      localStorage.setItem('tourCompleted', 'true');
-    }
-
-    const fetchStats = async () => {
-      try {
-        const statsRes = await api.get('/stats');
-        setTotalUsers(statsRes.data.totalUsers);
-      } catch (error) {
-        console.error('Failed to fetch initial data', error);
-      } finally {
-        setLoadingStats(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
+export default function Home() {
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    navigate('/landing');
+  };
 
   return (
-    <PageLayout>
-      <TourGuide run={runTour} />
-      <HeroSection>
-        <Content
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <Title>FixConnect</Title>
-          <Tagline>Your Quick Fix, Just a Click Away.</Tagline>
-          <Description>
-            The premier platform connecting you with top-tier skilled professionals.
-            Whether you need a Plumber, an Electrician, or a House Cleaner,
-            FixConnect bridges the gap between your needs and their expertise.
-          </Description>
+    <div className="min-h-screen bg-background dark text-foreground p-8 flex flex-col items-center">
+      <div className="max-w-4xl w-full flex justify-between items-center mb-12">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden p-1">
+            <img src="/FC-logo.png" alt="FixConnect Logo" className="w-full h-full object-cover rounded-full" />
+          </div>
+          <span className="text-xl font-bold tracking-tight text-white">FixConnect</span>
+        </div>
+        <Button variant="outline" onClick={handleLogout}>Logout</Button>
+      </div>
 
-          <CTAContainer>
-            <Link to="/book" className="primary">Book a Service</Link>
-          </CTAContainer>
-
-          <StatsSection
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            {loadingStats ? (
-              <div className="skeleton" style={{ height: '60px', width: '150px', margin: '0 auto' }}></div>
-            ) : (
-              <>
-                <StatNumber>{(totalUsers || 0).toLocaleString()}+</StatNumber>
-                <StatLabel>Registered Users Trust Us</StatLabel>
-              </>
-            )}
-          </StatsSection>
-        </Content>
-      </HeroSection>
-    </PageLayout>
+      <div className="max-w-4xl w-full text-center mt-20">
+        <h1 className="text-4xl font-bold mb-4">Welcome to FixConnect Dashboard</h1>
+        <p className="text-muted-foreground text-lg mb-8">This is where the real-time booking and map interface will go.</p>
+        <div className="p-12 border border-border/50 rounded-xl bg-card/30 flex items-center justify-center">
+          <p className="text-muted-foreground italic">Map and Job Feed Placeholder</p>
+        </div>
+      </div>
+    </div>
   );
-};
-
-export default Home;
+}

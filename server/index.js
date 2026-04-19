@@ -4,6 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const http = require('http');
 
 const authRoutes = require('./routes/auth');
 const workerRoutes = require('./routes/workers');
@@ -13,6 +14,11 @@ const reviewRoutes = require('./routes/reviews');
 const userRoutes = require('./routes/users');
 
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.io
+const socket = require('./socket');
+socket.init(server);
 
 // Debugging: Print out the MongoDB URI from environment variables to verify it's loaded
 console.log("Mongo URI:", process.env.MONGO_URI);
@@ -49,6 +55,6 @@ app.use('/api/users', userRoutes);
 // Set port from environment variables or default to 5000
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

@@ -41,30 +41,18 @@ const bookingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Searching', 'Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled'],
+    enum: ['Searching', 'Accepted', 'EnRoute', 'InProgress', 'Completed', 'Cancelled'],
     default: 'Searching'
   },
-  paymentUrl: {
-    type: String,
+  // Real-time location tracking for worker heading to user
+  workerLocation: {
+    lat: { type: Number },
+    lng: { type: Number }
   },
-  paymentReference: {
-    type: String,
-  },
-  paymentMethod: {
-    type: String,
-    enum: ['PayMongo', 'GCash', 'Maya', 'Cash', 'Credit / Debit'],
-    required: true,
-    default: 'PayMongo'
-  },
-  paymentType: {
-    type: String,
-    enum: ['one-time', 'monthly'],
-    default: 'one-time'
-  },
-  paymentStatus: {
-    type: String,
-    enum: ['pending', 'paid', 'failed'],
-    default: 'pending'
+  // Request coordinates (where the user needs the worker)
+  jobLocation: {
+    lat: { type: Number },
+    lng: { type: Number }
   },
   expiresAt: {
     type: Date
