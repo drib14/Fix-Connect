@@ -6,6 +6,8 @@ import 'leaflet/dist/leaflet.css';
 import { Button } from './ui/button';
 import { ResponsiveModal } from './ResponsiveModal';
 import { CreateBookingForm } from './CreateBookingForm';
+import { Target } from 'lucide-react';
+import { SearchingWorkerModal } from './SearchingWorkerModal';
 
 // Custom FC Logo Pin for Workers
 const workerIcon = new L.Icon({
@@ -14,6 +16,15 @@ const workerIcon = new L.Icon({
     iconAnchor: [20, 40],
     popupAnchor: [0, -40],
     className: 'rounded-full border-2 border-emerald-500 bg-white'
+});
+
+const customPinIcon = new L.Icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    shadowSize: [41, 41]
 });
 
 function MapUpdater({ center }) {
@@ -28,6 +39,12 @@ export function CustomerHome() {
   const [workerLocations, setWorkerLocations] = useState([]);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [hasActiveBooking, setHasActiveBooking] = useState(false);
+  const [mapCenter, setMapCenter] = useState([14.5995, 120.9842]);
+  const [customerLocation, setCustomerLocation] = useState({ address: '', lat: null, lng: null });
+
+  // Searching flow states
+  const [isSearching, setIsSearching] = useState(false);
+  const [activeBookingId, setActiveBookingId] = useState(null);
 
   useEffect(() => {
       fetchWorkerLocations();
@@ -52,20 +69,59 @@ export function CustomerHome() {
           const res = await axios.get(`/api/bookings/user/${userId}`, {
               headers: { Authorization: `Bearer ${token}` }
           });
-          const active = res.data.some(b => ['pending', 'accepted', 'in_progress'].includes(b.status));
-          setHasActiveBooking(active);
+          const active = res.data.find(b => ['pending', 'accepted', 'in_progress'].includes(b.status));
+          if (active) {
+              setHasActiveBooking(true);
+              if (active.status === 'pending') {
+                  setActiveBookingId(active._id);
+                  setIsSearching(true);
+              }
+          }
       } catch (err) {
           console.error('Failed to check active bookings');
       }
   };
 
+  const handleLocateMe = () => {
+      if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+              (position) => {
+                  const newLoc = {
+                      lat: position.coords.latitude,
+                      lng: position.coords.longitude,
+                      address: 'Current Location'
+                  };
+                  setMapCenter([newLoc.lat, newLoc.lng]);
+                  setCustomerLocation(newLoc);
+              },
+              () => alert('Unable to retrieve your location.')
+          );
+      } else {
+          alert('Geolocation is not supported by your browser.');
+      }
+  };
+
+  // Center map dynamically when customerLocation updates from dropdown
+  useEffect(() => {
+      if (customerLocation.lat && customerLocation.lng) {
+          setMapCenter([customerLocation.lat, customerLocation.lng]);
+      }
+  }, [customerLocation]);
+
   return (
-    <div className="relative w-full h-[calc(100vh-88px)] rounded-xl overflow-hidden shadow-2xl border border-border/50 z-0">
-        <MapContainer center={[14.5995, 120.9842]} zoom={13} className="w-full h-full" zoomControl={false}>
+    <div className="relative w-full h-full overflow-hidden z-0">
+        <MapContainer center={mapCenter} zoom={13} className="w-full h-full" zoomControl={false}>
+            <MapUpdater center={mapCenter} />
             <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             />
+
+            {customerLocation.lat && customerLocation.lng && (
+                <Marker position={[customerLocation.lat, customerLocation.lng]} icon={customPinIcon}>
+                    <Popup>Your Location</Popup>
+                </Marker>
+            )}
 
             {workerLocations.map(worker => (
                 <Marker
@@ -81,34 +137,60 @@ export function CustomerHome() {
             ))}
         </MapContainer>
 
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000]">
-            {hasActiveBooking ? (
-                <div className="bg-card/90 backdrop-blur px-6 py-3 rounded-full border border-emerald-500/50 shadow-lg text-emerald-400 font-medium">
-                    You have an active booking. Check "My Bookings" page.
-                </div>
-            ) : (
-                <ResponsiveModal
-                    title="Request a Service"
-                    description="Fill out the details below to find a skilled worker near you."
-                    open={isBookingModalOpen}
-                    onOpenChange={setIsBookingModalOpen}
-                    trigger={
-                        <Button size="lg" className="font-bold text-lg px-8 shadow-xl shadow-emerald-500/25 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full">
-                            Request a FixConnect Worker
-                        </Button>
-                    }
-                >
-                    <CreateBookingForm
-                        onSuccess={(newBooking) => {
-                            setIsBookingModalOpen(false);
-                            setHasActiveBooking(true);
-                            window.location.href = `/booking/${newBooking._id}`;
-                        }}
-                        onCancel={() => setIsBookingModalOpen(false)}
-                    />
-                </ResponsiveModal>
-            )}
+        {/* Floating Actions */}
+        <div className="absolute bottom-8 right-4 md:right-8 z-[1000] flex flex-col items-end gap-4">
+            <button
+                onClick={handleLocateMe}
+                className="w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center text-primary hover:bg-gray-100 transition-colors"
+                title="Locate Me"
+            >
+                <Target size={24} />
+            </button>
         </div>
+
+        <div className="absolute bottom-0 left-0 w-full md:bottom-8 md:left-8 md:w-auto z-[1000]">
+            <div className="bg-background/95 backdrop-blur-xl border border-border/50 shadow-2xl md:rounded-2xl p-6 md:w-96 rounded-t-2xl">
+                <h2 className="text-xl font-bold mb-2">Where to?</h2>
+                <p className="text-sm text-muted-foreground mb-4">Find a skilled worker for your repairs.</p>
+
+                {hasActiveBooking && !isSearching ? (
+                    <Button asChild className="w-full font-bold shadow-lg bg-emerald-600 hover:bg-emerald-700 text-white">
+                        <Link to="/bookings">View Active Booking</Link>
+                    </Button>
+                ) : (
+                    <ResponsiveModal
+                        title="Request a Service"
+                        description="Fill out the details to find a skilled worker."
+                        open={isBookingModalOpen}
+                        onOpenChange={setIsBookingModalOpen}
+                        trigger={
+                            <Button size="lg" className="w-full font-bold text-lg shadow-xl shadow-emerald-500/25 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">
+                                Request a FixConnect Worker
+                            </Button>
+                        }
+                    >
+                        <CreateBookingForm
+                            customerLocation={customerLocation}
+                            setCustomerLocation={setCustomerLocation}
+                            onSuccess={(newBooking) => {
+                                setIsBookingModalOpen(false);
+                                setHasActiveBooking(true);
+                                setActiveBookingId(newBooking._id);
+                                setIsSearching(true);
+                            }}
+                            onCancel={() => setIsBookingModalOpen(false)}
+                        />
+                    </ResponsiveModal>
+                )}
+            </div>
+        </div>
+
+        {/* Searching Worker Interactive Modal */}
+        <SearchingWorkerModal
+            isOpen={isSearching}
+            setIsOpen={setIsSearching}
+            bookingId={activeBookingId}
+        />
     </div>
   );
 }

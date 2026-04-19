@@ -11,6 +11,8 @@ export default function Bookings() {
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelStep, setCancelStep] = useState(1);
   const [cancellingId, setCancellingId] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
   const userId = localStorage.getItem('userId');
   const socket = useSocket();
 
@@ -57,8 +59,10 @@ export default function Bookings() {
 
   const executeCancel = async () => {
     try {
+      const finalReason = cancelReason === 'Other' ? customReason : cancelReason;
+
       const token = localStorage.getItem('token');
-      await axios.put(`/api/bookings/${cancellingId}/cancel`, {}, {
+      await axios.put(`/api/bookings/${cancellingId}/cancel`, { reason: finalReason }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCancelModalOpen(false);
@@ -68,6 +72,19 @@ export default function Bookings() {
       console.error("Failed to cancel booking", err);
     }
   };
+
+  const predefinedReasons = [
+      "Found another worker",
+      "Service is no longer needed",
+      "Worker is too far away",
+      "Expected price is too high",
+      "Selected wrong service category",
+      "Selected wrong location or time",
+      "Worker is unresponsive",
+      "Wait time is too long",
+      "Change of schedule",
+      "Other"
+  ];
 
   return (
     <div className="min-h-screen bg-background dark text-foreground p-6 sm:p-8 flex flex-col items-center">
@@ -122,25 +139,64 @@ export default function Bookings() {
       </main>
 
       <ResponsiveModal
-          title={cancelStep === 1 ? "Cancel Booking?" : "Final Confirmation"}
-          description={cancelStep === 1 ? "Are you sure you want to cancel this booking?" : "This action cannot be undone and the worker will be notified. Proceed with cancellation?"}
+          title={cancelStep === 1 ? "Cancel Booking?" : "Why are you cancelling?"}
+          description={cancelStep === 1 ? "Are you sure you want to cancel this booking?" : "Please help us improve by selecting a reason."}
           open={cancelModalOpen}
-          onOpenChange={setCancelModalOpen}
+          onOpenChange={(isOpen) => {
+              if (!isOpen) {
+                  setCancelModalOpen(false);
+                  setCancelStep(1);
+                  setCancelReason('');
+                  setCustomReason('');
+              }
+          }}
       >
-          <div className="pt-4 flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => { setCancelModalOpen(false); setCancelStep(1); }}>
-                  No, Keep It
-              </Button>
-              {cancelStep === 1 ? (
+          {cancelStep === 1 ? (
+              <div className="pt-4 flex gap-3">
+                  <Button variant="outline" className="flex-1" onClick={() => { setCancelModalOpen(false); setCancelStep(1); }}>
+                      No, Keep It
+                  </Button>
                   <Button variant="destructive" className="flex-1" onClick={handleNextCancelStep}>
                       Yes, Cancel
                   </Button>
-              ) : (
-                  <Button variant="destructive" className="flex-1" onClick={executeCancel}>
-                      Confirm Cancel
-                  </Button>
-              )}
-          </div>
+              </div>
+          ) : (
+              <div className="flex flex-col gap-4 mt-2 max-h-[60vh] overflow-y-auto pr-2">
+                  <div className="flex flex-col gap-2">
+                      {predefinedReasons.map(reason => (
+                          <label key={reason} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${cancelReason === reason ? 'border-emerald-500 bg-emerald-500/10' : 'border-border/50 hover:bg-card'}`}>
+                              <input
+                                  type="radio"
+                                  name="cancelReason"
+                                  value={reason}
+                                  checked={cancelReason === reason}
+                                  onChange={(e) => setCancelReason(e.target.value)}
+                                  className="accent-emerald-500"
+                              />
+                              <span className="text-sm font-medium">{reason}</span>
+                          </label>
+                      ))}
+                  </div>
+
+                  {cancelReason === 'Other' && (
+                      <textarea
+                          placeholder="Please state your reason..."
+                          className="w-full p-3 rounded-lg border border-border/50 bg-background focus:outline-none focus:border-emerald-500 min-h-[80px]"
+                          value={customReason}
+                          onChange={(e) => setCustomReason(e.target.value)}
+                      />
+                  )}
+
+                  <div className="pt-2 flex gap-3 sticky bottom-0 bg-background pb-2">
+                      <Button variant="outline" className="flex-1" onClick={() => setCancelStep(1)}>
+                          Back
+                      </Button>
+                      <Button variant="destructive" className="flex-1" disabled={!cancelReason || (cancelReason === 'Other' && !customReason.trim())} onClick={executeCancel}>
+                          Confirm Cancellation
+                      </Button>
+                  </div>
+              </div>
+          )}
       </ResponsiveModal>
     </div>
   );
