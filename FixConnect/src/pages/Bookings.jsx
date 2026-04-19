@@ -89,8 +89,13 @@ export default function Bookings() {
   return (
     <div className="min-h-screen bg-background dark text-foreground p-6 sm:p-8 flex flex-col items-center">
       <nav className="w-full max-w-4xl mb-8 flex items-center justify-between">
-          <Button variant="ghost" asChild><Link to="/">&larr; Back to Map</Link></Button>
-          <span className="font-bold text-lg">My Bookings</span>
+          <Button variant="ghost" asChild className="pl-0"><Link to="/">&larr; Back to Map</Link></Button>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center overflow-hidden p-1 shrink-0">
+              <img src="/FC-logo.png" alt="FixConnect Logo" className="w-full h-full object-cover rounded-full" />
+            </div>
+            <span className="font-bold text-lg hidden sm:block">My Bookings</span>
+          </div>
       </nav>
 
       <main className="w-full max-w-4xl grid grid-cols-1 gap-4">

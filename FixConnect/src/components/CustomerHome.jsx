@@ -8,6 +8,7 @@ import { ResponsiveModal } from './ResponsiveModal';
 import { CreateBookingForm } from './CreateBookingForm';
 import { Target } from 'lucide-react';
 import { SearchingWorkerModal } from './SearchingWorkerModal';
+import { Link } from 'react-router-dom';
 
 // Custom FC Logo Pin for Workers
 const workerIcon = new L.Icon({
@@ -18,14 +19,16 @@ const workerIcon = new L.Icon({
     className: 'rounded-full border-2 border-emerald-500 bg-white'
 });
 
-const customPinIcon = new L.Icon({
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    shadowSize: [41, 41]
-});
+function getCustomerIcon() {
+    const avatarUrl = localStorage.getItem('userAvatar') || `https://ui-avatars.com/api/?name=Me&background=10b981&color=fff`;
+    return new L.Icon({
+        iconUrl: avatarUrl,
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
+        popupAnchor: [0, -40],
+        className: 'rounded-full border-2 border-primary bg-white object-cover'
+    });
+}
 
 function MapUpdater({ center }) {
     const map = useMap();
@@ -113,12 +116,12 @@ export function CustomerHome() {
         <MapContainer center={mapCenter} zoom={13} className="w-full h-full" zoomControl={false}>
             <MapUpdater center={mapCenter} />
             <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             />
 
             {customerLocation.lat && customerLocation.lng && (
-                <Marker position={[customerLocation.lat, customerLocation.lng]} icon={customPinIcon}>
+                <Marker position={[customerLocation.lat, customerLocation.lng]} icon={getCustomerIcon()}>
                     <Popup>Your Location</Popup>
                 </Marker>
             )}
@@ -138,10 +141,10 @@ export function CustomerHome() {
         </MapContainer>
 
         {/* Floating Actions */}
-        <div className="absolute bottom-8 right-4 md:right-8 z-[1000] flex flex-col items-end gap-4">
+        <div className="absolute bottom-40 right-4 md:bottom-8 md:right-8 z-[1000] flex flex-col items-end gap-4">
             <button
                 onClick={handleLocateMe}
-                className="w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center text-primary hover:bg-gray-100 transition-colors"
+                className="w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center text-primary hover:bg-gray-100 transition-colors ring-2 ring-border/50"
                 title="Locate Me"
             >
                 <Target size={24} />
@@ -164,8 +167,11 @@ export function CustomerHome() {
                         open={isBookingModalOpen}
                         onOpenChange={setIsBookingModalOpen}
                         trigger={
-                            <Button size="lg" className="w-full font-bold text-lg shadow-xl shadow-emerald-500/25 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">
-                                Request a FixConnect Worker
+                            <Button size="lg" className="w-full font-bold text-lg shadow-xl shadow-emerald-500/25 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full flex items-center justify-center gap-2">
+                                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center p-0.5">
+                                    <img src="/FC-logo.png" alt="FC" className="w-full h-full rounded-full object-cover" />
+                                </div>
+                                Book a service
                             </Button>
                         }
                     >

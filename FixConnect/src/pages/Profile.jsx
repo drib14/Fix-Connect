@@ -10,7 +10,7 @@ export default function Profile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({ firstName: '', lastName: '' });
+  const [formData, setFormData] = useState({ firstName: '', lastName: '', phone: '', address: '' });
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [message, setMessage] = useState('');
@@ -30,7 +30,9 @@ export default function Profile() {
       setUser(res.data);
       setFormData({
         firstName: res.data.firstName || '',
-        lastName: res.data.lastName || ''
+        lastName: res.data.lastName || '',
+        phone: res.data.phone || '',
+        address: res.data.address || ''
       });
       if (res.data.avatar) {
           setAvatarPreview(res.data.avatar);
@@ -50,6 +52,10 @@ export default function Profile() {
       }
   };
 
+  const handleChange = (e) => {
+      setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -58,19 +64,27 @@ export default function Profile() {
     try {
         const token = localStorage.getItem('token');
         const form = new FormData();
-        // Since original backend expect name, we will just pass nothing if we only want avatar
-        // or we could map firstName and lastName if the endpoint supported it.
-        // We will just upload avatar for now.
+
+        form.append('firstName', formData.firstName);
+        form.append('lastName', formData.lastName);
+        form.append('phone', formData.phone);
+        form.append('address', formData.address);
+
         if (avatarFile) {
             form.append('avatar', avatarFile);
         }
 
-        await axios.put('/api/users/profile', form, {
+        const res = await axios.put('/api/users/profile', form, {
             headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'multipart/form-data'
             }
         });
+
+        if (res.data.avatar) {
+            localStorage.setItem('userAvatar', res.data.avatar);
+            window.dispatchEvent(new Event('storage'));
+        }
 
         setMessage('Profile updated successfully!');
         await fetchProfile();
@@ -140,25 +154,33 @@ export default function Profile() {
               {/* Form Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                      <Label>First Name</Label>
-                      <Input value={formData.firstName} disabled className="bg-background/50 text-muted-foreground" />
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input id="firstName" name="firstName" value={formData.firstName} onChange={handleChange} className="bg-background/50 focus:border-emerald-500" required />
                   </div>
                   <div className="space-y-2">
-                      <Label>Last Name</Label>
-                      <Input value={formData.lastName} disabled className="bg-background/50 text-muted-foreground" />
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} className="bg-background/50 focus:border-emerald-500" required />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} className="bg-background/50 focus:border-emerald-500" placeholder="+63 912 345 6789" />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="address">Address</Label>
+                      <Input id="address" name="address" value={formData.address} onChange={handleChange} className="bg-background/50 focus:border-emerald-500" placeholder="123 Main St, City, Province" />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
                       <Label>Email</Label>
-                      <Input value={user.email} disabled className="bg-background/50 text-muted-foreground" />
+                      <Input value={user.email} disabled className="bg-background/50 text-muted-foreground cursor-not-allowed" />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
                       <Label>Role</Label>
-                      <Input value={user.role.toUpperCase()} disabled className="bg-background/50 text-muted-foreground" />
+                      <Input value={user.role.toUpperCase()} disabled className="bg-background/50 text-muted-foreground cursor-not-allowed" />
                   </div>
               </div>
 
               <div className="pt-4 border-t border-border/50 flex justify-end">
-                  <Button type="submit" disabled={saving || !avatarFile} className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-500/20">
+                  <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-500/20">
                       {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                       Save Profile
                   </Button>

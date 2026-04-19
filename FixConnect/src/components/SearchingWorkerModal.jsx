@@ -80,31 +80,48 @@ export function SearchingWorkerModal({ isOpen, setIsOpen, bookingId }) {
         }
     };
 
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
+    const searchingTexts = [
+        "Finding nearby workers...",
+        "Broadcasting your request...",
+        "Matching your service...",
+        "Just a moment more...",
+        "Contacting top professionals..."
+    ];
+
+    const [textIndex, setTextIndex] = useState(0);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const textTimer = setInterval(() => {
+            setTextIndex(prev => (prev + 1) % searchingTexts.length);
+        }, 3000);
+        return () => clearInterval(textTimer);
+    }, [isOpen]);
 
     return (
         <ResponsiveModal
-            title="Looking for a FixConnect Worker"
-            description="Broadcasting your request to nearby skilled professionals..."
+            title="Requesting..."
+            description="Please don't close this window."
             open={isOpen}
             onOpenChange={() => {}} // prevent manual close
         >
             <div className="flex flex-col items-center py-8">
-                {/* Radar Animation */}
-                <div className="relative flex justify-center items-center w-32 h-32 mb-6">
+                {/* Custom Pin Radar Animation */}
+                <div className="relative flex justify-center items-center w-32 h-32 mb-8">
                     <div className="absolute w-full h-full bg-emerald-500/20 rounded-full animate-ping"></div>
                     <div className="absolute w-24 h-24 bg-emerald-500/40 rounded-full animate-ping" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="relative w-16 h-16 bg-emerald-600 rounded-full flex flex-col justify-center items-center shadow-lg shadow-emerald-500/50 z-10 text-white font-bold">
-                        {minutes}:{seconds.toString().padStart(2, '0')}
+                    <div className="relative w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/50 z-10 p-1">
+                        <img src="/FC-logo.png" alt="FC Logo Pin" className="w-full h-full rounded-full object-cover border-2 border-white" />
                     </div>
                 </div>
 
-                <p className="text-center text-muted-foreground mb-6 max-w-sm">
-                    Please wait while we match you with an expert. If no one accepts within the time limit, your request will be automatically cancelled.
-                </p>
+                <div className="h-8 mb-6 flex items-center justify-center">
+                    <p className="text-center font-bold text-lg text-emerald-400 animate-pulse">
+                        {searchingTexts[textIndex]}
+                    </p>
+                </div>
 
-                <Button variant="destructive" onClick={handleManualCancel} className="w-full">
+                <Button variant="destructive" onClick={handleManualCancel} className="w-full font-bold">
                     Cancel Request
                 </Button>
             </div>

@@ -48,6 +48,7 @@ exports.register = async (req, res) => {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        avatar: user.avatar,
         token: generateToken(user._id),
       });
     } else {

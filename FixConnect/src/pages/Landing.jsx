@@ -20,18 +20,18 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="relative h-screen flex flex-col items-center overflow-hidden dark bg-background">
-      <div className="absolute inset-0 pointer-events-none z-0">
+    <div className="relative min-h-screen flex flex-col items-center overflow-y-auto overflow-x-hidden dark bg-background">
+      <div className="absolute inset-0 pointer-events-none z-0 fixed">
          <ThreeBackground />
       </div>
 
       {/* Navbar */}
       <nav className="relative z-20 w-full max-w-6xl mx-auto p-6 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20 overflow-hidden p-1">
+          <div className="w-12 h-12 shrink-0 bg-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20 overflow-hidden p-1">
             <img src="/FC-logo.png" alt="FixConnect Logo" className="w-full h-full object-cover rounded-full" />
           </div>
-          <span className="text-2xl font-bold tracking-tight text-white">FixConnect</span>
+          <span className="text-2xl font-bold tracking-tight text-white hidden sm:block">FixConnect</span>
         </div>
         <div className="flex items-center gap-4">
           <Link to="/login" className="text-sm font-medium text-white hover:text-emerald-400 transition-colors z-30 relative px-4 py-2">

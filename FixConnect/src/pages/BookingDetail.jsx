@@ -145,15 +145,23 @@ export default function BookingDetail() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-        <nav className="p-6 flex items-center justify-between border-b border-border/50 bg-background/80 backdrop-blur-md z-40">
-          <Button variant="ghost" asChild><Link to="/bookings">&larr; Back to Bookings</Link></Button>
-          <span className="font-bold text-lg text-white">Booking Status: <span className="text-emerald-400">{booking.status.toUpperCase()}</span></span>
+        <nav className="p-4 sm:p-6 flex items-center justify-between border-b border-border/50 bg-background/80 backdrop-blur-md z-40 relative">
+          <Button variant="ghost" asChild className="pl-0 shrink-0"><Link to="/bookings">&larr; Back</Link></Button>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 shrink-0 bg-white rounded-full flex items-center justify-center overflow-hidden p-1">
+              <img src="/FC-logo.png" alt="FixConnect Logo" className="w-full h-full object-cover rounded-full" />
+            </div>
+            <span className="font-bold text-base sm:text-lg text-white truncate">
+                <span className="hidden sm:inline">Status: </span>
+                <span className="text-emerald-400">{booking.status.toUpperCase()}</span>
+            </span>
+          </div>
         </nav>
 
         <div className="flex-1 relative z-0">
             <MapContainer center={center} zoom={13} className="w-full h-full" zoomControl={false}>
                 <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 />
 

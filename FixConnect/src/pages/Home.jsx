@@ -50,7 +50,7 @@ export default function Home() {
           </div>
           <span className="font-bold tracking-tight text-white hidden sm:block">FixConnect</span>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4 pointer-events-auto bg-background/80 backdrop-blur-md px-4 py-2 rounded-full border border-border/50 shadow-lg">
+        <div className="flex items-center gap-2 sm:gap-4 pointer-events-auto bg-background/80 backdrop-blur-md px-3 sm:px-4 py-2 rounded-full border border-border/50 shadow-lg">
           {userRole !== 'admin' && (
             <>
                 <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors flex items-center gap-1">
@@ -61,11 +61,21 @@ export default function Home() {
                 </Link>
             </>
           )}
-          <Link to="/profile" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">
-              Profile
-          </Link>
           <NotificationsDropdown />
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-red-400 hover:text-red-300 hover:bg-red-400/10">Logout</Button>
+          <Link to="/profile" className="flex items-center gap-2 hover:bg-emerald-500/10 px-1 py-1 rounded-full transition-colors" title="Profile">
+              <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-lg overflow-hidden">
+                  {localStorage.getItem('userAvatar') ? (
+                      <img src={localStorage.getItem('userAvatar')} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                      userRole ? userRole.charAt(0).toUpperCase() : 'U'
+                  )}
+              </div>
+              <span className="text-sm font-medium text-emerald-400 hidden sm:block pr-2">Profile</span>
+          </Link>
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-red-400 hover:text-red-300 hover:bg-red-400/10 px-2 sm:px-3">
+              <span className="hidden sm:inline">Logout</span>
+              <span className="sm:hidden text-xs">X</span>
+          </Button>
         </div>
       </nav>
 

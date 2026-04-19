@@ -54,6 +54,8 @@ exports.createBooking = async (req, res) => {
     let paymentUrl = null;
     let paymentReference = null;
 
+    const bookingId = new require('mongoose').Types.ObjectId();
+
     // Handle digital payments
     if (paymentMethod && paymentMethod !== 'Cash') {
       try {
@@ -62,6 +64,7 @@ exports.createBooking = async (req, res) => {
           paymongoSecret = process.env.PAYMONGO_PUBLIC_KEY;
         }
         const encodedSecret = Buffer.from(`${paymongoSecret}:`).toString('base64');
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
         const paymentData = {
           data: {
@@ -79,7 +82,9 @@ exports.createBooking = async (req, res) => {
                 }
               ],
               payment_method_types: ['gcash', 'paymaya', 'card', 'qrph'],
-              description: `FixConnect Booking: ${serviceCategory}`
+              description: `FixConnect Booking: ${serviceCategory}`,
+              success_url: `${frontendUrl}/booking/${bookingId}`,
+              cancel_url: `${frontendUrl}/`
             }
           }
         };
@@ -106,6 +111,7 @@ exports.createBooking = async (req, res) => {
     const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
 
     const newBooking = new Booking({
+      _id: bookingId,
       userId: req.user._id,
       serviceCategory,
       date: bookingDate,
