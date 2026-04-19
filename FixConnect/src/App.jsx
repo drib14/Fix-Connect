@@ -6,6 +6,8 @@ import { SocketProvider } from './contexts/SocketContext';
 import Landing from './pages/Landing';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
+import Bookings from './pages/Bookings';
+import BookingDetail from './pages/BookingDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -22,6 +24,8 @@ function App() {
         {/* Protected Dashboard/Home Route */}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Home />} />
+          <Route path="/bookings" element={<Bookings />} />
+          <Route path="/booking/:id" element={<BookingDetail />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
 

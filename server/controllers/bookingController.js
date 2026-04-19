@@ -36,6 +36,16 @@ exports.createBooking = async (req, res) => {
       return res.status(400).json(createResponse(false, 'Invalid date format.'));
     }
 
+    // 1-Booking Rule Check
+    const existingActiveBooking = await Booking.findOne({
+      userId: req.user._id,
+      status: { $in: ['pending', 'accepted', 'in_progress'] }
+    });
+
+    if (existingActiveBooking) {
+        return res.status(400).json(createResponse(false, 'You already have an active booking. Please wait for it to complete or cancel it before booking another.'));
+    }
+
     // Lock price
     const priceAtBooking = 500; // Flat fee for now
     const tax = priceAtBooking * 0.12;
@@ -345,6 +355,20 @@ exports.getUserBookings = async (req, res) => {
     res.status(500).json(createResponse(false, 'Failed to fetch user bookings.'));
   }
 };
+
+exports.getBookingById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const booking = await Booking.findById(id).populate('workerId userId');
+        if (!booking) {
+             return res.status(404).json(createResponse(false, 'Booking not found.'));
+        }
+        res.status(200).json(createResponse(true, 'Booking fetched.', booking));
+    } catch (error) {
+        console.error('Get Booking By ID Error:', error);
+        res.status(500).json(createResponse(false, 'Failed to fetch booking details.'));
+    }
+}
 
 exports.getBookings = async (req, res) => {
   try {

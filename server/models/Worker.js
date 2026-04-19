@@ -48,6 +48,10 @@ const workerSchema = new mongoose.Schema({
   },
   documentUrl: {
     type: String
+  },
+  currentLocation: {
+    lat: { type: Number },
+    lng: { type: Number }
   }
 }, { timestamps: true });
 
