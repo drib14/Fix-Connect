@@ -22,11 +22,13 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.38.0",
     "gsap": "^3.15.0",
+<<<<<<< HEAD
     "i": "^0.3.7",
+=======
+>>>>>>> 5482df00d0789ca1f9d05ec534abd921ad2e2645
     "leaflet": "^1.9.4",
     "leaflet-routing-machine": "^3.2.12",
     "lucide-react": "^1.8.0",
-    "npm": "^11.12.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-icons": "^5.6.0",

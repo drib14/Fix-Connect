@@ -68,6 +68,35 @@ export default function BookingDetail() {
     fetchBooking();
   }, [id]);
 
+  // Worker Location Broadcaster
+  useEffect(() => {
+      if (!booking || !socket || booking.status !== 'in_progress') return;
+
+      const userId = localStorage.getItem('userId');
+      const isWorker = booking.workerId && booking.workerId.userId === userId;
+
+      if (!isWorker) return;
+
+      let watchId;
+      if (navigator.geolocation) {
+          watchId = navigator.geolocation.watchPosition(
+              (position) => {
+                  const lat = position.coords.latitude;
+                  const lng = position.coords.longitude;
+                  socket.emit('locationUpdate', { bookingId: id, lat, lng });
+                  // Also update local state for the worker's own map view
+                  setBooking(prev => ({ ...prev, workerLocation: { lat, lng } }));
+              },
+              (err) => console.error("Error watching position:", err),
+              { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          );
+      }
+
+      return () => {
+          if (watchId) navigator.geolocation.clearWatch(watchId);
+      };
+  }, [booking?.status, booking?.workerId, socket, id]);
+
   useEffect(() => {
     if (!socket || !id) return;
     socket.emit('joinBookingRoom', id);

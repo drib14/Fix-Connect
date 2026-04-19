@@ -41,16 +41,16 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background dark text-foreground flex flex-col items-center">
+    <div className="h-screen bg-background dark text-foreground flex flex-col overflow-hidden relative">
       {/* Navbar */}
-      <nav className="w-full p-4 sm:p-6 flex justify-between items-center border-b border-border/50 sticky top-0 bg-background/80 backdrop-blur-md z-40">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden p-1">
+      <nav className="absolute top-0 left-0 w-full p-4 sm:p-6 flex justify-between items-center z-[1000] pointer-events-none">
+        <div className="flex items-center gap-3 pointer-events-auto bg-background/80 backdrop-blur-md px-4 py-2 rounded-full border border-border/50 shadow-lg">
+          <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center overflow-hidden p-1">
             <img src="/FC-logo.png" alt="FixConnect Logo" className="w-full h-full object-cover rounded-full" />
           </div>
-          <span className="text-xl font-bold tracking-tight text-white hidden sm:block">FixConnect</span>
+          <span className="font-bold tracking-tight text-white hidden sm:block">FixConnect</span>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 pointer-events-auto bg-background/80 backdrop-blur-md px-4 py-2 rounded-full border border-border/50 shadow-lg">
           {userRole !== 'admin' && (
             <>
                 <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors flex items-center gap-1">
@@ -65,7 +65,7 @@ export default function Home() {
               Profile
           </Link>
           <NotificationsDropdown />
-          <Button variant="outline" size="sm" onClick={handleLogout}>Logout</Button>
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-red-400 hover:text-red-300 hover:bg-red-400/10">Logout</Button>
         </div>
       </nav>
 
@@ -74,11 +74,11 @@ export default function Home() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
       ) : (
-      <main className="w-full flex-1 flex flex-col p-4 sm:p-6 items-center">
+      <main className="w-full flex-1 flex flex-col items-center relative z-0">
         {userRole === 'admin' ? (
-            <AdminDashboard />
+            <div className="pt-24"><AdminDashboard /></div>
         ) : userRole === 'worker' ? (
-            <div className="w-full max-w-4xl"><WorkerJobPool /></div>
+            <div className="w-full max-w-4xl pt-24"><WorkerJobPool /></div>
         ) : (
             <CustomerHome />
         )}

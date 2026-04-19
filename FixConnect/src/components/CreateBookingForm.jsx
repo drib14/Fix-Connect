@@ -4,18 +4,16 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Wallet, CreditCard } from 'lucide-react';
+import { LocationSearchInput } from './LocationSearchInput';
 
-export function CreateBookingForm({ onSuccess, onCancel }) {
+export function CreateBookingForm({ onSuccess, onCancel, customerLocation, setCustomerLocation }) {
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     serviceCategory: '',
     date: '',
     startTime: '',
     endTime: '',
-    address: '',
     paymentMethod: 'Cash',
-    lat: 14.5995, // Mock default coordinates (Manila)
-    lng: 120.9842
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -52,8 +50,21 @@ export function CreateBookingForm({ onSuccess, onCancel }) {
     setError('');
 
     try {
+      if (!customerLocation || !customerLocation.lat) {
+          setError('Please select a valid location from the dropdown suggestions.');
+          setLoading(false);
+          return;
+      }
+
+      const payload = {
+          ...formData,
+          address: customerLocation.address,
+          lat: customerLocation.lat,
+          lng: customerLocation.lng
+      };
+
       const token = localStorage.getItem('token');
-      const res = await axios.post('/api/bookings', formData, {
+      const res = await axios.post('/api/bookings', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
@@ -102,9 +113,20 @@ export function CreateBookingForm({ onSuccess, onCancel }) {
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 relative">
         <Label htmlFor="address">Service Address</Label>
-        <Input id="address" placeholder="123 Main St, City" value={formData.address} onChange={handleChange} className="bg-background/50 border-border/50 focus:border-primary" required />
+        <LocationSearchInput
+            initialAddress={customerLocation?.address}
+            onLocationSelect={(data) => {
+                // If they picked from dropdown, update the global map center
+                if (data.lat && data.lng) {
+                    setCustomerLocation({ address: data.address, lat: data.lat, lng: data.lng });
+                } else {
+                    // Just typing
+                    setCustomerLocation(prev => ({ ...prev, address: data.address }));
+                }
+            }}
+        />
       </div>
 
       <div className="space-y-3 pt-2">

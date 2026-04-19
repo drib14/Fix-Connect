@@ -102,8 +102,8 @@ exports.createBooking = async (req, res) => {
       }
     }
 
-    // Set expiration 10 minutes from now for 'pending' state
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    // Set expiration 3 minutes from now for 'pending' state (ride hailing standard)
+    const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
 
     const newBooking = new Booking({
       userId: req.user._id,
@@ -286,6 +286,7 @@ exports.updateBookingStatus = async (req, res) => {
 exports.cancelBooking = async (req, res) => {
     try {
         const { id } = req.params;
+        const { reason } = req.body;
         const userId = req.user._id.toString();
 
         const booking = await Booking.findById(id);
@@ -318,6 +319,7 @@ exports.cancelBooking = async (req, res) => {
 
         booking.status = 'cancelled';
         booking.cancelledAt = new Date();
+        if (reason) booking.cancellationReason = reason;
         await booking.save();
 
         const io = socket.getIO();

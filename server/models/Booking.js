@@ -77,6 +77,7 @@ const bookingSchema = new mongoose.Schema({
   acceptedAt: { type: Date },
   completedAt: { type: Date },
   cancelledAt: { type: Date },
+  cancellationReason: { type: String },
   expiresAt: { type: Date }
 }, { timestamps: true });
 
