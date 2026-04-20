@@ -24,7 +24,7 @@ const workerIcon = new L.Icon({
     className: 'rounded-full border-2 border-emerald-500 bg-white'
 });
 
-function getCustomerIcon(user) {
+function getCustomerIcon(user, isPending) {
     let initials = 'USER';
     if (user && user.firstName && user.lastName) {
         initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
@@ -34,9 +34,11 @@ function getCustomerIcon(user) {
 
     const avatarUrl = user?.avatar || `https://ui-avatars.com/api/?name=${initials}&background=10b981&color=fff`;
 
+    const animationClass = isPending ? 'animate-pulse' : '';
+
     return new L.DivIcon({
         html: `
-            <div style="position: relative; width: 40px; height: 50px; display: flex; flex-direction: column; align-items: center;">
+            <div class="${animationClass}" style="position: relative; width: 40px; height: 50px; display: flex; flex-direction: column; align-items: center;">
                 <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 3px solid #10b981; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 2;">
                     <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;" />
                 </div>
@@ -66,6 +68,21 @@ const getWorkerIcon = () => {
         popupAnchor: [0, -50]
     });
 };
+
+function MapUpdater({ center, zoom = 13 }) {
+    const map = useMap();
+    const prevCenter = React.useRef(null);
+    React.useEffect(() => {
+        if (center && (!prevCenter.current || prevCenter.current[0] !== center[0] || prevCenter.current[1] !== center[1])) {
+            map.flyTo(center, zoom, {
+                animate: true,
+                duration: 1.5
+            });
+            prevCenter.current = center;
+        }
+    }, [center, map, zoom]);
+    return null;
+}
 
 function RoutingMachine({ customerLoc, workerLoc, setEta }) {
     const map = useMap();
@@ -224,7 +241,7 @@ export default function BookingDetail() {
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="animate-spin text-emerald-500 w-8 h-8" /></div>;
   if (!booking) return <div className="min-h-screen bg-background flex items-center justify-center text-white">Booking not found.</div>;
 
-  const center = booking.coordinates ? [booking.coordinates.lat, booking.coordinates.lng] : [14.5995, 120.9842];
+  const center = booking.workerLocation && booking.status === 'in_progress' ? [booking.workerLocation.lat, booking.workerLocation.lng] : (booking.coordinates ? [booking.coordinates.lat, booking.coordinates.lng] : [14.5995, 120.9842]);
 
   const getStatusIcon = (status) => {
       switch(status) {
@@ -387,13 +404,14 @@ export default function BookingDetail() {
             {/* Map Area */}
             <div className="flex-1 w-full h-1/2 md:h-full relative z-0">
                 <MapContainer center={center} zoom={13} className="w-full h-full" zoomControl={false}>
+                    <MapUpdater center={center} />
                     <TileLayer
                         url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                     />
 
                 {booking.coordinates && (
-                    <Marker position={[booking.coordinates.lat, booking.coordinates.lng]} icon={getCustomerIcon(booking.userId)}>
+                    <Marker position={[booking.coordinates.lat, booking.coordinates.lng]} icon={getCustomerIcon(booking.userId, booking.status === 'pending')}>
                         <Popup className="custom-popup"><b>Your Location</b><br/>{booking.address}</Popup>
                     </Marker>
                 )}

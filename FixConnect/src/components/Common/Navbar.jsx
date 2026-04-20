@@ -144,11 +144,12 @@ const Navbar = () => {
   }, []);
 
   const getInitials = () => {
-    if (!user) return 'ME';
-    if (user.firstName && user.lastName) {
+    if (user && user.firstName && user.lastName) {
         return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    } else if (user && user.firstName) {
+        return user.firstName.charAt(0).toUpperCase();
     }
-    return user.firstName?.charAt(0).toUpperCase() || 'ME';
+    return 'USER';
   };
 
   const handleLogout = () => {

@@ -31,14 +31,14 @@ const getWorkerIcon = () => {
 function getCustomerIcon() {
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
-    let initials = 'ME';
+    let initials = 'USER';
     if (user && user.firstName && user.lastName) {
         initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
     } else if (user && user.firstName) {
         initials = user.firstName.charAt(0).toUpperCase();
     }
 
-    const avatarUrl = localStorage.getItem('userAvatar') || `https://ui-avatars.com/api/?name=${initials}&background=10b981&color=fff`;
+    const avatarUrl = localStorage.getItem('userAvatar') || user?.avatar || `https://ui-avatars.com/api/?name=${initials}&background=10b981&color=fff`;
 
     // Instead of using just the image as the map pin, we use a custom divIcon that looks like a map pin pointing down,
     // with the user's avatar inside it.
@@ -60,8 +60,15 @@ function getCustomerIcon() {
 
 function MapUpdater({ center }) {
     const map = useMap();
+    const prevCenter = React.useRef(null);
     useEffect(() => {
-        if (center) map.setView(center, map.getZoom());
+        if (center && (!prevCenter.current || prevCenter.current[0] !== center[0] || prevCenter.current[1] !== center[1])) {
+            map.flyTo(center, 15, {
+                animate: true,
+                duration: 1.5
+            });
+            prevCenter.current = center;
+        }
     }, [center, map]);
     return null;
 }
@@ -81,6 +88,22 @@ export function CustomerHome() {
   useEffect(() => {
       fetchWorkerLocations();
       checkActiveBooking();
+
+      // Auto-locate on load
+      if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+              (position) => {
+                  const newLoc = {
+                      lat: position.coords.latitude,
+                      lng: position.coords.longitude,
+                      address: 'Current Location'
+                  };
+                  setCustomerLocation(newLoc);
+              },
+              (err) => console.error(err),
+              { enableHighAccuracy: true }
+          );
+      }
   }, []);
 
   const fetchWorkerLocations = async () => {
