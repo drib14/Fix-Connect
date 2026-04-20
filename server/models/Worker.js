@@ -52,6 +52,10 @@ const workerSchema = new mongoose.Schema({
   currentLocation: {
     lat: { type: Number },
     lng: { type: Number }
+  },
+  isBot: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 

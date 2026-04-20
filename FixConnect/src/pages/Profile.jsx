@@ -103,8 +103,11 @@ export default function Profile() {
   );
 
   const getInitials = () => {
-      if (!user) return 'FC';
-      return `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase();
+    if (!user) return 'FC';
+    if (user.firstName && user.lastName) {
+        return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    }
+    return user.firstName?.charAt(0).toUpperCase() || 'FC';
   };
 
   return (

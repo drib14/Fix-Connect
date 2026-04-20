@@ -10,19 +10,34 @@ import { Target } from 'lucide-react';
 import { SearchingWorkerModal } from './SearchingWorkerModal';
 import { Link } from 'react-router-dom';
 
-// Custom FC Logo Pin for Workers
-const workerIcon = new L.Icon({
-    iconUrl: '/FC-logo.png',
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -40],
-    className: 'rounded-full border-2 border-emerald-500 bg-white'
-});
+// Custom Mascot Pin for Workers
+const getWorkerIcon = () => {
+    return new L.DivIcon({
+        html: `
+            <div style="position: relative; width: 40px; height: 50px; display: flex; flex-direction: column; align-items: center;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 3px solid #10b981; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 2; display: flex; justify-content: center; align-items: center; font-size: 24px;">
+                    🤖
+                </div>
+                <div style="width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 12px solid #10b981; margin-top: -4px; z-index: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));"></div>
+            </div>
+        `,
+        className: '',
+        iconSize: [40, 50],
+        iconAnchor: [20, 50],
+        popupAnchor: [0, -50]
+    });
+};
 
 function getCustomerIcon() {
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
-    const initials = user ? `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase() : 'ME';
+    let initials = 'ME';
+    if (user && user.firstName && user.lastName) {
+        initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    } else if (user && user.firstName) {
+        initials = user.firstName.charAt(0).toUpperCase();
+    }
+
     const avatarUrl = localStorage.getItem('userAvatar') || `https://ui-avatars.com/api/?name=${initials}&background=10b981&color=fff`;
 
     // Instead of using just the image as the map pin, we use a custom divIcon that looks like a map pin pointing down,
@@ -145,7 +160,7 @@ export function CustomerHome() {
                 <Marker
                     key={worker._id}
                     position={[worker.currentLocation.lat, worker.currentLocation.lng]}
-                    icon={workerIcon}
+                    icon={getWorkerIcon()}
                 >
                     <Popup className="custom-popup">
                         <div className="font-bold text-emerald-600">{worker.name}</div>
@@ -168,7 +183,7 @@ export function CustomerHome() {
 
         <div className="absolute bottom-0 left-0 w-full md:bottom-8 md:left-8 md:w-auto z-[1000]">
             <div className="bg-background/95 backdrop-blur-xl border border-border/50 shadow-2xl md:rounded-2xl p-6 md:w-96 rounded-t-2xl">
-                <h2 className="text-xl font-bold mb-2">Where to?</h2>
+                <h2 className="text-xl font-bold mb-2">What service do you need?</h2>
                 <p className="text-sm text-muted-foreground mb-4">Find a skilled worker for your repairs.</p>
 
                 {hasActiveBooking && !isSearching ? (

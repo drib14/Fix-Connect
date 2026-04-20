@@ -142,6 +142,91 @@ exports.createBooking = async (req, res) => {
     await createAndEmitNotification(req.user._id, `Your booking for ${serviceCategory} was created and is pending worker acceptance.`);
 
     res.status(201).json(createResponse(true, 'Booking successfully created!', savedBooking));
+
+    // Bot Auto-Accept Logic
+    setTimeout(async () => {
+      try {
+        const Worker = require('../models/Worker');
+        const socket = require('../socket');
+        // Find a bot worker that offers the category, preferring active ones
+        const bots = await Worker.find({
+            isBot: true,
+            status: 'Active',
+            category: serviceCategory
+        });
+
+        if (bots.length > 0) {
+            // Find nearest bot
+            const getDistance = (lat1, lon1, lat2, lon2) => {
+              const R = 6371; // Radius of the earth in km
+              const dLat = (lat2 - lat1) * (Math.PI / 180);
+              const dLon = (lon2 - lon1) * (Math.PI / 180);
+              const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) *
+                  Math.cos(lat2 * (Math.PI / 180)) *
+                  Math.sin(dLon / 2) *
+                  Math.sin(dLon / 2);
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+              const d = R * c; // Distance in km
+              return d;
+            };
+
+            let nearestBot = bots[0];
+            let minDistance = getDistance(lat, lng, nearestBot.currentLocation.lat, nearestBot.currentLocation.lng);
+            for (let i = 1; i < bots.length; i++) {
+                let distance = getDistance(lat, lng, bots[i].currentLocation.lat, bots[i].currentLocation.lng);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestBot = bots[i];
+                }
+            }
+            const bot = nearestBot;
+
+            const bookingToAccept = await Booking.findById(savedBooking._id);
+            if (bookingToAccept && bookingToAccept.status === 'pending') {
+                bookingToAccept.status = 'accepted';
+                bookingToAccept.workerId = bot._id;
+                bookingToAccept.acceptedAt = new Date();
+                const acceptedBooking = await bookingToAccept.save();
+
+                const populatedBooking = await Booking.findById(acceptedBooking._id).populate('workerId userId');
+
+                const io = socket.getIO();
+                // Emit success
+                io.to(populatedBooking.userId.toString()).emit('jobAccepted', populatedBooking);
+                await createAndEmitNotification(populatedBooking.userId, `Your booking has been accepted by ${bot.name}.`);
+
+                // Simulate status updates (In Progress -> Completed)
+                setTimeout(async () => {
+                   const progressBooking = await Booking.findById(acceptedBooking._id);
+                   if (progressBooking && progressBooking.status === 'accepted') {
+                       progressBooking.status = 'in_progress';
+                       await progressBooking.save();
+                       const popProg = await Booking.findById(progressBooking._id).populate('workerId userId');
+                       const ioProg = socket.getIO();
+                       ioProg.to(progressBooking.userId.toString()).emit('bookingStatusUpdated', popProg);
+                   }
+                }, 10000); // 10 seconds later: in progress
+
+                setTimeout(async () => {
+                   const finishBooking = await Booking.findById(acceptedBooking._id);
+                   if (finishBooking && finishBooking.status === 'in_progress') {
+                       finishBooking.status = 'completed';
+                       finishBooking.completedAt = new Date();
+                       await finishBooking.save();
+                       const popFinish = await Booking.findById(finishBooking._id).populate('workerId userId');
+                       const ioFin = socket.getIO();
+                       ioFin.to(finishBooking.userId.toString()).emit('bookingStatusUpdated', popFinish);
+                   }
+                }, 30000); // 30 seconds later: completed
+            }
+        }
+      } catch (e) {
+          console.error("Bot auto-accept error:", e);
+      }
+    }, 3000); // 3 seconds delay for auto-accept simulation
+
   } catch (error) {
     console.error('Create Booking Error:', error);
     res.status(500).json(createResponse(false, 'Failed to create booking.'));
