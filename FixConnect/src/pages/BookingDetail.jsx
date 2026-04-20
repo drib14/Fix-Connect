@@ -295,7 +295,7 @@ export default function BookingDetail() {
 
         <div className="flex-1 relative z-0 flex flex-col md:flex-row">
             {/* Details Panel */}
-            <div className="w-full md:w-[400px] h-1/2 md:h-full bg-card/95 backdrop-blur-md border-r border-border/50 z-10 flex flex-col overflow-y-auto shadow-2xl p-6 absolute md:relative bottom-0 md:bottom-auto rounded-t-3xl md:rounded-none">
+            <div className="w-full md:w-[400px] h-1/2 md:h-full bg-card/95 backdrop-blur-md border-r border-border/50 z-10 flex flex-col overflow-y-auto no-scrollbar shadow-2xl p-6 absolute md:relative bottom-0 md:bottom-auto rounded-t-3xl md:rounded-none">
                 <div className="flex items-center gap-3 mb-6">
                     {getStatusIcon(booking.status)}
                     <div>
