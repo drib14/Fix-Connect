@@ -1,0 +1,17 @@
+--- bookingController.js
++++ bookingController.js
+@@ -48,9 +48,11 @@
+       address: location.address || address
+     });
+
+-    const priceAtBooking = 500; // Flat fee for now
+-    const tax = priceAtBooking * 0.12;
+-    const totalAmount = priceAtBooking + tax;
++    const baseFee = 500; // Flat fee for service
++    const transpoFee = 30; // Minimum transpo fee
++    const priceAtBooking = baseFee + transpoFee;
++    const tax = priceAtBooking * 0.12; // 12% tax
++    const totalAmount = priceAtBooking + tax;
+
+     // Expires in 5 minutes
+     const expiresAt = new Date(Date.now() + 5 * 60000);

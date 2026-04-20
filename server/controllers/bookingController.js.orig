@@ -48,9 +48,7 @@ exports.createBooking = async (req, res) => {
     }
 
     // Lock price
-    const baseFee = 500;
-    const transpoFee = 30;
-    const priceAtBooking = baseFee + transpoFee;
+    const priceAtBooking = 500; // Flat fee for now
     const tax = priceAtBooking * 0.12;
     const totalAmount = priceAtBooking + tax;
 

@@ -252,6 +252,11 @@ export default function BookingDetail() {
                                     <p className="text-xs text-muted-foreground">{booking.workerId.userId?.phone || 'Contact Info Unavailable'}</p>
                                 </div>
                             </div>
+                            <div className="mt-3 text-sm text-gray-300">
+                                <p><span className="text-emerald-500 font-medium">Category:</span> {booking.workerId.category}</p>
+                                <p><span className="text-emerald-500 font-medium">Rating:</span> {booking.workerId.rating} ★</p>
+                                <p className="mt-1 line-clamp-2"><span className="text-emerald-500 font-medium">Overview:</span> {booking.workerId.description}</p>
+                            </div>
                         </div>
                     )}
                 </div>
