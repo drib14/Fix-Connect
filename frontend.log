@@ -3,26 +3,8 @@
 > vite
 
 Port 5173 is in use, trying another one...
-Port 5174 is in use, trying another one...
 
-  VITE v8.0.3  ready in 649 ms
+  VITE v8.0.3  ready in 723 ms
 
-  ➜  Local:   http://localhost:5175/
+  ➜  Local:   http://localhost:5174/
   ➜  Network: use --host to expose
-9:47:12 AM [vite] (client) hmr update /src/pages/Home.jsx, /src/index.css
-9:47:19 AM [vite] (client) hmr update /src/App.jsx, /src/index.css
-10:39:14 AM [vite] (client) hmr update /src/index.css, /src/components/CreateBookingForm.jsx
-10:39:37 AM [vite] (client) hmr update /src/index.css, /src/components/CreateBookingForm.jsx
-10:40:44 AM [vite] (client) hmr update /src/pages/Home.jsx, /src/index.css
-11:19:35 AM [vite] (client) hmr update /src/pages/Landing.jsx, /src/index.css
-11:20:02 AM [vite] (client) hmr update /src/pages/Profile.jsx, /src/index.css
-11:20:50 AM [vite] (client) hmr update /src/pages/Home.jsx, /src/index.css
-11:22:17 AM [vite] (client) hmr update /src/pages/Login.jsx, /src/index.css
-11:25:47 AM [vite] (client) hmr update /src/pages/Home.jsx, /src/index.css
-11:38:09 AM [vite] (client) hmr update /src/pages/Profile.jsx, /src/index.css
-12:15:08 PM [vite] (client) hmr update /src/index.css
-/Home.jsx, /src/index.css
-11:19:35 AM [vite] (client) hmr update /src/pages/Landing.jsx, /src/index.css
-11:20:02 AM [vite] (client) hmr update /src/index.css
-11:20:50 AM [vite11:20:50 AM [vite] (client) hmr update /src/pages/Home.jsx11:22:17 AM [vite11:22:17 AM [vite] (client) hmr update /src/pages/Login.jsx11:25:47 AM [vite11:25:47 AM [vite] (client) hmr update /src/pages/Home.jsx11:38:09 AM [vite11:38:09 AM [vite] (client) hmr updat12:15:07 PM [vite] (client) hmr update /src/index.css
-e /src/index.css

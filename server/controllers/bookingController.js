@@ -211,57 +211,103 @@ exports.createBooking = async (req, res) => {
 
                         // Move the bot every 1 second along the route
                         const moveInterval = setInterval(async () => {
-                            if (currentStep >= totalSteps) {
-                                clearInterval(moveInterval);
-                                // Arrived!
-                                const progressBooking = await Booking.findById(acceptedBooking._id);
-                                if (progressBooking && progressBooking.status === 'accepted') {
-                                    progressBooking.status = 'in_progress';
-                                    await progressBooking.save();
-                                    const popProg = await Booking.findById(progressBooking._id).populate('workerId userId');
-                                    const ioProg = socket.getIO();
-                                    ioProg.to(progressBooking.userId._id.toString()).emit('bookingStatusUpdated', popProg);
-                                    await createAndEmitNotification(progressBooking.userId._id, `${bot.name} has arrived at your location.`);
+                            try {
+                                if (currentStep >= totalSteps) {
+                                    clearInterval(moveInterval);
+                                    // Arrived!
+                                    const progressBooking = await Booking.findById(acceptedBooking._id);
+                                    if (progressBooking && progressBooking.status === 'accepted') {
+                                        progressBooking.status = 'in_progress';
+                                        await progressBooking.save();
+                                        const popProg = await Booking.findById(progressBooking._id).populate('workerId userId');
+                                        const ioProg = socket.getIO();
+                                        ioProg.to(progressBooking.userId._id.toString()).emit('bookingStatusUpdated', popProg);
+                                        await createAndEmitNotification(progressBooking.userId._id, `${bot.name} has arrived at your location.`);
 
-                                    // Simulate work done after 15 seconds
-                                    setTimeout(async () => {
-                                        const finishBooking = await Booking.findById(acceptedBooking._id);
-                                        if (finishBooking && finishBooking.status === 'in_progress') {
-                                            finishBooking.status = 'completed';
-                                            finishBooking.completedAt = new Date();
-                                            await finishBooking.save();
-                                            const popFinish = await Booking.findById(finishBooking._id).populate('workerId userId');
-                                            const ioFin = socket.getIO();
-                                            ioFin.to(finishBooking.userId._id.toString()).emit('bookingStatusUpdated', popFinish);
-                                            await createAndEmitNotification(finishBooking.userId._id, `${bot.name} has completed the job.`);
-                                        }
-                                    }, 15000);
+                                        // Simulate work done after 15 seconds
+                                        setTimeout(async () => {
+                                            try {
+                                                const finishBooking = await Booking.findById(acceptedBooking._id);
+                                                if (finishBooking && finishBooking.status === 'in_progress') {
+                                                    finishBooking.status = 'completed';
+                                                    finishBooking.completedAt = new Date();
+                                                    await finishBooking.save();
+                                                    const popFinish = await Booking.findById(finishBooking._id).populate('workerId userId');
+                                                    const ioFin = socket.getIO();
+                                                    ioFin.to(finishBooking.userId._id.toString()).emit('bookingStatusUpdated', popFinish);
+                                                    await createAndEmitNotification(finishBooking.userId._id, `${bot.name} has completed the job.`);
+                                                }
+                                            } catch (err) {
+                                                console.error('Bot simulation error completing job:', err);
+                                            }
+                                        }, 15000);
+                                    }
+                                    return;
                                 }
-                                return;
-                            }
 
-                            // Emit location update
-                            const [currentLng, currentLat] = routeCoords[currentStep];
-                            const ioLoc = socket.getIO();
+                                // Emit location update
+                                const [currentLng, currentLat] = routeCoords[currentStep];
+                                const ioLoc = socket.getIO();
 
-                            // To prevent DB overload, only save to DB every 5 steps (5 seconds)
-                            if (currentStep % 5 === 0) {
-                                await Booking.findByIdAndUpdate(acceptedBooking._id, {
-                                    workerLocation: { lat: currentLat, lng: currentLng }
+                                // To prevent DB overload, only save to DB every 5 steps (5 seconds)
+                                if (currentStep % 5 === 0) {
+                                    await Booking.findByIdAndUpdate(acceptedBooking._id, {
+                                        workerLocation: { lat: currentLat, lng: currentLng }
+                                    });
+                                }
+
+                                ioLoc.to(populatedBooking.userId._id.toString()).emit('workerLocationUpdate', {
+                                    bookingId: acceptedBooking._id,
+                                    lat: currentLat,
+                                    lng: currentLng
                                 });
+
+                                currentStep++;
+                            } catch (err) {
+                                console.error('Bot simulation error in moveInterval:', err);
                             }
-
-                            ioLoc.to(populatedBooking.userId._id.toString()).emit('workerLocationUpdate', {
-                                bookingId: acceptedBooking._id,
-                                lat: currentLat,
-                                lng: currentLng
-                            });
-
-                            currentStep++;
                         }, 1000); // Move every 1s
                     } else {
                         // Fallback if no route found: teleport and arrive in 10s
                         setTimeout(async () => {
+                           try {
+                               const progressBooking = await Booking.findById(acceptedBooking._id);
+                               if (progressBooking && progressBooking.status === 'accepted') {
+                                   progressBooking.status = 'in_progress';
+                                   await progressBooking.save();
+                                   const popProg = await Booking.findById(progressBooking._id).populate('workerId userId');
+                                   const ioProg = socket.getIO();
+                                   ioProg.to(progressBooking.userId._id.toString()).emit('bookingStatusUpdated', popProg);
+                                   await createAndEmitNotification(progressBooking.userId._id, `${bot.name} has arrived at your location.`);
+
+                                   // Simulate work done after 15 seconds
+                                   setTimeout(async () => {
+                                       try {
+                                           const finishBooking = await Booking.findById(acceptedBooking._id);
+                                           if (finishBooking && finishBooking.status === 'in_progress') {
+                                               finishBooking.status = 'completed';
+                                               finishBooking.completedAt = new Date();
+                                               await finishBooking.save();
+                                               const popFinish = await Booking.findById(finishBooking._id).populate('workerId userId');
+                                               const ioFin = socket.getIO();
+                                               ioFin.to(finishBooking.userId._id.toString()).emit('bookingStatusUpdated', popFinish);
+                                               await createAndEmitNotification(finishBooking.userId._id, `${bot.name} has completed the job.`);
+                                           }
+                                       } catch(err) {
+                                           console.error('Fallback error completing job:', err);
+                                       }
+                                   }, 15000);
+                               }
+                           } catch (err) {
+                               console.error('Fallback error arriving at location:', err);
+                           }
+                        }, 10000);
+                    }
+                } catch (osrmError) {
+                    console.error("OSRM Route Error:", osrmError);
+                    // Fallback on error: teleport and arrive in 10s
+                    setTimeout(async () => {
+                       try {
                            const progressBooking = await Booking.findById(acceptedBooking._id);
                            if (progressBooking && progressBooking.status === 'accepted') {
                                progressBooking.status = 'in_progress';
@@ -273,46 +319,24 @@ exports.createBooking = async (req, res) => {
 
                                // Simulate work done after 15 seconds
                                setTimeout(async () => {
-                                   const finishBooking = await Booking.findById(acceptedBooking._id);
-                                   if (finishBooking && finishBooking.status === 'in_progress') {
-                                       finishBooking.status = 'completed';
-                                       finishBooking.completedAt = new Date();
-                                       await finishBooking.save();
-                                       const popFinish = await Booking.findById(finishBooking._id).populate('workerId userId');
-                                       const ioFin = socket.getIO();
-                                       ioFin.to(finishBooking.userId._id.toString()).emit('bookingStatusUpdated', popFinish);
-                                       await createAndEmitNotification(finishBooking.userId._id, `${bot.name} has completed the job.`);
+                                   try {
+                                       const finishBooking = await Booking.findById(acceptedBooking._id);
+                                       if (finishBooking && finishBooking.status === 'in_progress') {
+                                           finishBooking.status = 'completed';
+                                           finishBooking.completedAt = new Date();
+                                           await finishBooking.save();
+                                           const popFinish = await Booking.findById(finishBooking._id).populate('workerId userId');
+                                           const ioFin = socket.getIO();
+                                           ioFin.to(finishBooking.userId._id.toString()).emit('bookingStatusUpdated', popFinish);
+                                           await createAndEmitNotification(finishBooking.userId._id, `${bot.name} has completed the job.`);
+                                       }
+                                   } catch(err) {
+                                       console.error('Fallback OSRM error completing job:', err);
                                    }
                                }, 15000);
                            }
-                        }, 10000);
-                    }
-                } catch (osrmError) {
-                    console.error("OSRM Route Error:", osrmError);
-                    // Fallback on error: teleport and arrive in 10s
-                    setTimeout(async () => {
-                       const progressBooking = await Booking.findById(acceptedBooking._id);
-                       if (progressBooking && progressBooking.status === 'accepted') {
-                           progressBooking.status = 'in_progress';
-                           await progressBooking.save();
-                           const popProg = await Booking.findById(progressBooking._id).populate('workerId userId');
-                           const ioProg = socket.getIO();
-                           ioProg.to(progressBooking.userId._id.toString()).emit('bookingStatusUpdated', popProg);
-                           await createAndEmitNotification(progressBooking.userId._id, `${bot.name} has arrived at your location.`);
-
-                           // Simulate work done after 15 seconds
-                           setTimeout(async () => {
-                               const finishBooking = await Booking.findById(acceptedBooking._id);
-                               if (finishBooking && finishBooking.status === 'in_progress') {
-                                   finishBooking.status = 'completed';
-                                   finishBooking.completedAt = new Date();
-                                   await finishBooking.save();
-                                   const popFinish = await Booking.findById(finishBooking._id).populate('workerId userId');
-                                   const ioFin = socket.getIO();
-                                   ioFin.to(finishBooking.userId._id.toString()).emit('bookingStatusUpdated', popFinish);
-                                   await createAndEmitNotification(finishBooking.userId._id, `${bot.name} has completed the job.`);
-                               }
-                           }, 15000);
+                       } catch (err) {
+                           console.error('Fallback OSRM error arriving at location:', err);
                        }
                     }, 10000);
                 }
