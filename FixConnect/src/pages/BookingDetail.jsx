@@ -7,7 +7,14 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine';
 import { Button } from '../components/ui/button';
 import { useSocket } from '../contexts/SocketContext';
-import { Loader2, Briefcase, Calendar, MapPin, Wallet, CreditCard, User, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Loader2, Briefcase, Calendar, MapPin, Wallet, CreditCard, User, CheckCircle2, XCircle, Clock, Map } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog"
 
 const workerIcon = new L.Icon({
     iconUrl: '/FC-logo.png',
@@ -18,42 +25,105 @@ const workerIcon = new L.Icon({
 });
 
 function getCustomerIcon(user) {
-    const name = user?.firstName ? `${user.firstName}+${user.lastName || ''}` : 'User';
-    const avatarUrl = user?.avatar || `https://ui-avatars.com/api/?name=${name}&background=10b981&color=fff`;
+    let initials = 'USER';
+    if (user && user.firstName && user.lastName) {
+        initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    } else if (user && user.firstName) {
+        initials = user.firstName.charAt(0).toUpperCase();
+    }
 
-    return new L.Icon({
-        iconUrl: avatarUrl,
-        iconSize: [40, 40],
-        iconAnchor: [20, 40],
-        popupAnchor: [0, -40],
-        className: 'rounded-full border-2 border-primary bg-white object-cover'
+    const avatarUrl = user?.avatar || `https://ui-avatars.com/api/?name=${initials}&background=10b981&color=fff`;
+
+    return new L.DivIcon({
+        html: `
+            <div style="position: relative; width: 40px; height: 50px; display: flex; flex-direction: column; align-items: center;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 3px solid #10b981; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 2;">
+                    <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;" />
+                </div>
+                <div style="width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 12px solid #10b981; margin-top: -4px; z-index: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));"></div>
+            </div>
+        `,
+        className: '',
+        iconSize: [40, 50],
+        iconAnchor: [20, 50],
+        popupAnchor: [0, -50]
     });
 }
 
-function RoutingMachine({ customerLoc, workerLoc }) {
+const getWorkerIcon = () => {
+    return new L.DivIcon({
+        html: `
+            <div style="position: relative; width: 40px; height: 50px; display: flex; flex-direction: column; align-items: center;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 3px solid #10b981; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 2; display: flex; justify-content: center; align-items: center; font-size: 24px;">
+                    🤖
+                </div>
+                <div style="width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 12px solid #10b981; margin-top: -4px; z-index: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));"></div>
+            </div>
+        `,
+        className: '',
+        iconSize: [40, 50],
+        iconAnchor: [20, 50],
+        popupAnchor: [0, -50]
+    });
+};
+
+function RoutingMachine({ customerLoc, workerLoc, setEta }) {
     const map = useMap();
+    const routingControlRef = React.useRef(null);
+    const hasInitializedRef = React.useRef(false);
 
     useEffect(() => {
         if (!map || !customerLoc || !workerLoc) return;
 
-        const routingControl = L.Routing.control({
-            waypoints: [
+        if (!hasInitializedRef.current) {
+            routingControlRef.current = L.Routing.control({
+                waypoints: [
+                    L.latLng(workerLoc.lat, workerLoc.lng),
+                    L.latLng(customerLoc.lat, customerLoc.lng)
+                ],
+                lineOptions: {
+                    styles: [{ color: '#10b981', weight: 4 }]
+                },
+                show: false,
+                addWaypoints: false,
+                routeWhileDragging: false,
+                fitSelectedRoutes: true,
+                showAlternatives: false,
+                createMarker: () => null // We draw our own markers
+            }).on('routesfound', function(e) {
+                const routes = e.routes;
+                const summary = routes[0].summary;
+                if (setEta) {
+                    // convert seconds to human readable
+                    const totalMinutes = Math.round(summary.totalTime / 60);
+                    setEta(totalMinutes > 0 ? `${totalMinutes} min` : '< 1 min');
+                }
+            }).addTo(map);
+            hasInitializedRef.current = true;
+        } else if (routingControlRef.current) {
+             // Only update the waypoint data without fitting selected routes again
+             routingControlRef.current.setWaypoints([
                 L.latLng(workerLoc.lat, workerLoc.lng),
                 L.latLng(customerLoc.lat, customerLoc.lng)
-            ],
-            lineOptions: {
-                styles: [{ color: '#10b981', weight: 4 }]
-            },
-            show: false,
-            addWaypoints: false,
-            routeWhileDragging: false,
-            fitSelectedRoutes: true,
-            showAlternatives: false,
-            createMarker: () => null // We draw our own markers
-        }).addTo(map);
+            ]);
+        }
 
-        return () => map.removeControl(routingControl);
-    }, [map, customerLoc, workerLoc]);
+        return () => {
+             // We do not destroy the control here, otherwise it re-renders every time workerLoc changes
+             // It is destroyed only when component unmounts fully
+        };
+    }, [map, customerLoc, workerLoc, setEta]);
+
+    useEffect(() => {
+        // Cleanup on fully unmounting
+        return () => {
+             if (routingControlRef.current && map) {
+                 try {
+                     map.removeControl(routingControlRef.current);
+                 } catch (e) {}
+             }
+        }
+    }, [map]);
 
     return null;
 }
@@ -62,6 +132,9 @@ export default function BookingDetail() {
   const { id } = useParams();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [eta, setEta] = useState(null);
+  const [showArrivedModal, setShowArrivedModal] = useState(false);
+  const [showCompletedModal, setShowCompletedModal] = useState(false);
   const socket = useSocket();
 
   useEffect(() => {
@@ -102,7 +175,17 @@ export default function BookingDetail() {
     socket.emit('joinBookingRoom', id);
 
     const handleStatusUpdate = (updatedBooking) => {
-        if (updatedBooking._id === id) setBooking(updatedBooking);
+        if (updatedBooking._id === id) {
+            setBooking(prev => {
+                if (prev && prev.status !== 'in_progress' && updatedBooking.status === 'in_progress') {
+                    setShowArrivedModal(true);
+                }
+                if (prev && prev.status !== 'completed' && updatedBooking.status === 'completed') {
+                    setShowCompletedModal(true);
+                }
+                return updatedBooking;
+            });
+        }
     };
 
     const handleLocationUpdate = (data) => {
@@ -163,6 +246,40 @@ export default function BookingDetail() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+        <Dialog open={showArrivedModal} onOpenChange={setShowArrivedModal}>
+          <DialogContent className="sm:max-w-md border-emerald-500/20 bg-card">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2">
+                 <Map className="w-5 h-5 text-emerald-500" />
+                 Worker Arrived
+              </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                {booking.workerId?.name} has arrived at your location and is starting the job.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end mt-4">
+               <Button onClick={() => setShowArrivedModal(false)} className="bg-emerald-600 hover:bg-emerald-700">Acknowledge</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showCompletedModal} onOpenChange={setShowCompletedModal}>
+          <DialogContent className="sm:max-w-md border-emerald-500/20 bg-card">
+            <DialogHeader>
+              <DialogTitle className="text-xl flex items-center gap-2">
+                 <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                 Job Completed!
+              </DialogTitle>
+              <DialogDescription className="text-gray-400">
+                {booking.workerId?.name} has completed the service. Thank you for using FixConnect!
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end mt-4">
+               <Button onClick={() => setShowCompletedModal(false)} className="bg-emerald-600 hover:bg-emerald-700">Okay</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <nav className="p-4 sm:p-6 flex items-center justify-between border-b border-border/50 bg-background/80 backdrop-blur-md z-40 relative">
           <Button variant="ghost" asChild className="pl-0 shrink-0"><Link to="/bookings">&larr; Back</Link></Button>
           <div className="flex items-center gap-2">
@@ -186,6 +303,11 @@ export default function BookingDetail() {
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${getStatusColor(booking.status)}`}>
                             {booking.status}
                         </span>
+                        {eta && booking.status === 'accepted' && (
+                            <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider text-blue-500 bg-blue-500/10">
+                                ETA: {eta}
+                            </span>
+                        )}
                     </div>
                 </div>
 
@@ -277,13 +399,13 @@ export default function BookingDetail() {
                 )}
 
                 {booking.workerLocation && (
-                    <Marker position={[booking.workerLocation.lat, booking.workerLocation.lng]} icon={workerIcon}>
+                    <Marker position={[booking.workerLocation.lat, booking.workerLocation.lng]} icon={getWorkerIcon()}>
                         <Popup className="custom-popup"><b>Worker Location</b><br/>{booking.workerId?.name || 'Assigned Worker'}</Popup>
                     </Marker>
                 )}
 
                     {booking.workerLocation && booking.coordinates && (
-                        <RoutingMachine customerLoc={booking.coordinates} workerLoc={booking.workerLocation} />
+                        <RoutingMachine customerLoc={booking.coordinates} workerLoc={booking.workerLocation} setEta={setEta} />
                     )}
                 </MapContainer>
             </div>

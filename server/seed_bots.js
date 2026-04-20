@@ -5,23 +5,29 @@ require('dotenv').config();
 const Worker = require('./models/Worker');
 const User = require('./models/User');
 
-// Philippine coordinates (roughly bounding box for regions)
-// We'll generate random coordinates within these bounds to simulate spread across the PH
-const phBounds = {
-    minLat: 5.88,
-    maxLat: 19.14,
-    minLng: 116.92,
-    maxLng: 126.60
-};
-
-// Simplified provinces list for distribution
-const provinces = [
-    'Metro Manila', 'Cebu', 'Davao del Sur', 'Cavite', 'Laguna',
-    'Batangas', 'Rizal', 'Pampanga', 'Bulacan', 'Iloilo',
-    'Negros Occidental', 'Palawan', 'Bohol', 'Zamboanga del Sur',
-    'Misamis Oriental', 'Pangasinan', 'Nueva Ecija', 'Tarlac',
-    'Quezon', 'Leyte', 'Samar', 'Cagayan', 'Isabela',
-    // ... add more to cover regions conceptually
+// Specific coordinates for major Philippine cities to ensure bots spawn on land.
+// We'll add a tiny random offset to these base coordinates to spread them out slightly.
+const phCityCenters = [
+    { name: 'Metro Manila', lat: 14.5995, lng: 120.9842 },
+    { name: 'Cebu City', lat: 10.3157, lng: 123.8854 },
+    { name: 'Davao City', lat: 7.1907, lng: 125.4553 },
+    { name: 'Baguio City', lat: 16.4023, lng: 120.5960 },
+    { name: 'Iloilo City', lat: 10.7202, lng: 122.5621 },
+    { name: 'Bacolod City', lat: 10.6667, lng: 122.9500 },
+    { name: 'Cagayan de Oro', lat: 8.4542, lng: 124.6319 },
+    { name: 'Zamboanga City', lat: 6.9214, lng: 122.0790 },
+    { name: 'General Santos', lat: 6.1164, lng: 125.1716 },
+    { name: 'Angeles City', lat: 15.1398, lng: 120.5926 },
+    { name: 'Legazpi City', lat: 13.1391, lng: 123.7353 },
+    { name: 'Naga City', lat: 13.6268, lng: 123.1858 },
+    { name: 'Tacloban City', lat: 11.2430, lng: 125.0081 },
+    { name: 'Lucena City', lat: 11.9333, lng: 121.5333 },
+    { name: 'Puerto Princesa', lat: 9.7429, lng: 118.7363 },
+    { name: 'Tagbilaran City', lat: 9.6482, lng: 123.8561 },
+    { name: 'Dumaguete City', lat: 9.3068, lng: 123.3005 },
+    { name: 'Butuan City', lat: 8.9492, lng: 125.5436 },
+    { name: 'Iligan City', lat: 8.2280, lng: 124.2452 },
+    { name: 'Cotabato City', lat: 7.2243, lng: 124.2460 },
 ];
 
 const categories = ['Plumbing', 'Electrical', 'Cleaning', 'Carpentry', 'Painting', 'AC Repair'];
@@ -42,19 +48,15 @@ const seedBots = async () => {
         console.log('Connected to DB for seeding bots...');
 
         const WORKERS_PER_PROVINCE = 5;
-        const totalBots = provinces.length * WORKERS_PER_PROVINCE;
+        const totalBots = phCityCenters.length * WORKERS_PER_PROVINCE;
         console.log(`Seeding ${totalBots} bot workers...`);
 
         let botCount = 0;
 
-        // Use a static password for bots
         const passwordStr = 'botpassword123';
-        // Bcrypt hashing happens in the model's pre-save middleware for User
-        // But for performance on 100+ users, we can hash it once if we insertMany,
-        // but since User model has pre-save, we'll do it individually or handle it carefully.
 
-        for (let i = 0; i < provinces.length; i++) {
-            const province = provinces[i];
+        for (let i = 0; i < phCityCenters.length; i++) {
+            const city = phCityCenters[i];
 
             for (let j = 0; j < WORKERS_PER_PROVINCE; j++) {
                 const firstName = getRandomItem(firstNames);
@@ -76,10 +78,11 @@ const seedBots = async () => {
                     await user.save();
                 }
 
-                // Random coordinate roughly in PH
-                // To be more precise, you'd use actual province coordinates, but for random seeding, this is a proxy.
-                const lat = getRandomCoordinate(phBounds.minLat, phBounds.maxLat);
-                const lng = getRandomCoordinate(phBounds.minLng, phBounds.maxLng);
+                // Apply a small random offset (~1-5km) to the city center to spread bots out
+                const latOffset = (Math.random() - 0.5) * 0.05;
+                const lngOffset = (Math.random() - 0.5) * 0.05;
+                const lat = city.lat + latOffset;
+                const lng = city.lng + lngOffset;
 
                 // Create Worker
                 const existingWorker = await Worker.findOne({ userId: user._id });
@@ -88,7 +91,7 @@ const seedBots = async () => {
                         userId: user._id,
                         name: `${firstName} ${lastName}`,
                         category,
-                        description: `Hi, I am an automated bot worker in ${province}. I specialize in ${category}.`,
+                        description: `Hi, I am an automated bot worker in ${city.name}. I specialize in ${category}.`,
                         jobsOffered: ['General Service', 'Inspection', 'Repair'],
                         status: 'Active',
                         currentLocation: { lat, lng },
