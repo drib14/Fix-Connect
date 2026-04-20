@@ -244,10 +244,12 @@ exports.createBooking = async (req, res) => {
                             const [currentLng, currentLat] = routeCoords[currentStep];
                             const ioLoc = socket.getIO();
 
-                            // Also update the DB so if they refresh, it's saved
-                            await Booking.findByIdAndUpdate(acceptedBooking._id, {
-                                workerLocation: { lat: currentLat, lng: currentLng }
-                            });
+                            // To prevent DB overload, only save to DB every 5 steps (5 seconds)
+                            if (currentStep % 5 === 0) {
+                                await Booking.findByIdAndUpdate(acceptedBooking._id, {
+                                    workerLocation: { lat: currentLat, lng: currentLng }
+                                });
+                            }
 
                             ioLoc.to(populatedBooking.userId._id.toString()).emit('workerLocationUpdate', {
                                 bookingId: acceptedBooking._id,

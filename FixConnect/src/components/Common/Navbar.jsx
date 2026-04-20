@@ -177,8 +177,8 @@ const Navbar = () => {
         {token ? (
           <>
             <NavLink to="/profile" style={{ marginRight: '10px' }}>
-              {localStorage.getItem('userAvatar') || user.avatar ? (
-                 <img src={localStorage.getItem('userAvatar') || user.avatar} alt="Profile" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
+              {localStorage.getItem('userAvatar') || user?.avatar ? (
+                 <img src={localStorage.getItem('userAvatar') || user?.avatar} alt="Profile" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
               ) : (
                  <img src={`https://ui-avatars.com/api/?name=${getInitials()}&background=10b981&color=fff`} alt="Profile" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
               )}

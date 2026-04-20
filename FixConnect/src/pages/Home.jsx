@@ -7,7 +7,7 @@ import { WorkerJobPool } from '../components/WorkerJobPool';
 import { AdminDashboard } from '../components/AdminDashboard';
 import { CustomerHome } from '../components/CustomerHome';
 import { useSocket } from '../contexts/SocketContext';
-import { Loader2, Map as MapIcon, List as ListIcon } from 'lucide-react';
+import { Loader2, Map as MapIcon, List as ListIcon, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Home() {
@@ -74,7 +74,7 @@ export default function Home() {
           </Link>
           <Button variant="ghost" size="sm" onClick={handleLogout} className="text-red-400 hover:text-red-300 hover:bg-red-400/10 px-2 sm:px-3">
               <span className="hidden sm:inline">Logout</span>
-              <span className="sm:hidden text-xs">X</span>
+              <LogOut className="sm:hidden w-4 h-4" />
           </Button>
         </div>
       </nav>
