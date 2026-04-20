@@ -214,11 +214,13 @@ export default function BookingDetail() {
     socket.on('bookingStatusUpdated', handleStatusUpdate);
     socket.on('jobAccepted', handleStatusUpdate);
     socket.on('workerLocation', handleLocationUpdate);
+    socket.on('workerLocationUpdate', handleLocationUpdate);
 
     return () => {
         socket.off('bookingStatusUpdated', handleStatusUpdate);
         socket.off('jobAccepted', handleStatusUpdate);
         socket.off('workerLocation', handleLocationUpdate);
+        socket.off('workerLocationUpdate', handleLocationUpdate);
     };
   }, [socket, id]);
 
@@ -406,8 +408,8 @@ export default function BookingDetail() {
                 <MapContainer center={center} zoom={13} className="w-full h-full" zoomControl={false}>
                     <MapUpdater center={center} />
                     <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url={`https://{s}-tiles.locationiq.com/v3/streets/r/{z}/{x}/{y}.png?key=${import.meta.env.VITE_LOCATIONIQ_ACCESS_TOKEN}`}
+                        attribution='&copy; <a href="https://locationiq.com/?ref=maps">LocationIQ</a> contributors'
                     />
 
                 {booking.coordinates && (

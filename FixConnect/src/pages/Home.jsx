@@ -14,6 +14,7 @@ export default function Home() {
   const navigate = useNavigate();
   const socket = useSocket();
   const [userRole, setUserRole] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,11 +28,22 @@ export default function Home() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUserRole(userRes.data.role);
+      setUser(userRes.data);
+      localStorage.setItem('user', JSON.stringify(userRes.data));
     } catch (err) {
       console.error("Failed to fetch data", err);
     } finally {
         setLoading(false);
     }
+  };
+
+  const getInitials = () => {
+    if (user && user.firstName && user.lastName) {
+        return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    } else if (user && user.firstName) {
+        return user.firstName.charAt(0).toUpperCase();
+    }
+    return 'USER';
   };
 
   const handleLogout = () => {
@@ -64,10 +76,10 @@ export default function Home() {
           <NotificationsDropdown />
           <Link to="/profile" className="flex items-center gap-2 hover:bg-emerald-500/10 px-1 py-1 rounded-full transition-colors" title="Profile">
               <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-lg overflow-hidden">
-                  {localStorage.getItem('userAvatar') ? (
-                      <img src={localStorage.getItem('userAvatar')} alt="Profile" className="w-full h-full object-cover" />
+                  {localStorage.getItem('userAvatar') || user?.avatar ? (
+                      <img src={localStorage.getItem('userAvatar') || user?.avatar} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                      userRole ? userRole.charAt(0).toUpperCase() : 'U'
+                      <img src={`https://ui-avatars.com/api/?name=${getInitials()}&background=10b981&color=fff`} alt="Profile" className="w-full h-full object-cover" />
                   )}
               </div>
               <span className="text-sm font-medium text-emerald-400 hidden sm:block pr-2">Profile</span>
