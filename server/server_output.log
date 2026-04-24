@@ -1,4 +1,49 @@
-◇ injected env (10) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
-◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+◇ injected env (11) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
 Server running on port 5000
 Connected to MongoDB
+New client connected: 0vOr3IMw2OoKedZMAAAC
+Socket 0vOr3IMw2OoKedZMAAAC joined room 69eb38a6c4d82b982f62fa51
+Client disconnected: 0vOr3IMw2OoKedZMAAAC
+New client connected: JWaSCMPH8Panj6C5AAAF
+Socket JWaSCMPH8Panj6C5AAAF joined room 69eb38a6c4d82b982f62fa51
+Client disconnected: JWaSCMPH8Panj6C5AAAF
+New client connected: -gEMFMqd_fYaRpfJAAAI
+Socket -gEMFMqd_fYaRpfJAAAI joined room 69eb3a33c4d82b982f62fa52
+Client disconnected: -gEMFMqd_fYaRpfJAAAI
+New client connected: e0cSQs3cMtdmz-YKAAAL
+Socket e0cSQs3cMtdmz-YKAAAL joined room 69eb3a33c4d82b982f62fa52
+Client disconnected: e0cSQs3cMtdmz-YKAAAL
+New client connected: uZ-V_wxcaeKhc1roAAAO
+Socket uZ-V_wxcaeKhc1roAAAO joined room 69eb3b8dc4d82b982f62fa53
+Client disconnected: uZ-V_wxcaeKhc1roAAAO
+New client connected: R50f8XUofrSmznxDAAAR
+Socket R50f8XUofrSmznxDAAAR joined room 69eb3c98c4d82b982f62fa54
+Client disconnected: R50f8XUofrSmznxDAAAR
+New client connected: rl3cPGuIGyE-0ixRAAAU
+Socket rl3cPGuIGyE-0ixRAAAU joined room 69eb3d58c4d82b982f62fa55
+Client disconnected: rl3cPGuIGyE-0ixRAAAU
+New client connected: y8r5IZmuRLYpo6BnAAAX
+Socket y8r5IZmuRLYpo6BnAAAX joined room 69eb3e1bc4d82b982f62fa56
+Client disconnected: y8r5IZmuRLYpo6BnAAAX
+New client connected: 1cF86To9DqZuOJn6AAAa
+Socket 1cF86To9DqZuOJn6AAAa joined room 69eb3e9cc4d82b982f62fa57
+Client disconnected: 1cF86To9DqZuOJn6AAAa
+New client connected: r3FOTu7FdUTGQHioAAAd
+Socket r3FOTu7FdUTGQHioAAAd joined room 69eb3f88c4d82b982f62fa58
+Client disconnected: r3FOTu7FdUTGQHioAAAd
+New client connected: ATuhupzfk7irbwnqAAAg
+Socket ATuhupzfk7irbwnqAAAg joined room 69eb3f88c4d82b982f62fa58
+Client disconnected: ATuhupzfk7irbwnqAAAg
+New client connected: e9ExsVLMimucy5xLAAAj
+Socket e9ExsVLMimucy5xLAAAj joined room 69eb40b6c4d82b982f62fa59
+Client disconnected: e9ExsVLMimucy5xLAAAj
+New client connected: -NRqw14El29maMKfAAAm
+Socket -NRqw14El29maMKfAAAm joined room 69eb40b6c4d82b982f62fa59
+Client disconnected: -NRqw14El29maMKfAAAm
+New client connected: 4MZyGccrTnsxhCpdAAAp
+Socket 4MZyGccrTnsxhCpdAAAp joined room 69eb4225c4d82b982f62fa5a
+Client disconnected: 4MZyGccrTnsxhCpdAAAp
+New client connected: 1HloDlBqEwU4YKVkAAAs
+Socket 1HloDlBqEwU4YKVkAAAs joined room 69eb4225c4d82b982f62fa5a
+Client disconnected: 1HloDlBqEwU4YKVkAAAs

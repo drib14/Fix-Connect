@@ -16,14 +16,6 @@ import {
   DialogTitle,
 } from "../components/ui/dialog"
 
-const workerIcon = new L.Icon({
-    iconUrl: '/FC-logo.png',
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -40],
-    className: 'rounded-full border-2 border-emerald-500 bg-white'
-});
-
 function getCustomerIcon(user, isPending) {
     let initials = 'USER';
     if (user && user.firstName && user.lastName) {
@@ -137,7 +129,9 @@ function RoutingMachine({ customerLoc, workerLoc, setEta }) {
              if (routingControlRef.current && map) {
                  try {
                      map.removeControl(routingControlRef.current);
-                 } catch (e) {}
+                 } catch (_e) { // eslint-disable-line no-unused-vars
+                     // ignore
+                 }
              }
         }
     }, [map]);
@@ -156,6 +150,7 @@ export default function BookingDetail() {
 
   useEffect(() => {
     fetchBooking();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   // Worker Location Broadcaster
