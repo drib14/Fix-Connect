@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import { Button } from '../components/ui/button';
 import { useSocket } from '../contexts/SocketContext';
 import { Loader2, Briefcase, Calendar, MapPin, Wallet, CreditCard, User, CheckCircle2, XCircle, Clock, Map } from 'lucide-react';
@@ -83,8 +84,9 @@ function RoutingMachine({ customerLoc, workerLoc, setEta }) {
     useEffect(() => {
         if (!map || !customerLoc || !workerLoc) return;
 
+        // If it doesn't exist, create it
         if (!routingControlRef.current) {
-            routingControlRef.current = L.Routing.control({
+            const control = L.Routing.control({
                 waypoints: [
                     L.latLng(workerLoc.lat, workerLoc.lng),
                     L.latLng(customerLoc.lat, customerLoc.lng)
@@ -100,14 +102,27 @@ function RoutingMachine({ customerLoc, workerLoc, setEta }) {
                 createMarker: () => null // We draw our own markers
             });
 
-            // Prevent crash on unmount during ajax
-            const originalClearLines = routingControlRef.current._clearLines.bind(routingControlRef.current);
-            routingControlRef.current._clearLines = function() {
-                if (!this._map) return;
-                originalClearLines();
-            };
+            // Critical patch: override the internal line cleanup function which causes the error
+            if (control._clearLines) {
+                const originalClearLines = control._clearLines.bind(control);
+                control._clearLines = function() {
+                    // Only remove if map exists and has the layer
+                    if (this._line) {
+                        try {
+                            this._map.removeLayer(this._line);
+                        } catch(e) {}
+                    }
+                    if (this._alternatives && this._alternatives.length) {
+                        for (let i in this._alternatives) {
+                            try {
+                                this._map.removeLayer(this._alternatives[i]);
+                            } catch(e) {}
+                        }
+                    }
+                };
+            }
 
-            routingControlRef.current.on('routesfound', function(e) {
+            control.on('routesfound', function(e) {
                 const routes = e.routes;
                 if (routes && routes.length > 0) {
                     const summary = routes[0].summary;
@@ -117,30 +132,42 @@ function RoutingMachine({ customerLoc, workerLoc, setEta }) {
                         setEta(totalMinutes > 0 ? `${totalMinutes} min` : '< 1 min');
                     }
                 }
-            }).addTo(map);
+            });
+
+            control.addTo(map);
+            routingControlRef.current = control;
         } else {
-             // Only update the waypoint data without fitting selected routes again
-             if (routingControlRef.current._map) {
-                 routingControlRef.current.setWaypoints([
+             // If it exists, just set waypoints
+             try {
+                routingControlRef.current.setWaypoints([
                     L.latLng(workerLoc.lat, workerLoc.lng),
                     L.latLng(customerLoc.lat, customerLoc.lng)
                 ]);
+             } catch (err) {
+                 console.warn("Error updating waypoints:", err);
              }
         }
+
+        return () => {
+            // We intentionally do NOT destroy it here on every render, only on unmount.
+        };
     }, [map, customerLoc, workerLoc, setEta]);
 
     useEffect(() => {
-        // Cleanup on fully unmounting
+        // Component fully unmounting
         return () => {
-             if (routingControlRef.current && map) {
-                 try {
-                     map.removeControl(routingControlRef.current);
-                     routingControlRef.current = null;
-                 } catch (_e) { // eslint-disable-line no-unused-vars
-                     // ignore
-                 }
-             }
-        }
+            if (routingControlRef.current && map) {
+                try {
+                    // Stop it from making further requests
+                    if (routingControlRef.current.getRouter && routingControlRef.current.getRouter()) {
+                        routingControlRef.current.getRouter().abort = () => {};
+                    }
+                    map.removeControl(routingControlRef.current);
+                } catch (e) {
+                    console.warn("Cleanup error in routing machine", e);
+                }
+            }
+        };
     }, [map]);
 
     return null;
@@ -266,7 +293,7 @@ export default function BookingDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen w-screen bg-background flex flex-col overflow-hidden">
         <Dialog open={showArrivedModal} onOpenChange={setShowArrivedModal}>
           <DialogContent className="sm:max-w-md border-emerald-500/20 bg-card">
             <DialogHeader>
@@ -406,8 +433,8 @@ export default function BookingDetail() {
             </div>
 
             {/* Map Area */}
-            <div className="flex-1 w-full h-1/2 md:h-full relative z-0">
-                <MapContainer center={center} zoom={13} className="w-full h-full" zoomControl={false}>
+            <div className="flex-1 w-full h-full relative z-0 min-h-[50vh]">
+                <MapContainer center={center} zoom={13} className="w-full h-full min-h-full" zoomControl={false} style={{ height: '100%' }}>
                     <MapUpdater center={center} />
                     <TileLayer
                         url={import.meta.env.VITE_LOCATIONIQ_ACCESS_TOKEN ? `https://{s}-tiles.locationiq.com/v3/streets/r/{z}/{x}/{y}.png?key=${import.meta.env.VITE_LOCATIONIQ_ACCESS_TOKEN}` : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
