@@ -143,9 +143,9 @@ export function SearchingWorkerModal({ isOpen, setIsOpen, bookingId, bookingDeta
                             <div className="flex items-start gap-3">
                                 <Calendar className="w-4 h-4 text-emerald-400 mt-1" />
                                 <div>
-                                    <p className="text-muted-foreground text-xs">Schedule</p>
+                                    <p className="text-muted-foreground text-xs">Requested</p>
                                     <p className="font-medium">
-                                        {bookingDetails.date ? new Date(bookingDetails.date).toLocaleDateString() : 'Today'}, {bookingDetails.startTime || 'ASAP'}
+                                        {bookingDetails.createdAt ? new Date(bookingDetails.createdAt).toLocaleString() : 'Just now'}
                                     </p>
                                 </div>
                             </div>

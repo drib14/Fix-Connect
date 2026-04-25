@@ -200,8 +200,6 @@ const Booking = () => {
   const [workers, setWorkers] = useState([]);
   const [formData, setFormData] = useState({
     serviceCategory: '',
-    date: '',
-    time: '',
     address: '',
     details: '',
     paymentMethod: 'PayMongo',
@@ -225,7 +223,7 @@ const Booking = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.serviceCategory || !formData.date || !formData.time || !formData.address) {
+    if (!formData.serviceCategory || !formData.address) {
       setStatus({ type: 'error', message: 'Please fill in all required fields.' });
       return;
     }
@@ -308,30 +306,6 @@ const Booking = () => {
               <option value="Web Developer">Web Developer</option>
               <option value="Virtual Assistant">Virtual Assistant</option>
             </Select>
-          </InputGroup>
-
-          <InputGroup style={{ flexDirection: 'row', gap: '20px' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <Label>Date</Label>
-              <Input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                min={new Date().toISOString().split('T')[0]}
-                required
-              />
-            </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <Label>Time</Label>
-              <Input
-                type="time"
-                name="time"
-                value={formData.time}
-                onChange={handleChange}
-                required
-              />
-            </div>
           </InputGroup>
 
           <InputGroup>
@@ -420,7 +394,7 @@ const Booking = () => {
             <ol style={{ color: 'var(--text-muted)', marginLeft: '20px', lineHeight: '1.6' }}>
               <li><strong>Pay the Total Amount:</strong> Click the button above to safely complete your payment via {formData.paymentMethod}.</li>
               <li><strong>Confirmation:</strong> Once paid, your booking status will update to "Confirmed".</li>
-              <li><strong>Worker Dispatch:</strong> A highly skilled professional will be assigned and dispatched to your address on the scheduled date.</li>
+              <li><strong>Worker Dispatch:</strong> A highly skilled professional will be assigned and dispatched to your address immediately.</li>
               <li><strong>Job Completion:</strong> Review the work and mark the job as completed in your Dashboard.</li>
             </ol>
           </div>

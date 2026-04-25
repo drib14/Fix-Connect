@@ -415,9 +415,9 @@ export default function BookingDetail() {
                         <div className="flex items-start gap-3">
                             <Calendar className="w-4 h-4 text-emerald-400 mt-1 shrink-0" />
                             <div>
-                                <p className="text-xs text-muted-foreground">Schedule</p>
+                                <p className="text-xs text-muted-foreground">Requested</p>
                                 <p className="font-medium">
-                                    {booking.date ? new Date(booking.date).toLocaleDateString() : 'ASAP'}, {booking.startTime || 'Now'}
+                                    {new Date(booking.createdAt).toLocaleString()}
                                 </p>
                             </div>
                         </div>

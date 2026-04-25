@@ -294,8 +294,7 @@ const Dashboard = () => {
                   <StatusBadge $status={job.status}>{job.status}</StatusBadge>
                 </div>
                 <Detail><strong>Client:</strong> {job.userId?.name || 'Guest'}</Detail>
-                <Detail><strong>Date:</strong> {job.date}</Detail>
-                <Detail><strong>Time:</strong> {job.time}</Detail>
+                <Detail><strong>Requested:</strong> {new Date(job.createdAt).toLocaleString()}</Detail>
                 <Detail><strong>Address:</strong> {job.address}</Detail>
                 <Detail><strong>Total Value:</strong> ₱ {job.price?.toLocaleString()}</Detail>
               </BookingInfo>
@@ -326,8 +325,7 @@ const Dashboard = () => {
                     <span style={{ fontSize: '0.8rem', background: 'rgba(33, 150, 243, 0.2)', color: '#2196F3', padding: '4px 8px', borderRadius: '4px' }}>Worker View</span>
                   )}
                 </div>
-                <Detail><strong>Date:</strong> {booking.date}</Detail>
-                <Detail><strong>Time:</strong> {booking.time}</Detail>
+                <Detail><strong>Requested:</strong> {new Date(booking.createdAt).toLocaleString()}</Detail>
                 <Detail><strong>Address:</strong> {booking.address}</Detail>
 
                 {isWorker && booking.workerId?.userId === localStorage.getItem('userId') ? (

@@ -80,7 +80,7 @@ export function WorkerJobPool() {
                 <div>
                     <h3 className="font-bold text-lg text-white">{job.serviceCategory}</h3>
                     <p className="text-sm text-muted-foreground mb-1">
-                        {new Date(job.date).toLocaleDateString()} at {job.startTime}
+                        Requested: {new Date(job.createdAt).toLocaleString()}
                     </p>
                     <p className="text-sm text-muted-foreground">{job.address}</p>
                     <p className="text-sm font-medium mt-1">Payment: {job.paymentMethod}</p>

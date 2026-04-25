@@ -25,16 +25,12 @@ const createAndEmitNotification = async (userId, message) => {
 
 exports.createBooking = async (req, res) => {
   try {
-    const { serviceCategory, date, startTime, endTime, address, lat, lng, paymentMethod } = req.body;
+    const { serviceCategory, address, lat, lng, paymentMethod } = req.body;
 
     // Basic Validation
     if (!serviceCategory || !address || lat === undefined || lng === undefined) {
       return res.status(400).json(createResponse(false, 'Missing required fields or location coordinates.'));
     }
-
-    // Provide defaults for instant booking if missing
-    const finalDate = date ? new Date(date) : new Date();
-    const finalStartTime = startTime || 'ASAP';
 
     // 1-Booking Rule Check
     const existingActiveBooking = await Booking.findOne({
@@ -78,7 +74,7 @@ exports.createBooking = async (req, res) => {
                 {
                   currency: 'PHP',
                   amount: Math.round(totalAmount * 100),
-                  description: `FixConnect Booking: ${serviceCategory} on ${date} at ${startTime}`,
+                  description: `FixConnect Booking: ${serviceCategory}`,
                   name: `Service: ${serviceCategory}`,
                   quantity: 1
                 }
@@ -116,9 +112,6 @@ exports.createBooking = async (req, res) => {
       _id: bookingId,
       userId: req.user._id,
       serviceCategory,
-      date: bookingDate,
-      startTime,
-      endTime,
       address,
       coordinates: { lat, lng },
       priceAtBooking,
@@ -424,13 +417,11 @@ exports.acceptJob = async (req, res) => {
     // Double Booking Prevention
     const conflictBooking = await Booking.findOne({
       workerId: worker._id,
-      date: booking.date,
-      startTime: booking.startTime,
       status: { $in: ['accepted', 'in_progress'] }
     });
 
     if (conflictBooking) {
-      return res.status(409).json(createResponse(false, 'You already have an active booking at this time.'));
+      return res.status(400).json(createResponse(false, 'You already have another active job.'));
     }
 
     booking.workerId = worker._id;

@@ -15,17 +15,6 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  date: {
-    type: Date,
-    default: Date.now
-  },
-  startTime: {
-    type: String,
-    default: 'ASAP'
-  },
-  endTime: {
-    type: String,
-  },
   address: {
     type: String,
     required: true,

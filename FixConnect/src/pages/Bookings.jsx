@@ -122,7 +122,7 @@ export default function Bookings() {
                                 </span>
                             </div>
                             <p className="text-sm text-muted-foreground mb-1">
-                                {new Date(booking.date).toLocaleDateString()} at {booking.startTime}
+                                Requested: {new Date(booking.createdAt).toLocaleString()}
                             </p>
                             <p className="text-sm text-muted-foreground">{booking.address}</p>
                             {booking.workerId && (

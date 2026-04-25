@@ -248,8 +248,8 @@ const BookingTracking = () => {
             <Value>{booking.serviceCategory}</Value>
           </DetailRow>
           <DetailRow>
-            <Label>Date & Time</Label>
-            <Value>{booking.date} at {booking.time}</Value>
+            <Label>Requested</Label>
+            <Value>{new Date(booking.createdAt).toLocaleString()}</Value>
           </DetailRow>
           <DetailRow>
             <Label>Address</Label>
