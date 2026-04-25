@@ -172,9 +172,11 @@ const Dashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [availableJobs, setAvailableJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('Active');
   const navigate = useNavigate();
-  const [isWorker, setIsWorker] = useState(false);
+  // Immediately parse role from localStorage so UI doesn't flash user-mode first
+  const initialIsWorker = localStorage.getItem('role') === 'worker' || localStorage.getItem('role') === 'admin';
+  const [isWorker, setIsWorker] = useState(initialIsWorker);
+  const [activeTab, setActiveTab] = useState(initialIsWorker ? 'JobPool' : 'Active');
   const [workerSettings, setWorkerSettings] = useState({ isOnline: true, travelRadius: 15 });
 
   const fetchWorkerSettings = async () => {
@@ -229,33 +231,26 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    // Check if user is a worker efficiently
-    const checkWorkerStatus = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await api.get('/workers/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.data && res.data._id) {
-          setIsWorker(true);
-          fetchWorkerSettings();
+    const initializeDashboard = async () => {
+        if (isWorker) {
+            await fetchWorkerSettings();
+            if (activeTab === 'JobPool') {
+                await fetchAvailableJobs();
+            }
         }
-      } catch(err) {
-        // 404 means they are not a worker, which is fine
-        if (err.response && err.response.status !== 404) {
-          console.error('Failed to check worker status:', err);
-        }
-      }
-    }
-    checkWorkerStatus();
-    fetchBookings();
+        await fetchBookings();
+    };
+    initializeDashboard();
   }, []);
 
   useEffect(() => {
     // Setup polling for live job pool updates
-    const interval = setInterval(() => {
-        if (isWorker && activeTab === 'JobPool') fetchAvailableJobs();
-    }, 5000);
+    let interval;
+    if (isWorker && activeTab === 'JobPool') {
+        interval = setInterval(() => {
+            fetchAvailableJobs();
+        }, 5000);
+    }
     return () => clearInterval(interval);
   }, [isWorker, activeTab]);
 
