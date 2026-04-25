@@ -15,7 +15,10 @@ export default function ApplyWorker() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
     category: '',
     description: '',
     dailyRate: '',
@@ -28,11 +31,15 @@ export default function ApplyWorker() {
   };
 
   const handleNext = () => {
-    if (step === 1 && (!formData.name || !formData.category)) {
-        setError('Please fill in your name and category.');
+    if (step === 1 && (!formData.firstName || !formData.lastName || !formData.email || !formData.password)) {
+        setError('Please fill out all credential fields.');
         return;
     }
-    if (step === 2 && !formData.description) {
+    if (step === 2 && !formData.category) {
+        setError('Please provide your primary service category.');
+        return;
+    }
+    if (step === 3 && !formData.description) {
         setError('Please provide a brief description.');
         return;
     }
@@ -53,15 +60,27 @@ export default function ApplyWorker() {
     setLoading(true);
     setError('');
     try {
-      const token = localStorage.getItem('token');
-      // If not logged in, redirect to login first (simplified for this demo)
-      if (!token) {
-          navigate('/login', { state: { message: 'Please login or register first before applying as a worker.' } });
-          return;
-      }
+      // 1. Register the User as a 'worker'
+      const registerRes = await axios.post('/api/auth/register', {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.password, // backend requires confirmPassword
+        role: 'worker'
+      });
 
+      const token = registerRes.data.token;
+      localStorage.setItem('token', token);
+      localStorage.setItem('userId', registerRes.data._id);
+      localStorage.setItem('role', 'worker');
+
+      // 2. Submit the Worker Application Profile
       const submitData = new FormData();
-      Object.keys(formData).forEach(key => submitData.append(key, formData[key]));
+      submitData.append('name', `${formData.firstName} ${formData.lastName}`);
+      submitData.append('category', formData.category);
+      submitData.append('description', formData.description);
+      submitData.append('dailyRate', formData.dailyRate);
       submitData.append('documents', documentFile);
 
       await axios.post('/api/workers', submitData, {
@@ -71,11 +90,9 @@ export default function ApplyWorker() {
           }
       });
 
-      // Update local storage role so they immediately see the dashboard tab
-      localStorage.setItem('role', 'worker');
       setShowWalkthrough(true);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit application.');
+      setError(err.response?.data?.message || 'Failed to register. You may already have an account.');
     } finally {
       setLoading(false);
     }
@@ -101,12 +118,12 @@ export default function ApplyWorker() {
 
             {/* Stepper UI */}
             <div className="flex justify-center items-center gap-2 mb-8">
-                {[1, 2, 3].map((i) => (
+                {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="flex items-center">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${step >= i ? 'bg-emerald-500 text-white' : 'bg-background border border-border text-muted-foreground'}`}>
                             {step > i ? <CheckCircle2 className="w-5 h-5" /> : i}
                         </div>
-                        {i < 3 && <div className={`w-12 h-1 mx-2 rounded-full transition-colors ${step > i ? 'bg-emerald-500' : 'bg-border'}`} />}
+                        {i < 4 && <div className={`w-6 sm:w-10 h-1 mx-1 sm:mx-2 rounded-full transition-colors ${step > i ? 'bg-emerald-500' : 'bg-border'}`} />}
                     </div>
                 ))}
             </div>
@@ -116,16 +133,29 @@ export default function ApplyWorker() {
             <div className="space-y-6 min-h-[200px]">
                 {step === 1 && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="space-y-2">
-                            <Label>Full Name</Label>
-                            <Input
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                placeholder="John Doe"
-                                className="bg-background/50"
-                            />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>First Name</Label>
+                                <Input name="firstName" value={formData.firstName} onChange={handleChange} placeholder="John" className="bg-background/50" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Last Name</Label>
+                                <Input name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Doe" className="bg-background/50" />
+                            </div>
                         </div>
+                        <div className="space-y-2">
+                            <Label>Email</Label>
+                            <Input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="john@example.com" className="bg-background/50" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Password</Label>
+                            <Input name="password" type="password" value={formData.password} onChange={handleChange} placeholder="••••••••" className="bg-background/50" />
+                        </div>
+                    </div>
+                )}
+
+                {step === 2 && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="space-y-2">
                             <Label>Primary Skill / Category</Label>
                             <Input
@@ -139,7 +169,7 @@ export default function ApplyWorker() {
                     </div>
                 )}
 
-                {step === 2 && (
+                {step === 3 && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="space-y-2">
                             <Label>Professional Summary</Label>
@@ -165,7 +195,7 @@ export default function ApplyWorker() {
                     </div>
                 )}
 
-                {step === 3 && (
+                {step === 4 && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-4">
                             <p className="text-sm text-emerald-400">To maintain trust and quality, we require verification.</p>
@@ -192,13 +222,13 @@ export default function ApplyWorker() {
                     <ChevronLeft className="w-4 h-4 mr-1" /> Back
                 </Button>
 
-                {step < 3 ? (
+                {step < 4 ? (
                     <Button onClick={handleNext} className="bg-emerald-600 hover:bg-emerald-700 w-32">
                         Next <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                 ) : (
                     <Button onClick={handleSubmit} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 w-40 font-bold">
-                        {loading ? 'Submitting...' : 'Submit Form'}
+                        {loading ? 'Submitting...' : 'Create Account'}
                     </Button>
                 )}
             </div>
