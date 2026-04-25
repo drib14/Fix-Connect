@@ -148,14 +148,7 @@ exports.createBooking = async (req, res) => {
         });
 
         if (bots.length === 0) {
-            const bookingToCancel = await Booking.findById(savedBooking._id);
-            if (bookingToCancel && bookingToCancel.status === 'pending') {
-                bookingToCancel.status = 'cancelled';
-                bookingToCancel.cancelReason = 'Timeout: No workers available in category';
-                await bookingToCancel.save();
-                const io = socket.getIO();
-                io.to(bookingToCancel.userId._id.toString()).emit('bookingStatusUpdated', bookingToCancel);
-            }
+            console.log(`No bots found for category ${serviceCategory}. Leaving booking pending for real workers.`);
             return;
         }
 
@@ -186,15 +179,7 @@ exports.createBooking = async (req, res) => {
                 }
             }
             if (minDistance > 15) {
-                console.log(`Nearest worker is ${minDistance.toFixed(2)}km away. Auto-canceling booking.`);
-                const bookingToCancel = await Booking.findById(savedBooking._id);
-                if (bookingToCancel && bookingToCancel.status === 'pending') {
-                    bookingToCancel.status = 'cancelled';
-                    bookingToCancel.cancelReason = 'Timeout: No worker accepted the request';
-                    await bookingToCancel.save();
-                    const io = socket.getIO();
-                    io.to(bookingToCancel.userId._id.toString()).emit('bookingStatusUpdated', bookingToCancel);
-                }
+                console.log(`Nearest bot worker is ${minDistance.toFixed(2)}km away. Leaving booking pending for real nearby workers.`);
                 return;
             }
             const bot = nearestBot;

@@ -289,7 +289,7 @@ export default function BookingDetail() {
   const handleCompleteJob = async () => {
       try {
           const token = localStorage.getItem('token');
-          await axios.patch(`/api/bookings/${id}`, { status: 'completed' }, {
+          await axios.put(`/api/bookings/${id}/status`, { status: 'completed' }, {
               headers: { Authorization: `Bearer ${token}` }
           });
           setBooking(prev => ({ ...prev, status: 'completed' }));
@@ -307,7 +307,7 @@ export default function BookingDetail() {
       setIsCancelling(true);
       try {
           const token = localStorage.getItem('token');
-          await axios.patch(`/api/bookings/${id}`, { status: 'cancelled', cancelReason: finalReason }, {
+          await axios.put(`/api/bookings/${id}/cancel`, { reason: finalReason }, {
               headers: { Authorization: `Bearer ${token}` }
           });
           setBooking(prev => ({ ...prev, status: 'cancelled' }));
