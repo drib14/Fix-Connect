@@ -192,6 +192,10 @@ export default function BookingDetail() {
   const [eta, setEta] = useState(null);
   const [showArrivedModal, setShowArrivedModal] = useState(false);
   const [showCompletedModal, setShowCompletedModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
   const socket = useSocket();
 
   useEffect(() => {
@@ -281,6 +285,33 @@ export default function BookingDetail() {
     }
   };
 
+  const handleCompleteJob = async () => {
+      try {
+          await api.patch(`/bookings/${id}`, { status: 'completed' });
+          setBooking(prev => ({ ...prev, status: 'completed' }));
+      } catch (err) {
+          console.error('Failed to complete job', err);
+      }
+  };
+
+  const handleCancelBooking = async () => {
+      const finalReason = cancelReason === 'Other' ? customReason : cancelReason;
+      if (!finalReason) {
+          alert('Please provide a reason for cancellation.');
+          return;
+      }
+      setIsCancelling(true);
+      try {
+          await api.patch(`/bookings/${id}`, { status: 'cancelled', cancelReason: finalReason });
+          setBooking(prev => ({ ...prev, status: 'cancelled' }));
+          setShowCancelModal(false);
+      } catch (err) {
+          console.error('Failed to cancel', err);
+      } finally {
+          setIsCancelling(false);
+      }
+  };
+
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="animate-spin text-emerald-500 w-8 h-8" /></div>;
   if (!booking) return <div className="min-h-screen bg-background flex items-center justify-center text-white">Booking not found.</div>;
 
@@ -353,7 +384,7 @@ export default function BookingDetail() {
           </div>
         </nav>
 
-        <div className="flex-1 relative z-0 flex flex-col md:flex-row">
+        <div className="flex-1 relative z-0 flex flex-col md:flex-row overflow-hidden">
             {/* Details Panel */}
             <div className="w-full md:w-[400px] h-1/2 md:h-full bg-card/95 backdrop-blur-md border-r border-border/50 z-10 flex flex-col overflow-y-auto no-scrollbar shadow-2xl p-6 absolute md:relative bottom-0 md:bottom-auto rounded-t-3xl md:rounded-none">
                 <div className="flex items-center gap-3 mb-6">
@@ -442,9 +473,23 @@ export default function BookingDetail() {
                         </div>
                     )}
                 </div>
+
+                <div className="mt-6 pt-4 border-t border-border/50 flex flex-col gap-3 shrink-0">
+                    {['pending', 'accepted', 'in_progress'].includes(booking.status) && localStorage.getItem('userId') !== booking.workerId?.userId && (
+                         <Button variant="destructive" className="w-full font-bold" onClick={() => setShowCancelModal(true)}>
+                             Cancel Booking
+                         </Button>
+                    )}
+                    {booking.status === 'in_progress' && localStorage.getItem('userId') === booking.workerId?.userId && (
+                        <Button className="w-full font-bold bg-emerald-600 hover:bg-emerald-700" onClick={handleCompleteJob}>
+                             Complete Job
+                         </Button>
+                    )}
+                </div>
             </div>
 
             {/* Map Area */}
+
             <div className="flex-1 w-full h-full relative z-0 min-h-[50vh]">
                 <MapContainer center={center} zoom={13} className="w-full h-full min-h-full" zoomControl={false} style={{ height: '100%' }}>
                     <MapUpdater center={center} />
