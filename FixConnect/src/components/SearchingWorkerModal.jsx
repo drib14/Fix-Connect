@@ -7,14 +7,14 @@ import { Button } from './ui/button';
 import { Briefcase, CreditCard, Wallet, Calendar, MapPin, Search } from 'lucide-react';
 
 export function SearchingWorkerModal({ isOpen, setIsOpen, bookingId, bookingDetails }) {
-    const [timeLeft, setTimeLeft] = useState(180); // 3 minutes
+    const [timeLeft, setTimeLeft] = useState(120); // 2 minutes
     const socket = useSocket();
     const navigate = useNavigate();
 
     useEffect(() => {
         if (!isOpen || !bookingId) return;
 
-        setTimeLeft(180);
+        setTimeLeft(120);
 
         const timer = setInterval(() => {
             setTimeLeft(prev => {
@@ -57,7 +57,7 @@ export function SearchingWorkerModal({ isOpen, setIsOpen, bookingId, bookingDeta
 
     const handleKeepWaiting = () => {
         setShowNoWorkerModal(false);
-        setTimeLeft(180); // Reset timer for another 3 minutes
+        setTimeLeft(120); // Reset timer for another 2 minutes
     };
 
     const handleRebook = async () => {
@@ -206,7 +206,7 @@ export function SearchingWorkerModal({ isOpen, setIsOpen, bookingId, bookingDeta
 
                 <div className="space-y-3 pt-4">
                     <Button onClick={handleKeepWaiting} className="w-full font-bold bg-emerald-600 hover:bg-emerald-700 text-white py-6 rounded-xl">
-                        Keep Waiting (3 more minutes)
+                        Keep Waiting (2 more minutes)
                     </Button>
                     <Button onClick={handleRebook} variant="outline" className="w-full font-bold py-6 rounded-xl border-emerald-500/50 hover:bg-emerald-500/10 text-emerald-400">
                         Cancel & Try Another Service

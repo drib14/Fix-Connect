@@ -105,8 +105,8 @@ exports.createBooking = async (req, res) => {
       }
     }
 
-    // Set expiration 3 minutes from now for 'pending' state (ride hailing standard)
-    const expiresAt = new Date(Date.now() + 3 * 60 * 1000);
+    // Set expiration 2 minutes from now for 'pending' state
+    const expiresAt = new Date(Date.now() + 2 * 60 * 1000);
 
     const newBooking = new Booking({
       _id: bookingId,
