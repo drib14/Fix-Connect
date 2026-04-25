@@ -58,14 +58,14 @@ export default function Landing() {
           FixConnect is the modern platform for booking reliable, skilled workers on demand. Track your worker's location in real-time, just like your favorite ride-hailing app.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center max-w-md z-30 relative">
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center max-w-lg z-30 relative">
           <Button asChild size="lg" className="w-full sm:w-auto font-semibold text-lg px-8 shadow-xl shadow-primary/25">
             <Link to="/register">
               Find a Worker <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
-          <Button asChild size="lg" variant="outline" className="w-full sm:w-auto font-semibold text-lg px-8 text-white hover:text-emerald-400">
-            <Link to="/login">Sign In</Link>
+          <Button asChild size="lg" variant="outline" className="w-full sm:w-auto font-semibold text-lg px-8 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10">
+            <Link to="/apply-worker">Become a Pro</Link>
           </Button>
         </div>
 

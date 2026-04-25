@@ -97,6 +97,15 @@ export default function Login() {
               Sign up
             </Link>
           </div>
+
+          <div className="relative pt-4 w-full">
+             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/50"></div></div>
+             <div className="relative flex justify-center text-xs uppercase"><span className="bg-card/60 px-2 text-muted-foreground">For Professionals</span></div>
+          </div>
+
+          <Button asChild variant="outline" className="w-full border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400">
+            <Link to="/apply-worker">Become a FixConnect Pro</Link>
+          </Button>
         </CardFooter>
       </form>
     </Card>

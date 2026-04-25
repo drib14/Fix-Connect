@@ -11,6 +11,7 @@ import BookingDetail from './pages/BookingDetail';
 import Earnings from './pages/Earnings';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ApplyWorker from './pages/ApplyWorker';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
@@ -54,6 +55,8 @@ function App() {
             <ResetPassword />
           </AuthLayout>
         } />
+
+        <Route path="/apply-worker" element={<ApplyWorker />} />
 
         </Routes>
       </Router>
