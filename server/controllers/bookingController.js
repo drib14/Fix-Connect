@@ -28,14 +28,13 @@ exports.createBooking = async (req, res) => {
     const { serviceCategory, date, startTime, endTime, address, lat, lng, paymentMethod } = req.body;
 
     // Basic Validation
-    if (!serviceCategory || !date || !startTime || !address || lat === undefined || lng === undefined) {
+    if (!serviceCategory || !address || lat === undefined || lng === undefined) {
       return res.status(400).json(createResponse(false, 'Missing required fields or location coordinates.'));
     }
 
-    const bookingDate = new Date(date);
-    if (isNaN(bookingDate)) {
-      return res.status(400).json(createResponse(false, 'Invalid date format.'));
-    }
+    // Provide defaults for instant booking if missing
+    const finalDate = date ? new Date(date) : new Date();
+    const finalStartTime = startTime || 'ASAP';
 
     // 1-Booking Rule Check
     const existingActiveBooking = await Booking.findOne({
