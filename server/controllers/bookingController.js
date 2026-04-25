@@ -521,6 +521,23 @@ exports.cancelBooking = async (req, res) => {
              return res.status(403).json(createResponse(false, 'Not authorized to cancel this booking.'));
         }
 
+        const User = require('../models/User');
+        const userDoc = await User.findById(userId);
+
+        // Cancellation Limit Logic
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (userDoc.lastCancellationDate && userDoc.lastCancellationDate >= today) {
+            if (userDoc.dailyCancellationCount >= 5) {
+                return res.status(429).json(createResponse(false, 'You have reached the maximum of 5 cancellations per day. Please try again tomorrow.'));
+            }
+            userDoc.dailyCancellationCount += 1;
+        } else {
+            userDoc.dailyCancellationCount = 1;
+            userDoc.lastCancellationDate = new Date();
+        }
+
         // Customer Cancellation Rules
         if (isCustomer) {
             if (booking.status !== 'pending' && booking.status !== 'accepted') {
@@ -539,6 +556,7 @@ exports.cancelBooking = async (req, res) => {
         booking.cancelledAt = new Date();
         if (reason) booking.cancellationReason = reason;
         await booking.save();
+        await userDoc.save();
 
         const io = socket.getIO();
         io.to(id).emit('bookingStatusUpdated', booking);

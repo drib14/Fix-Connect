@@ -46,6 +46,13 @@ const userSchema = new mongoose.Schema({
   isBot: {
     type: Boolean,
     default: false
+  },
+  dailyCancellationCount: {
+    type: Number,
+    default: 0
+  },
+  lastCancellationDate: {
+    type: Date
   }
 }, { timestamps: true });
 

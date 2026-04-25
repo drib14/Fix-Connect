@@ -289,23 +289,16 @@ const Booking = () => {
         <form onSubmit={handleSubmit}>
           <InputGroup>
             <Label>Select Service Category</Label>
-            <Select
+            <Input
               name="serviceCategory"
+              placeholder="e.g. Plumbing, IT Support, Cleaning"
               value={formData.serviceCategory}
               onChange={(e) => {
                 handleChange(e);
                 setCurrentPrice(BASE_PRICE);
               }}
               required
-            >
-              <option value="" disabled>What do you need help with?</option>
-              <option value="Plumber">Plumber</option>
-              <option value="Electrician">Electrician</option>
-              <option value="Carpenter">Carpenter</option>
-              <option value="House Cleaner">House Cleaner</option>
-              <option value="Web Developer">Web Developer</option>
-              <option value="Virtual Assistant">Virtual Assistant</option>
-            </Select>
+            />
           </InputGroup>
 
           <InputGroup>

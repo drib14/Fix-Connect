@@ -25,16 +25,13 @@ export function CreateBookingForm({ onSuccess, onCancel, customerLocation, setCu
                 setCategories(res.data.data);
                 setFormData(prev => ({ ...prev, serviceCategory: res.data.data[0] }));
             } else {
-                // Fallback categories if db is empty
-                const fallbacks = ['Plumbing', 'Electrical', 'Carpentry', 'Cleaning'];
-                setCategories(fallbacks);
-                setFormData(prev => ({ ...prev, serviceCategory: fallbacks[0] }));
+                setCategories([]);
+                setFormData(prev => ({ ...prev, serviceCategory: '' }));
             }
         } catch (err) {
             console.error("Failed to fetch categories", err);
-            const fallbacks = ['Plumbing', 'Electrical', 'Carpentry', 'Cleaning'];
-            setCategories(fallbacks);
-            setFormData(prev => ({ ...prev, serviceCategory: fallbacks[0] }));
+            setCategories([]);
+            setFormData(prev => ({ ...prev, serviceCategory: '' }));
         }
     };
     fetchCategories();
@@ -88,17 +85,20 @@ export function CreateBookingForm({ onSuccess, onCancel, customerLocation, setCu
 
       <div className="space-y-2">
         <Label htmlFor="serviceCategory">Service Category</Label>
-        <select
+        <Input
             id="serviceCategory"
-            className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+            list="category-suggestions"
+            placeholder="e.g. Plumbing, IT Support, Cleaning"
             value={formData.serviceCategory}
             onChange={handleChange}
             required
-        >
+            className="bg-background/50"
+        />
+        <datalist id="category-suggestions">
           {categories.map(cat => (
-              <option key={cat} value={cat} className="bg-background">{cat}</option>
+              <option key={cat} value={cat} />
           ))}
-        </select>
+        </datalist>
       </div>
 
 

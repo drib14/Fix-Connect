@@ -316,10 +316,16 @@ export default function BookingDetail() {
       }
   };
 
+  const [showFinalCancelConfirm, setShowFinalCancelConfirm] = useState(false);
+
   const handleCancelBooking = async () => {
       const finalReason = cancelReason === 'Other' ? customReason : cancelReason;
       if (!finalReason) {
           alert('Please provide a reason for cancellation.');
+          return;
+      }
+      if (!showFinalCancelConfirm) {
+          setShowFinalCancelConfirm(true);
           return;
       }
       setIsCancelling(true);
@@ -330,8 +336,12 @@ export default function BookingDetail() {
           });
           setBooking(prev => ({ ...prev, status: 'cancelled' }));
           setShowCancelModal(false);
+          setShowFinalCancelConfirm(false);
       } catch (err) {
           console.error('Failed to cancel', err);
+          if (err.response?.status === 429) {
+              alert(err.response.data.message); // Show 5x daily limit message
+          }
       } finally {
           setIsCancelling(false);
       }
@@ -351,6 +361,15 @@ export default function BookingDetail() {
       }
   };
 
+  const resetCancelFlow = (isOpen) => {
+      setShowCancelModal(isOpen);
+      if (!isOpen) {
+          setShowFinalCancelConfirm(false);
+          setCancelReason('');
+          setCustomReason('');
+      }
+  };
+
   const getStatusColor = (status) => {
       switch(status) {
           case 'completed': return 'text-emerald-500 bg-emerald-500/10';
@@ -362,6 +381,54 @@ export default function BookingDetail() {
 
   return (
     <div className="h-screen w-screen bg-background flex flex-col overflow-hidden">
+        <ResponsiveModal isOpen={showCancelModal} setIsOpen={resetCancelFlow} title="Cancel Booking">
+            <div className="space-y-4 pt-4 pb-4">
+                {!showFinalCancelConfirm ? (
+                    <>
+                        <p className="text-sm text-muted-foreground">Please tell us why you are cancelling this booking.</p>
+                        <select
+                            className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors"
+                            value={cancelReason}
+                            onChange={(e) => setCancelReason(e.target.value)}
+                        >
+                            <option value="" disabled>Select a reason</option>
+                            <option value="Changed my mind">Changed my mind</option>
+                            <option value="Wait time is too long">Wait time is too long</option>
+                            <option value="Worker is unresponsive">Worker is unresponsive</option>
+                            <option value="Found another solution">Found another solution</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        {cancelReason === 'Other' && (
+                            <textarea
+                                placeholder="Please specify your reason..."
+                                value={customReason}
+                                onChange={(e) => setCustomReason(e.target.value)}
+                                className="flex min-h-[80px] w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors mt-3"
+                            />
+                        )}
+                        <div className="flex gap-3 pt-4 border-t border-border/50">
+                            <Button variant="outline" className="flex-1" onClick={() => resetCancelFlow(false)}>Keep Booking</Button>
+                            <Button variant="destructive" onClick={handleCancelBooking} className="flex-1 font-bold">Proceed to Cancel</Button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="text-center space-y-4">
+                        <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto border border-red-500/30">
+                            <XCircle className="w-8 h-8 text-red-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white">Are you absolutely sure?</h3>
+                        <p className="text-muted-foreground text-sm">You are about to cancel this booking. This action cannot be undone, and you are limited to 5 cancellations per day.</p>
+                        <div className="flex gap-3 pt-4 border-t border-border/50">
+                            <Button variant="outline" className="flex-1" onClick={() => setShowFinalCancelConfirm(false)} disabled={isCancelling}>No, Go Back</Button>
+                            <Button variant="destructive" onClick={handleCancelBooking} disabled={isCancelling} className="flex-1 font-bold">
+                                {isCancelling ? 'Cancelling...' : 'Yes, Cancel it'}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </ResponsiveModal>
+
         <Dialog open={showArrivedModal} onOpenChange={setShowArrivedModal}>
           <DialogContent className="sm:max-w-md border-emerald-500/20 bg-card">
             <DialogHeader>
@@ -523,7 +590,9 @@ export default function BookingDetail() {
                                 <div>
                                     <p className="font-bold flex items-center gap-1">
                                         {booking.workerId.name || 'Worker Name'}
-                                        {booking.workerId.isVerified && <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">Verified</span>}
+                                        {booking.workerId.isVerified && (
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-500 fill-emerald-100/20" title="Verified Professional" />
+                                        )}
                                     </p>
                                     <p className="text-xs text-muted-foreground">{booking.workerId.userId?.phone || 'Contact Info Unavailable'}</p>
                                 </div>

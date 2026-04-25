@@ -78,6 +78,8 @@ export function SearchingWorkerModal({ isOpen, setIsOpen, bookingId, bookingDeta
         }
     };
 
+    const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
+
     const handleManualCancel = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -90,6 +92,9 @@ export function SearchingWorkerModal({ isOpen, setIsOpen, bookingId, bookingDeta
             window.location.reload();
         } catch (err) {
             console.error("Failed to cancel booking manually", err);
+            if (err.response?.status === 429) {
+                alert(err.response.data.message); // Show limit exceeded error
+            }
         }
     };
 
@@ -188,9 +193,22 @@ export function SearchingWorkerModal({ isOpen, setIsOpen, bookingId, bookingDeta
                     </div>
                 )}
 
-                <Button variant="destructive" onClick={handleManualCancel} className="w-full font-bold py-6 text-md rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20">
+                <Button variant="destructive" onClick={() => setShowCancelConfirmModal(true)} className="w-full font-bold py-6 text-md rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20">
                     Cancel Request
                 </Button>
+            </div>
+        </ResponsiveModal>
+
+        <ResponsiveModal isOpen={showCancelConfirmModal} setIsOpen={setShowCancelConfirmModal} title="Cancel Request?">
+            <div className="space-y-6 pt-4 pb-4">
+                <div className="text-center space-y-4">
+                    <h3 className="text-xl font-bold text-white">Are you sure?</h3>
+                    <p className="text-muted-foreground">You are about to cancel this search request. You are limited to 5 cancellations per day.</p>
+                </div>
+                <div className="flex gap-3 pt-4">
+                    <Button variant="outline" className="flex-1" onClick={() => setShowCancelConfirmModal(false)}>No, Keep Searching</Button>
+                    <Button variant="destructive" onClick={handleManualCancel} className="flex-1 font-bold">Yes, Cancel</Button>
+                </div>
             </div>
         </ResponsiveModal>
 
@@ -211,7 +229,7 @@ export function SearchingWorkerModal({ isOpen, setIsOpen, bookingId, bookingDeta
                     <Button onClick={handleRebook} variant="outline" className="w-full font-bold py-6 rounded-xl border-emerald-500/50 hover:bg-emerald-500/10 text-emerald-400">
                         Cancel & Try Another Service
                     </Button>
-                    <Button onClick={handleManualCancel} variant="ghost" className="w-full font-bold py-6 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300">
+                    <Button onClick={() => setShowCancelConfirmModal(true)} variant="ghost" className="w-full font-bold py-6 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300">
                         Just Cancel
                     </Button>
                 </div>
