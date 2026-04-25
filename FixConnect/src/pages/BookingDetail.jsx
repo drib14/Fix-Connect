@@ -194,6 +194,9 @@ export default function BookingDetail() {
   const [showArrivedModal, setShowArrivedModal] = useState(false);
   const [showCompletedModal, setShowCompletedModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showProofModal, setShowProofModal] = useState(false);
+  const [proofImage, setProofImage] = useState(null);
+  const [isCompleting, setIsCompleting] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [customReason, setCustomReason] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
@@ -287,14 +290,29 @@ export default function BookingDetail() {
   };
 
   const handleCompleteJob = async () => {
+      if (!proofImage) {
+          alert('Please upload a proof image to complete the job.');
+          return;
+      }
+      setIsCompleting(true);
       try {
           const token = localStorage.getItem('token');
-          await axios.put(`/api/bookings/${id}/status`, { status: 'completed' }, {
-              headers: { Authorization: `Bearer ${token}` }
+          const formData = new FormData();
+          formData.append('status', 'completed');
+          formData.append('proofImage', proofImage);
+
+          const res = await axios.put(`/api/bookings/${id}/status`, formData, {
+              headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'multipart/form-data'
+              }
           });
-          setBooking(prev => ({ ...prev, status: 'completed' }));
+          setBooking(res.data.data);
+          setShowProofModal(false);
       } catch (err) {
           console.error('Failed to complete job', err);
+      } finally {
+          setIsCompleting(false);
       }
   };
 
@@ -372,11 +390,39 @@ export default function BookingDetail() {
                 {booking.workerId?.name} has completed the service. Thank you for using FixConnect!
               </DialogDescription>
             </DialogHeader>
+            {booking.proofImageUrl && (
+                <div className="mt-4">
+                    <p className="text-sm text-emerald-400 mb-2">Proof of Work:</p>
+                    <img src={booking.proofImageUrl} alt="Proof of Work" className="w-full h-48 object-cover rounded-md border border-border/50" />
+                </div>
+            )}
             <div className="flex justify-end mt-4">
                <Button onClick={() => setShowCompletedModal(false)} className="bg-emerald-600 hover:bg-emerald-700">Okay</Button>
             </div>
           </DialogContent>
         </Dialog>
+
+        <ResponsiveModal isOpen={showProofModal} setIsOpen={setShowProofModal} title="Upload Job Proof">
+            <div className="space-y-4 pt-4 pb-4">
+                <p className="text-sm text-muted-foreground">Please upload a photo of the completed job before finalizing this booking.</p>
+                <div className="border-2 border-dashed border-border/50 rounded-lg p-6 flex flex-col items-center justify-center bg-background/50 hover:bg-background/80 transition-colors">
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setProofImage(e.target.files[0])}
+                        className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-500 hover:file:bg-emerald-500/20 cursor-pointer"
+                    />
+                </div>
+                {proofImage && <p className="text-xs text-emerald-500 text-center">Image selected: {proofImage.name}</p>}
+
+                <div className="flex gap-3 pt-4">
+                    <Button variant="outline" className="flex-1" onClick={() => setShowProofModal(false)}>Cancel</Button>
+                    <Button onClick={handleCompleteJob} disabled={!proofImage || isCompleting} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white">
+                        {isCompleting ? 'Uploading...' : 'Submit Proof'}
+                    </Button>
+                </div>
+            </div>
+        </ResponsiveModal>
 
         <nav className="p-4 sm:p-6 flex items-center justify-between border-b border-border/50 bg-background/80 backdrop-blur-md z-40 relative">
           <Button variant="ghost" asChild className="pl-0 shrink-0"><Link to="/bookings">&larr; Back</Link></Button>
@@ -498,7 +544,7 @@ export default function BookingDetail() {
                          </Button>
                     )}
                     {booking.status === 'in_progress' && localStorage.getItem('userId') === booking.workerId?.userId && (
-                        <Button className="w-full font-bold bg-emerald-600 hover:bg-emerald-700" onClick={handleCompleteJob}>
+                        <Button className="w-full font-bold bg-emerald-600 hover:bg-emerald-700" onClick={() => setShowProofModal(true)}>
                              Complete Job
                          </Button>
                     )}

@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Bookings from './pages/Bookings';
 import BookingDetail from './pages/BookingDetail';
+import Earnings from './pages/Earnings';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -27,6 +28,7 @@ function App() {
           <Route path="/bookings" element={<Bookings />} />
           <Route path="/booking/:id" element={<BookingDetail />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/worker/earnings" element={<Earnings />} />
         </Route>
 
         <Route path="/login" element={

@@ -60,6 +60,14 @@ const workerSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false
+  },
+  isOnline: {
+    type: Boolean,
+    default: true
+  },
+  travelRadius: {
+    type: Number,
+    default: 15 // Default to 15km
   }
 }, { timestamps: true });
 

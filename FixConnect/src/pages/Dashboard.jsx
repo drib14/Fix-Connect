@@ -175,6 +175,29 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('Active');
   const navigate = useNavigate();
   const [isWorker, setIsWorker] = useState(false);
+  const [workerSettings, setWorkerSettings] = useState({ isOnline: true, travelRadius: 15 });
+
+  const fetchWorkerSettings = async () => {
+      try {
+          const token = localStorage.getItem('token');
+          const res = await axios.get('/api/workers/me', { headers: { Authorization: `Bearer ${token}` } });
+          if (res.data) {
+              setWorkerSettings({ isOnline: res.data.isOnline ?? true, travelRadius: res.data.travelRadius ?? 15 });
+          }
+      } catch (err) {
+          console.error("Failed to load worker settings", err);
+      }
+  };
+
+  const updateWorkerSettings = async (field, value) => {
+      try {
+          const token = localStorage.getItem('token');
+          setWorkerSettings(prev => ({ ...prev, [field]: value }));
+          await axios.put('/api/workers/settings', { [field]: value }, { headers: { Authorization: `Bearer ${token}` } });
+      } catch (err) {
+          console.error("Failed to update setting", err);
+      }
+  };
 
   const fetchAvailableJobs = async () => {
     try {
@@ -215,6 +238,7 @@ const Dashboard = () => {
         });
         if (res.data && res.data._id) {
           setIsWorker(true);
+          fetchWorkerSettings();
         }
       } catch(err) {
         // 404 means they are not a worker, which is fine
@@ -266,8 +290,44 @@ const Dashboard = () => {
     <Navbar />
     <Container>
       <Header>
-        <Title>Your Dashboard</Title>
-        <Subtitle>Track your service requests, payments, and system processes.</Subtitle>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+          <div>
+            <Title>Your Dashboard</Title>
+            <Subtitle>Track your service requests, payments, and system processes.</Subtitle>
+          </div>
+          {isWorker && (
+            <div style={{ background: 'var(--bg-card)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', minWidth: '250px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Status:</span>
+                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <div style={{ position: 'relative' }}>
+                    <input type="checkbox" className="sr-only" checked={workerSettings.isOnline} onChange={(e) => updateWorkerSettings('isOnline', e.target.checked)} />
+                    <div className={`block w-10 h-6 rounded-full transition-colors ${workerSettings.isOnline ? 'bg-emerald-500' : 'bg-gray-600'}`}></div>
+                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${workerSettings.isOnline ? 'transform translate-x-4' : ''}`}></div>
+                  </div>
+                  <span style={{ marginLeft: '10px', fontSize: '0.9rem', fontWeight: 'bold', color: workerSettings.isOnline ? '#10b981' : '#9ca3af' }}>
+                    {workerSettings.isOnline ? 'Online' : 'Offline'}
+                  </span>
+                </label>
+              </div>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Work Radius</span>
+                  <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 'bold' }}>{workerSettings.travelRadius} km</span>
+                </div>
+                <input
+                  type="range"
+                  min="5"
+                  max="50"
+                  step="5"
+                  value={workerSettings.travelRadius}
+                  onChange={(e) => updateWorkerSettings('travelRadius', parseInt(e.target.value))}
+                  style={{ width: '100%', accentColor: '#10b981' }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </Header>
 
       <TabContainer>
@@ -276,6 +336,11 @@ const Dashboard = () => {
         <Tab $active={activeTab === 'Cancelled'} onClick={() => setActiveTab('Cancelled')}>Cancelled</Tab>
         {isWorker && (
           <Tab $active={activeTab === 'JobPool'} onClick={() => { setActiveTab('JobPool'); fetchAvailableJobs(); }}>Job Pool</Tab>
+        )}
+        {isWorker && (
+          <Tab onClick={() => window.location.href = '/worker/earnings'} style={{ marginLeft: 'auto', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', borderRadius: '8px' }}>
+            My Earnings
+          </Tab>
         )}
       </TabContainer>
 

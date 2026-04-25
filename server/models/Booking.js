@@ -67,7 +67,8 @@ const bookingSchema = new mongoose.Schema({
   completedAt: { type: Date },
   cancelledAt: { type: Date },
   cancellationReason: { type: String },
-  expiresAt: { type: Date }
+  expiresAt: { type: Date },
+  proofImageUrl: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Booking', bookingSchema);

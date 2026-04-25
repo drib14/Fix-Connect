@@ -473,7 +473,12 @@ exports.updateBookingStatus = async (req, res) => {
 
     booking.status = status;
 
-    if (status === 'completed') booking.completedAt = new Date();
+    if (status === 'completed') {
+        booking.completedAt = new Date();
+        if (req.file) {
+            booking.proofImageUrl = req.file.path;
+        }
+    }
     if (status === 'cancelled') booking.cancelledAt = new Date();
 
     if (lat && lng) {

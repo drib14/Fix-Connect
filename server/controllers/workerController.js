@@ -70,10 +70,30 @@ exports.getCategories = async (req, res) => {
 
 exports.getWorkerLocations = async (req, res) => {
     try {
-        const workers = await Worker.find({ status: 'Active' }, 'name currentLocation category');
+        const workers = await Worker.find({ status: 'Active', isOnline: true }, 'name currentLocation category isVerified');
         res.status(200).json({ success: true, data: workers });
     } catch (error) {
         console.error('Error fetching worker locations:', error);
         res.status(500).json({ success: false, message: 'Failed to fetch worker locations.' });
+    }
+};
+
+exports.updateSettings = async (req, res) => {
+    try {
+        const { isOnline, travelRadius } = req.body;
+        const worker = await Worker.findOne({ userId: req.user._id });
+
+        if (!worker) {
+            return res.status(404).json({ success: false, message: 'Worker profile not found.' });
+        }
+
+        if (isOnline !== undefined) worker.isOnline = isOnline;
+        if (travelRadius !== undefined) worker.travelRadius = travelRadius;
+
+        await worker.save();
+        res.status(200).json({ success: true, data: worker });
+    } catch (error) {
+        console.error('Error updating worker settings:', error);
+        res.status(500).json({ success: false, message: 'Failed to update settings.' });
     }
 };
