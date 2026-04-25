@@ -7,6 +7,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import { Button } from '../components/ui/button';
+import { ResponsiveModal } from '../components/ResponsiveModal';
 import { useSocket } from '../contexts/SocketContext';
 import { Loader2, Briefcase, Calendar, MapPin, Wallet, CreditCard, User, CheckCircle2, XCircle, Clock, Map } from 'lucide-react';
 import {

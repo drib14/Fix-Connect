@@ -181,6 +181,10 @@ exports.createBooking = async (req, res) => {
                     nearestBot = bots[i];
                 }
             }
+            if (minDistance > 15) {
+                console.log(`Nearest worker is ${minDistance.toFixed(2)}km away. Skipping auto-accept.`);
+                return;
+            }
             const bot = nearestBot;
 
             const bookingToAccept = await Booking.findById(savedBooking._id);
