@@ -96,6 +96,7 @@ const seedBots = async () => {
                         status: 'Active',
                         currentLocation: { lat, lng },
                         isBot: true,
+                        isVerified: true,
                         rating: 5.0,
                         dailyRate: 1500,
                         imageUrl: `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=10b981&color=fff`

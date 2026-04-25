@@ -288,7 +288,10 @@ export default function BookingDetail() {
 
   const handleCompleteJob = async () => {
       try {
-          await api.patch(`/bookings/${id}`, { status: 'completed' });
+          const token = localStorage.getItem('token');
+          await axios.patch(`/api/bookings/${id}`, { status: 'completed' }, {
+              headers: { Authorization: `Bearer ${token}` }
+          });
           setBooking(prev => ({ ...prev, status: 'completed' }));
       } catch (err) {
           console.error('Failed to complete job', err);
@@ -303,7 +306,10 @@ export default function BookingDetail() {
       }
       setIsCancelling(true);
       try {
-          await api.patch(`/bookings/${id}`, { status: 'cancelled', cancelReason: finalReason });
+          const token = localStorage.getItem('token');
+          await axios.patch(`/api/bookings/${id}`, { status: 'cancelled', cancelReason: finalReason }, {
+              headers: { Authorization: `Bearer ${token}` }
+          });
           setBooking(prev => ({ ...prev, status: 'cancelled' }));
           setShowCancelModal(false);
       } catch (err) {
@@ -454,15 +460,25 @@ export default function BookingDetail() {
                         <div className="bg-background/50 rounded-xl p-4 border border-border/50">
                             <h3 className="text-sm font-semibold text-emerald-500 mb-3">Assigned Worker</h3>
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center overflow-hidden shrink-0">
-                                    {booking.workerId.userId?.avatar ? (
-                                        <img src={booking.workerId.userId.avatar} alt="Worker" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <User className="w-5 h-5 text-emerald-500" />
+                                <div className="relative w-10 h-10 shrink-0">
+                                    <div className="w-full h-full rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center overflow-hidden">
+                                        {booking.workerId.userId?.avatar ? (
+                                            <img src={booking.workerId.userId.avatar} alt="Worker" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User className="w-5 h-5 text-emerald-500" />
+                                        )}
+                                    </div>
+                                    {booking.workerId.isVerified && (
+                                        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-500 fill-emerald-100" />
+                                        </div>
                                     )}
                                 </div>
                                 <div>
-                                    <p className="font-bold">{booking.workerId.name || 'Worker Name'}</p>
+                                    <p className="font-bold flex items-center gap-1">
+                                        {booking.workerId.name || 'Worker Name'}
+                                        {booking.workerId.isVerified && <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">Verified</span>}
+                                    </p>
                                     <p className="text-xs text-muted-foreground">{booking.workerId.userId?.phone || 'Contact Info Unavailable'}</p>
                                 </div>
                             </div>

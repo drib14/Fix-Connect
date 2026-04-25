@@ -49,20 +49,32 @@ export function SearchingWorkerModal({ isOpen, setIsOpen, bookingId, bookingDeta
         };
     }, [socket, isOpen, bookingId, navigate]);
 
-    const handleAutoCancel = async () => {
+    const [showNoWorkerModal, setShowNoWorkerModal] = useState(false);
+
+    const handleAutoCancel = () => {
+        setShowNoWorkerModal(true);
+    };
+
+    const handleKeepWaiting = () => {
+        setShowNoWorkerModal(false);
+        setTimeLeft(180); // Reset timer for another 3 minutes
+    };
+
+    const handleRebook = async () => {
+        // Cancel current silently then reload to allow rebooking
         try {
             const token = localStorage.getItem('token');
             await axios.put(`/api/bookings/${bookingId}/cancel`, {
-                reason: 'No worker found within 3 minutes timeout'
+                reason: 'Rebooking because no worker found'
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            alert('No workers accepted your job within the time limit. The booking has been cancelled.');
             setIsOpen(false);
-            window.location.reload(); // Refresh to reset state
+            setShowNoWorkerModal(false);
+            window.location.reload();
         } catch (err) {
-            console.error("Failed to auto cancel", err);
-            setIsOpen(false);
+            console.error("Failed to cancel for rebook", err);
+            window.location.reload();
         }
     };
 
@@ -99,11 +111,14 @@ export function SearchingWorkerModal({ isOpen, setIsOpen, bookingId, bookingDeta
         return () => clearInterval(textTimer);
     }, [isOpen]);
 
+    if (!isOpen && !showNoWorkerModal) return null;
+
     return (
+        <>
         <ResponsiveModal
             title="Requesting..."
             description="Please don't close this window."
-            open={isOpen}
+            open={isOpen && !showNoWorkerModal}
             onOpenChange={() => {}} // prevent manual close
         >
             <div className="flex flex-col py-6 max-h-[80vh] overflow-y-auto">
@@ -178,5 +193,30 @@ export function SearchingWorkerModal({ isOpen, setIsOpen, bookingId, bookingDeta
                 </Button>
             </div>
         </ResponsiveModal>
+
+        <ResponsiveModal isOpen={showNoWorkerModal} setIsOpen={setShowNoWorkerModal} title="No Workers Found">
+            <div className="space-y-6 pt-4 pb-4">
+                <div className="text-center space-y-4">
+                    <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto border border-yellow-500/30">
+                        <Search className="w-8 h-8 text-yellow-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white">We're having trouble finding a worker</h3>
+                    <p className="text-muted-foreground">All of our available workers in your area are currently busy. What would you like to do?</p>
+                </div>
+
+                <div className="space-y-3 pt-4">
+                    <Button onClick={handleKeepWaiting} className="w-full font-bold bg-emerald-600 hover:bg-emerald-700 text-white py-6 rounded-xl">
+                        Keep Waiting (3 more minutes)
+                    </Button>
+                    <Button onClick={handleRebook} variant="outline" className="w-full font-bold py-6 rounded-xl border-emerald-500/50 hover:bg-emerald-500/10 text-emerald-400">
+                        Cancel & Try Another Service
+                    </Button>
+                    <Button onClick={handleManualCancel} variant="ghost" className="w-full font-bold py-6 rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300">
+                        Just Cancel
+                    </Button>
+                </div>
+            </div>
+        </ResponsiveModal>
+        </>
     );
 }

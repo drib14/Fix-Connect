@@ -56,6 +56,10 @@ const workerSchema = new mongoose.Schema({
   isBot: {
     type: Boolean,
     default: false
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 
