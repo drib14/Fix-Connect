@@ -139,10 +139,17 @@ function RoutingMachine({ customerLoc, workerLoc, setEta }) {
         } else {
              // If it exists, just set waypoints
              try {
-                routingControlRef.current.setWaypoints([
-                    L.latLng(workerLoc.lat, workerLoc.lng),
-                    L.latLng(customerLoc.lat, customerLoc.lng)
-                ]);
+                const currentWaypoints = routingControlRef.current.getWaypoints();
+                const start = currentWaypoints[0]?.latLng;
+                const end = currentWaypoints[1]?.latLng;
+
+                // Only update if there is a meaningful change in coordinates to prevent excessive API calls
+                if (!start || !end || Math.abs(start.lat - workerLoc.lat) > 0.0005 || Math.abs(start.lng - workerLoc.lng) > 0.0005) {
+                    routingControlRef.current.setWaypoints([
+                        L.latLng(workerLoc.lat, workerLoc.lng),
+                        L.latLng(customerLoc.lat, customerLoc.lng)
+                    ]);
+                }
              } catch (err) {
                  console.warn("Error updating waypoints:", err);
              }
@@ -156,13 +163,18 @@ function RoutingMachine({ customerLoc, workerLoc, setEta }) {
     useEffect(() => {
         // Component fully unmounting
         return () => {
-            if (routingControlRef.current && map) {
+            if (routingControlRef.current) {
                 try {
                     // Stop it from making further requests
                     if (routingControlRef.current.getRouter && routingControlRef.current.getRouter()) {
                         routingControlRef.current.getRouter().abort = () => {};
                     }
-                    map.removeControl(routingControlRef.current);
+                    if (map && map.removeControl) {
+                        map.removeControl(routingControlRef.current);
+                    }
+                    // Explicitly nullify to prevent delayed callbacks from trying to add layers
+                    routingControlRef.current._map = null;
+                    routingControlRef.current._line = null;
                 } catch (e) {
                     console.warn("Cleanup error in routing machine", e);
                 }

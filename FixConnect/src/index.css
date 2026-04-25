@@ -98,3 +98,8 @@
     min-height: 100%;
   }
 }
+
+/* Make leaflet markers transition smoothly when their position changes */
+.leaflet-marker-icon, .leaflet-marker-shadow {
+    transition: transform 0.5s linear;
+}
