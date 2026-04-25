@@ -17,11 +17,11 @@ const bookingSchema = new mongoose.Schema({
   },
   date: {
     type: Date,
-    required: true,
+    default: Date.now
   },
   startTime: {
     type: String,
-    required: true,
+    default: 'ASAP'
   },
   endTime: {
     type: String,

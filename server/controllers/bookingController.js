@@ -155,6 +155,18 @@ exports.createBooking = async (req, res) => {
             category: serviceCategory
         });
 
+        if (bots.length === 0) {
+            const bookingToCancel = await Booking.findById(savedBooking._id);
+            if (bookingToCancel && bookingToCancel.status === 'pending') {
+                bookingToCancel.status = 'cancelled';
+                bookingToCancel.cancelReason = 'Timeout: No workers available in category';
+                await bookingToCancel.save();
+                const io = socket.getIO();
+                io.to(bookingToCancel.userId._id.toString()).emit('bookingStatusUpdated', bookingToCancel);
+            }
+            return;
+        }
+
         if (bots.length > 0) {
             // Find nearest bot
             const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -182,7 +194,15 @@ exports.createBooking = async (req, res) => {
                 }
             }
             if (minDistance > 15) {
-                console.log(`Nearest worker is ${minDistance.toFixed(2)}km away. Skipping auto-accept.`);
+                console.log(`Nearest worker is ${minDistance.toFixed(2)}km away. Auto-canceling booking.`);
+                const bookingToCancel = await Booking.findById(savedBooking._id);
+                if (bookingToCancel && bookingToCancel.status === 'pending') {
+                    bookingToCancel.status = 'cancelled';
+                    bookingToCancel.cancelReason = 'Timeout: No worker accepted the request';
+                    await bookingToCancel.save();
+                    const io = socket.getIO();
+                    io.to(bookingToCancel.userId._id.toString()).emit('bookingStatusUpdated', bookingToCancel);
+                }
                 return;
             }
             const bot = nearestBot;

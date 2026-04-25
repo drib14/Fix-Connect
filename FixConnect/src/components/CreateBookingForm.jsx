@@ -10,9 +10,8 @@ export function CreateBookingForm({ onSuccess, onCancel, customerLocation, setCu
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     serviceCategory: '',
-    date: '',
-    startTime: '',
-    endTime: '',
+    // instant booking
+
     paymentMethod: 'Cash',
   });
   const [loading, setLoading] = useState(false);
@@ -102,16 +101,7 @@ export function CreateBookingForm({ onSuccess, onCancel, customerLocation, setCu
         </select>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="date">Date</Label>
-          <Input id="date" type="date" value={formData.date} onChange={handleChange} className="bg-background/50 border-border/50 focus:border-primary" required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="startTime">Start Time</Label>
-          <Input id="startTime" type="time" value={formData.startTime} onChange={handleChange} className="bg-background/50 border-border/50 focus:border-primary" required />
-        </div>
-      </div>
+
 
       <div className="space-y-2 relative">
         <Label htmlFor="address">Service Address</Label>
