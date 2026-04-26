@@ -6,6 +6,7 @@ import { NotificationsDropdown } from '../components/NotificationsDropdown';
 import { WorkerJobPool } from '../components/WorkerJobPool';
 import { AdminDashboard } from '../components/AdminDashboard';
 import { CustomerHome } from '../components/CustomerHome';
+import { WorkerHome } from '../components/WorkerHome';
 import { useSocket } from '../contexts/SocketContext';
 import { Loader2, Map as MapIcon, List as ListIcon, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -13,9 +14,9 @@ import { Link } from 'react-router-dom';
 export default function Home() {
   const navigate = useNavigate();
   const socket = useSocket();
-  const [userRole, setUserRole] = useState(null);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState(localStorage.getItem('role'));
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
+  const [loading, setLoading] = useState(!userRole); // Don't show loading if we already have a role from localStorage
 
   useEffect(() => {
     fetchUserData();
@@ -99,6 +100,8 @@ export default function Home() {
       <main className="w-full flex-1 flex flex-col items-center relative z-0">
         {userRole === 'admin' ? (
             <div className="pt-24"><AdminDashboard /></div>
+        ) : userRole === 'worker' ? (
+            <WorkerHome />
         ) : (
             <CustomerHome />
         )}
