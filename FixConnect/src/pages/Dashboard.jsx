@@ -326,12 +326,10 @@ const Dashboard = () => {
       </Header>
 
       <TabContainer>
+        <Tab $active={activeTab === 'JobPool'} onClick={() => { setActiveTab('JobPool'); if(isWorker) fetchAvailableJobs(); }}>{isWorker ? 'Job Pool (Pro)' : 'Find Services'}</Tab>
         <Tab $active={activeTab === 'Active'} onClick={() => setActiveTab('Active')}>Active</Tab>
         <Tab $active={activeTab === 'Completed'} onClick={() => setActiveTab('Completed')}>Completed</Tab>
         <Tab $active={activeTab === 'Cancelled'} onClick={() => setActiveTab('Cancelled')}>Cancelled</Tab>
-        {isWorker && (
-          <Tab $active={activeTab === 'JobPool'} onClick={() => { setActiveTab('JobPool'); fetchAvailableJobs(); }}>Job Pool</Tab>
-        )}
         {isWorker && (
           <Tab onClick={() => window.location.href = '/worker/earnings'} style={{ marginLeft: 'auto', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', borderRadius: '8px' }}>
             My Earnings
@@ -339,28 +337,43 @@ const Dashboard = () => {
         )}
       </TabContainer>
 
-      {activeTab === 'JobPool' ? (
+      {activeTab === 'JobPool' && !isWorker ? (
+          <EmptyState style={{ marginTop: '40px' }}>
+             <h3>Need a FixConnect Pro?</h3>
+             <p>Book your service now and track your worker in real-time.</p>
+             <ViewButton style={{ marginTop: '20px', background: 'var(--primary-color)', color: 'white', border: 'none' }} onClick={() => navigate('/')}>Create Booking</ViewButton>
+          </EmptyState>
+      ) : activeTab === 'JobPool' && isWorker ? (
         <CardGrid>
           {availableJobs.length === 0 ? (
-            <EmptyState>
-              <h3>No jobs available.</h3>
-              <p>We are searching the network. New job requests in your category will appear here.</p>
+            <EmptyState style={{ background: 'transparent', border: 'none', minHeight: '300px' }}>
+                <div style={{ position: 'relative', width: '150px', height: '150px', margin: '0 auto 20px auto', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <div style={{ position: 'absolute', width: '100%', height: '100%', border: '2px solid rgba(16, 185, 129, 0.5)', borderRadius: '50%', animation: 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite' }}></div>
+                    <div style={{ position: 'absolute', width: '70%', height: '70%', border: '2px solid rgba(16, 185, 129, 0.8)', borderRadius: '50%', animation: 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite', animationDelay: '0.5s' }}></div>
+                    <div style={{ width: '30%', height: '30%', background: '#10b981', borderRadius: '50%', boxShadow: '0 0 20px #10b981' }}></div>
+                </div>
+                <h3 style={{ color: '#10b981' }}>Radar is Active</h3>
+                <p>Scanning a {workerSettings.travelRadius}km radius for new service requests...</p>
             </EmptyState>
           ) : availableJobs.map((job) => (
-            <BookingCard key={job._id}>
+            <BookingCard key={job._id} style={{ borderLeft: '4px solid #10b981', background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, rgba(0,0,0,0.2) 100%)' }}>
               <BookingInfo>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
-                  <ServiceName>{job.serviceCategory}</ServiceName>
-                  <StatusBadge $status={job.status}>{job.status}</StatusBadge>
+                  <ServiceName style={{ color: 'white', fontSize: '1.4rem' }}>{job.serviceCategory}</ServiceName>
+                  <StatusBadge $status="urgent" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444' }}>NEW JOB</StatusBadge>
                 </div>
+                <Detail><strong>Distance:</strong> {job.distance ? `${job.distance.toFixed(1)} km away` : 'Nearby'}</Detail>
                 <Detail><strong>Client:</strong> {job.userId?.name || 'Guest'}</Detail>
                 <Detail><strong>Requested:</strong> {new Date(job.createdAt).toLocaleString()}</Detail>
                 <Detail><strong>Address:</strong> {job.address}</Detail>
-                <Detail><strong>Total Value:</strong> ₱ {job.price?.toLocaleString()}</Detail>
+
+                <div style={{ marginTop: '15px', padding: '10px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', display: 'inline-block' }}>
+                    <strong style={{ color: '#10b981', fontSize: '1.2rem' }}>Estimated Net: ₱ {(job.price * 0.80).toLocaleString()}</strong>
+                </div>
               </BookingInfo>
-              <ActionSection>
-                <ViewButton onClick={() => handleAcceptJob(job._id)} style={{ background: '#2196F3', border: 'none', color: 'white' }}>
-                  Accept Job
+              <ActionSection style={{ display: 'flex', flexDirection: 'column', gap: '10px', justifyContent: 'center' }}>
+                <ViewButton onClick={() => handleAcceptJob(job._id)} style={{ background: '#10b981', border: 'none', color: 'white', fontSize: '1.1rem', padding: '15px 30px', fontWeight: 'bold', width: '100%', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)' }}>
+                  Accept Now
                 </ViewButton>
               </ActionSection>
             </BookingCard>
