@@ -24,8 +24,14 @@ export default function Login() {
       const response = await axios.post('/api/auth/login', { email, password });
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('userId', response.data._id);
+      localStorage.setItem('role', response.data.role);
       if (response.data.avatar) localStorage.setItem('userAvatar', response.data.avatar);
-      navigate('/'); // Or dashboard
+
+      if (response.data.role === 'worker') {
+        navigate('/bookings');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to login');
     } finally {

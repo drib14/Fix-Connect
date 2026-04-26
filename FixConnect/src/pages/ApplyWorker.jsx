@@ -102,7 +102,9 @@ export default function ApplyWorker() {
 
   const handleWalkthroughNext = () => {
       if (walkthroughStep === 3) {
-          navigate('/');
+          navigate('/bookings');
+          // Force a full reload so the app completely re-initializes and logs the user in visually
+          window.location.reload();
       } else {
           setWalkthroughStep(s => s + 1);
       }

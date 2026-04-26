@@ -99,8 +99,6 @@ export default function Home() {
       <main className="w-full flex-1 flex flex-col items-center relative z-0">
         {userRole === 'admin' ? (
             <div className="pt-24"><AdminDashboard /></div>
-        ) : userRole === 'worker' ? (
-            <div className="w-full max-w-4xl pt-24"><WorkerJobPool /></div>
         ) : (
             <CustomerHome />
         )}
