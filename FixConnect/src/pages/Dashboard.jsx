@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/axios';
+import axios from 'axios';
 import Navbar from '../components/Common/Navbar';
 
 const Container = styled.div`
