@@ -1,4 +1,5 @@
-◇ injected env (10) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
-◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+◇ injected env (4) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+(node:727059) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
 Server running on port 5000
-Connected to MongoDB
+Error: connect ECONNREFUSED 127.0.0.1:27017

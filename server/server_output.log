@@ -1,8 +1,0 @@
-◇ injected env (11) from .env // tip: ⌘ suppress logs { quiet: true }
-◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
-Server running on port 5000
-Connected to MongoDB
-New client connected: TI7gzbQ_8zGqgrQPAAAC
-Socket TI7gzbQ_8zGqgrQPAAAC joined booking room 69eb692579abb5186a74a528
-Socket TI7gzbQ_8zGqgrQPAAAC joined room 69eb692379abb5186a74a527
-Client disconnected: TI7gzbQ_8zGqgrQPAAAC
