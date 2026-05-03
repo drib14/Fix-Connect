@@ -13,11 +13,8 @@ export default function AdminDashboard() {
       try {
         const { data } = await api.get('/bookings');
         if (data.success) setBookings(data.data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+      } catch (error) { console.error(error); }
+      finally { setLoading(false); }
     };
     fetchBookings();
   }, []);
@@ -39,15 +36,9 @@ export default function AdminDashboard() {
         <Text style={styles.title}>Admin Panel</Text>
         <TouchableOpacity onPress={logout} style={styles.logoutBtn}><Text style={styles.logoutTxt}>Logout</Text></TouchableOpacity>
       </View>
-
       <Text style={styles.subtitle}>All System Bookings</Text>
       {loading ? <ActivityIndicator size="large" color="#10b981" /> : (
-        <FlatList
-          data={bookings}
-          keyExtractor={(item) => item._id}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 20 }}
-        />
+        <FlatList data={bookings} keyExtractor={(item) => item._id} renderItem={renderItem} contentContainerStyle={{ paddingBottom: 20 }} />
       )}
     </View>
   );

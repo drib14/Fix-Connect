@@ -16,11 +16,8 @@ export default function CustomerDashboard({ navigation }) {
     try {
       const { data } = await api.get('/bookings');
       if (data.success) setBookings(data.data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { console.error(error); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => {
@@ -31,25 +28,17 @@ export default function CustomerDashboard({ navigation }) {
         fetchBookings();
       });
     }
-    return () => {
-      if (socket) socket.off('bookingStatusUpdated');
-    };
+    return () => { if (socket) socket.off('bookingStatusUpdated'); };
   }, [socket]);
 
   const createBooking = async () => {
     try {
-      const { data } = await api.post('/bookings', {
-        serviceType: 'Plumbing Service',
-        location: { address: '123 Test St', lat: 14.5995, lng: 120.9842 },
-        priceAtBooking: 600
-      });
+      const { data } = await api.post('/bookings', { serviceType: 'Plumbing Service', location: { address: '123 Test St', lat: 14.5995, lng: 120.9842 }, priceAtBooking: 600 });
       if (data.success) {
         showToast('Booking requested successfully!');
         fetchBookings();
       }
-    } catch (error) {
-      showToast('Error creating booking');
-    }
+    } catch (error) { showToast('Error creating booking'); }
   };
 
   const renderItem = ({ item }) => (
@@ -70,20 +59,12 @@ export default function CustomerDashboard({ navigation }) {
         <Text style={styles.title}>Welcome, {user?.firstName}</Text>
         <TouchableOpacity onPress={logout} style={styles.logoutBtn}><Text style={styles.logoutTxt}>Logout</Text></TouchableOpacity>
       </View>
-
       <TouchableOpacity style={styles.newBtn} onPress={createBooking}>
         <Text style={styles.newBtnText}>+ Request New Service</Text>
       </TouchableOpacity>
-
       <Text style={styles.subtitle}>Your Bookings</Text>
       {loading ? <ActivityIndicator size="large" color="#10b981" /> : (
-        <FlatList
-          data={bookings}
-          keyExtractor={(item) => item._id}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 20 }}
-          ListEmptyComponent={<Text style={{color: '#9ca3af'}}>No bookings found.</Text>}
-        />
+        <FlatList data={bookings} keyExtractor={(item) => item._id} renderItem={renderItem} contentContainerStyle={{ paddingBottom: 20 }} ListEmptyComponent={<Text style={{color: '#9ca3af'}}>No bookings found.</Text>} />
       )}
     </View>
   );

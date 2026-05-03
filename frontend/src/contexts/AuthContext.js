@@ -14,16 +14,10 @@ export const AuthProvider = ({ children }) => {
         const token = await AsyncStorage.getItem('token');
         if (token) {
           const { data } = await api.get('/auth/me');
-          if (data.success) {
-            setUser(data.data);
-          }
+          if (data.success) setUser(data.data);
         }
-      } catch (error) {
-        console.error('Failed to load user', error);
-        await AsyncStorage.removeItem('token');
-      } finally {
-        setLoading(false);
-      }
+      } catch (error) { await AsyncStorage.removeItem('token'); }
+      finally { setLoading(false); }
     };
     loadUser();
   }, []);
@@ -36,9 +30,7 @@ export const AuthProvider = ({ children }) => {
         setUser(data.data);
         return { success: true };
       }
-    } catch (error) {
-      return { success: false, message: error.response?.data?.message || 'Login failed' };
-    }
+    } catch (error) { return { success: false, message: error.response?.data?.message || 'Login failed' }; }
   };
 
   const register = async (userData) => {
@@ -49,9 +41,7 @@ export const AuthProvider = ({ children }) => {
         setUser(data.data);
         return { success: true };
       }
-    } catch (error) {
-       return { success: false, message: error.response?.data?.message || 'Registration failed' };
-    }
+    } catch (error) { return { success: false, message: error.response?.data?.message || 'Registration failed' }; }
   };
 
   const logout = async () => {
@@ -59,9 +49,5 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, loading, login, register, logout }}>{children}</AuthContext.Provider>;
 };

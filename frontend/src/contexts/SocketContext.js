@@ -12,22 +12,11 @@ export const SocketProvider = ({ children }) => {
     let newSocket;
     if (user) {
       newSocket = io('http://localhost:5000');
-
-      newSocket.on('connect', () => {
-        newSocket.emit('join', user._id);
-      });
-
+      newSocket.on('connect', () => newSocket.emit('join', user._id));
       setSocket(newSocket);
     }
-
-    return () => {
-      if (newSocket) newSocket.disconnect();
-    };
+    return () => { if (newSocket) newSocket.disconnect(); };
   }, [user]);
 
-  return (
-    <SocketContext.Provider value={socket}>
-      {children}
-    </SocketContext.Provider>
-  );
+  return <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>;
 };

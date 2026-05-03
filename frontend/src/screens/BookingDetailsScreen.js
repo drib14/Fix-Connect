@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Linking } from 'react-native';
 import api from '../api/axios';
 import { AuthContext } from '../contexts/AuthContext';
 import { ToastContext } from '../contexts/ToastContext';
@@ -18,11 +18,8 @@ export default function BookingDetailsScreen({ route, navigation }) {
       try {
         const { data } = await api.get(`/bookings/${bookingId}`);
         if (data.success) setBooking(data.data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+      } catch (error) { console.error(error); }
+      finally { setLoading(false); }
     };
     fetchBooking();
   }, [bookingId]);
@@ -30,12 +27,8 @@ export default function BookingDetailsScreen({ route, navigation }) {
   const handlePayment = async () => {
     try {
       const { data } = await api.post(`/bookings/${bookingId}/pay`);
-      if (data.success && data.checkoutUrl) {
-        Linking.openURL(data.checkoutUrl);
-      }
-    } catch (error) {
-      showToast('Error initializing payment. Missing API keys?');
-    }
+      if (data.success && data.checkoutUrl) Linking.openURL(data.checkoutUrl);
+    } catch (error) { showToast('Error initializing payment. Missing API keys?'); }
   };
 
   const markPaidDemo = async () => {
@@ -45,27 +38,18 @@ export default function BookingDetailsScreen({ route, navigation }) {
         setBooking(data.data);
         showToast('Payment successful! Invoice generated.');
       }
-    } catch (error) {
-      showToast('Error marking paid');
-    }
+    } catch (error) { showToast('Error marking paid'); }
   };
 
-  if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#10b981" /></View>;
-  }
-
-  if (!booking) {
-    return <View style={styles.center}><Text style={{color: '#fff'}}>Booking not found.</Text></View>;
-  }
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#10b981" /></View>;
+  if (!booking) return <View style={styles.center}><Text style={{color: '#fff'}}>Booking not found.</Text></View>;
 
   const isCustomer = user.role === 'customer';
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{marginRight: 15}}>
-          <ArrowLeft color="#fff" size={24} />
-        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{marginRight: 15}}><ArrowLeft color="#fff" size={24} /></TouchableOpacity>
         <Text style={styles.title}>Job Details</Text>
       </View>
 
@@ -82,12 +66,8 @@ export default function BookingDetailsScreen({ route, navigation }) {
 
         {isCustomer && booking.status === 'completed' && booking.paymentStatus !== 'paid' && (
           <View style={styles.payBtnContainer}>
-            <TouchableOpacity style={styles.payBtn} onPress={handlePayment}>
-              <Text style={styles.payBtnTxt}>Pay with PayMongo</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.payBtn, {backgroundColor: '#3b82f6', marginTop: 10}]} onPress={markPaidDemo}>
-              <Text style={styles.payBtnTxt}>Simulate Payment (Dev)</Text>
-            </TouchableOpacity>
+            <TouchableOpacity style={styles.payBtn} onPress={handlePayment}><Text style={styles.payBtnTxt}>Pay with PayMongo</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.payBtn, {backgroundColor: '#3b82f6', marginTop: 10}]} onPress={markPaidDemo}><Text style={styles.payBtnTxt}>Simulate Payment (Dev)</Text></TouchableOpacity>
           </View>
         )}
       </View>

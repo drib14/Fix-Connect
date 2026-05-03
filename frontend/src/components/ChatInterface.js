@@ -14,13 +14,10 @@ const ChatInterface = ({ bookingId, status, updatedAt }) => {
   const flatListRef = useRef(null);
 
   useEffect(() => {
-    // Check 24 hour lock logic
     if (status === 'completed' && updatedAt) {
       const completedTime = new Date(updatedAt).getTime();
       const now = new Date().getTime();
-      if ((now - completedTime) > 24 * 60 * 60 * 1000) {
-        setIsLocked(true);
-      }
+      if ((now - completedTime) > 24 * 60 * 60 * 1000) setIsLocked(true);
     }
   }, [status, updatedAt]);
 
@@ -28,14 +25,9 @@ const ChatInterface = ({ bookingId, status, updatedAt }) => {
     const fetchMessages = async () => {
       try {
         const { data } = await api.get(`/chat/${bookingId}`);
-        if (data.success) {
-          setMessages(data.data);
-        }
-      } catch (error) {
-        console.error('Fetch messages error', error);
-      }
+        if (data.success) setMessages(data.data);
+      } catch (error) { console.error(error); }
     };
-
     fetchMessages();
 
     if (socket) {
@@ -45,10 +37,7 @@ const ChatInterface = ({ bookingId, status, updatedAt }) => {
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
       });
     }
-
-    return () => {
-      if (socket) socket.off('receiveMessage');
-    };
+    return () => { if (socket) socket.off('receiveMessage'); };
   }, [bookingId, socket]);
 
   const sendMessage = async () => {
@@ -56,9 +45,7 @@ const ChatInterface = ({ bookingId, status, updatedAt }) => {
     try {
       await api.post(`/chat/${bookingId}`, { content: input });
       setInput('');
-    } catch (error) {
-      console.error('Send message error', error);
-    }
+    } catch (error) { console.error('Send message error', error); }
   };
 
   return (
@@ -79,21 +66,11 @@ const ChatInterface = ({ bookingId, status, updatedAt }) => {
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />
       {isLocked ? (
-        <View style={styles.lockedContainer}>
-          <Text style={styles.lockedText}>Chat locked. 24 hours passed since completion.</Text>
-        </View>
+        <View style={styles.lockedContainer}><Text style={styles.lockedText}>Chat locked. 24 hours passed since completion.</Text></View>
       ) : (
         <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Type a message..."
-            placeholderTextColor="#888"
-          />
-          <TouchableOpacity onPress={sendMessage} style={styles.sendBtn}>
-            <Send color="#fff" size={20} />
-          </TouchableOpacity>
+          <TextInput style={styles.input} value={input} onChangeText={setInput} placeholder="Type a message..." placeholderTextColor="#888" />
+          <TouchableOpacity onPress={sendMessage} style={styles.sendBtn}><Send color="#fff" size={20} /></TouchableOpacity>
         </View>
       )}
     </View>

@@ -16,42 +16,26 @@ export default function WorkerDashboard({ navigation }) {
     try {
       const { data } = await api.get('/bookings');
       if (data.success) setBookings(data.data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { console.error(error); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => {
     fetchBookings();
     if (socket) {
-      socket.on('newBookingAvailable', (booking) => {
-        showToast('New booking available!');
-        fetchBookings();
-      });
-      socket.on('bookingStatusUpdated', () => {
-        fetchBookings();
-      });
+      socket.on('newBookingAvailable', () => { showToast('New booking available!'); fetchBookings(); });
+      socket.on('bookingStatusUpdated', () => fetchBookings());
     }
     return () => {
-      if (socket) {
-        socket.off('newBookingAvailable');
-        socket.off('bookingStatusUpdated');
-      }
+      if (socket) { socket.off('newBookingAvailable'); socket.off('bookingStatusUpdated'); }
     };
   }, [socket]);
 
   const updateStatus = async (id, status) => {
     try {
       const { data } = await api.put(`/bookings/${id}/status`, { status });
-      if (data.success) {
-        showToast(`Status updated to ${status}`);
-        fetchBookings();
-      }
-    } catch (error) {
-      showToast('Error updating status');
-    }
+      if (data.success) { showToast(`Status updated to ${status}`); fetchBookings(); }
+    } catch (error) { showToast('Error updating status'); }
   };
 
   const renderItem = ({ item }) => {
@@ -64,7 +48,6 @@ export default function WorkerDashboard({ navigation }) {
         </View>
         <Text style={styles.infoText}>Address: {item.location.address}</Text>
         <Text style={styles.infoText}>Price: ₱{item.priceAtBooking}</Text>
-
         {item.status === 'pending' && !isMine && (
           <TouchableOpacity style={styles.actionBtn} onPress={() => updateStatus(item._id, 'accepted')}>
             <Text style={styles.actionBtnTxt}>Accept Job</Text>
@@ -90,16 +73,9 @@ export default function WorkerDashboard({ navigation }) {
         <Text style={styles.title}>Worker Panel</Text>
         <TouchableOpacity onPress={logout} style={styles.logoutBtn}><Text style={styles.logoutTxt}>Logout</Text></TouchableOpacity>
       </View>
-
       <Text style={styles.subtitle}>Available & Active Jobs</Text>
       {loading ? <ActivityIndicator size="large" color="#10b981" /> : (
-        <FlatList
-          data={bookings}
-          keyExtractor={(item) => item._id}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 20 }}
-          ListEmptyComponent={<Text style={{color: '#9ca3af'}}>No jobs available.</Text>}
-        />
+        <FlatList data={bookings} keyExtractor={(item) => item._id} renderItem={renderItem} contentContainerStyle={{ paddingBottom: 20 }} ListEmptyComponent={<Text style={{color: '#9ca3af'}}>No jobs available.</Text>} />
       )}
     </View>
   );

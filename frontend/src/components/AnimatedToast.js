@@ -1,13 +1,6 @@
-import React, { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  withSequence,
-  runOnJS
-} from 'react-native-reanimated';
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
+import { Text, StyleSheet } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withSequence } from 'react-native-reanimated';
 
 const AnimatedToast = forwardRef((props, ref) => {
   const [message, setMessage] = useState('');
@@ -22,20 +15,13 @@ const AnimatedToast = forwardRef((props, ref) => {
         withSpring(50, { damping: 15, stiffness: 100 }),
         withTiming(50, { duration: 3000 }),
         withTiming(-100, { duration: 500 }, (isFinished) => {
-          if (isFinished) {
-            opacity.value = 0;
-          }
+          if (isFinished) opacity.value = 0;
         })
       );
     }
   }));
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: translateY.value }],
-      opacity: opacity.value,
-    };
-  });
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }], opacity: opacity.value }));
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
@@ -45,26 +31,8 @@ const AnimatedToast = forwardRef((props, ref) => {
 });
 
 const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    top: 0,
-    left: 20,
-    right: 20,
-    backgroundColor: '#10b981', // emerald
-    padding: 15,
-    borderRadius: 8,
-    zIndex: 9999,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  text: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  }
+  container: { position: 'absolute', top: 0, left: 20, right: 20, backgroundColor: '#10b981', padding: 15, borderRadius: 8, zIndex: 9999, elevation: 5 },
+  text: { color: '#fff', fontWeight: 'bold', textAlign: 'center' }
 });
 
 export default AnimatedToast;

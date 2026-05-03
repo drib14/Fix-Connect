@@ -8,7 +8,9 @@ const userSchema = mongoose.Schema({
     password: { type: String, required: true },
     role: { type: String, enum: ['customer', 'worker', 'admin'], default: 'customer' },
     status: { type: String, default: 'Active' },
-    category: { type: String }, // For workers
+    category: { type: String },
+    resetPasswordOTP: { type: String },
+    resetPasswordExpires: { type: Date }
 }, { timestamps: true });
 
 userSchema.pre('save', async function(next) {
@@ -21,5 +23,4 @@ userSchema.methods.matchPassword = async function(enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-const User = mongoose.model('User', userSchema);
-module.exports = User;
+module.exports = mongoose.model('User', userSchema);

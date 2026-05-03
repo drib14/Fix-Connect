@@ -4,8 +4,12 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 
 import { AuthContext } from '../contexts/AuthContext';
+import WelcomeScreen from '../screens/WelcomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import VerifyOTPScreen from '../screens/VerifyOTPScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import CustomerDashboard from '../screens/CustomerDashboard';
 import WorkerDashboard from '../screens/WorkerDashboard';
 import AdminDashboard from '../screens/AdminDashboard';
@@ -29,8 +33,12 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user == null ? (
           <>
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen name="VerifyOTP" component={VerifyOTPScreen} />
+            <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           </>
         ) : (
           <>
