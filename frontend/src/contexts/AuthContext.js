@@ -9,39 +9,44 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const token = await AsyncStorage.getItem('token');
-        if (token) {
-          const { data } = await api.get('/auth/me');
-          if (data.success) setUser(data.data);
-        }
-      } catch (error) { await AsyncStorage.removeItem('token'); }
-      finally { setLoading(false); }
-    };
     loadUser();
   }, []);
 
-  const login = async (email, password) => {
+  const loadUser = async () => {
     try {
-      const { data } = await api.post('/auth/login', { email, password });
-      if (data.success) {
-        await AsyncStorage.setItem('token', data.data.token);
-        setUser(data.data);
-        return { success: true };
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        const response = await api.get('/auth/me');
+        if (response.data.success) {
+          setUser(response.data.data);
+        }
       }
-    } catch (error) { return { success: false, message: error.response?.data?.message || 'Login failed' }; }
+    } catch (error) {
+      console.log('Failed to load user', error);
+      await AsyncStorage.removeItem('token');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login = async (email, password) => {
+    const response = await api.post('/auth/login', { email, password });
+    if (response.data.success) {
+      await AsyncStorage.setItem('token', response.data.data.token);
+      setUser(response.data.data);
+      return response.data.data;
+    }
+    throw new Error(response.data.message);
   };
 
   const register = async (userData) => {
-    try {
-      const { data } = await api.post('/auth/register', userData);
-      if (data.success) {
-        await AsyncStorage.setItem('token', data.data.token);
-        setUser(data.data);
-        return { success: true };
-      }
-    } catch (error) { return { success: false, message: error.response?.data?.message || 'Registration failed' }; }
+    const response = await api.post('/auth/register', userData);
+    if (response.data.success) {
+      await AsyncStorage.setItem('token', response.data.data.token);
+      setUser(response.data.data);
+      return response.data.data;
+    }
+    throw new Error(response.data.message);
   };
 
   const logout = async () => {
@@ -49,5 +54,9 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  return <AuthContext.Provider value={{ user, loading, login, register, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, loading, login, register, logout, setUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

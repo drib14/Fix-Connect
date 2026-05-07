@@ -1,5 +1,5 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import io from 'socket.io-client';
+import React, { createContext, useEffect, useState, useContext } from 'react';
+import { io } from 'socket.io-client';
 import { AuthContext } from './AuthContext';
 
 export const SocketContext = createContext();
@@ -9,14 +9,17 @@ export const SocketProvider = ({ children }) => {
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
-    let newSocket;
     if (user) {
-      newSocket = io('http://localhost:5000');
-      newSocket.on('connect', () => newSocket.emit('join', user._id));
+      const newSocket = io('http://localhost:5000');
       setSocket(newSocket);
+
+      return () => newSocket.close();
     }
-    return () => { if (newSocket) newSocket.disconnect(); };
   }, [user]);
 
-  return <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>;
+  return (
+    <SocketContext.Provider value={socket}>
+      {children}
+    </SocketContext.Provider>
+  );
 };

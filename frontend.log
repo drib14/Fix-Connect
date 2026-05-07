@@ -1,33 +1,13 @@
- INFO  Accepting connections at http://localhost:8081
- HTTP  5/3/2026 6:45:35 AM ::1 GET /
- HTTP  5/3/2026 6:45:35 AM ::1 Returned 200 in 23 ms
- HTTP  5/3/2026 6:45:35 AM ::1 GET /_expo/static/js/web/index-2bb377c1f704a7a02025e997cd462bbd.js
- HTTP  5/3/2026 6:45:35 AM ::1 Returned 200 in 26 ms
- HTTP  5/3/2026 6:45:36 AM ::1 GET /assets/assets/images/logo.eb1064f0991e90eeb266fc4821fe2165.png
- HTTP  5/3/2026 6:45:36 AM ::1 Returned 200 in 5 ms
- HTTP  5/3/2026 6:49:44 AM ::1 GET /
- HTTP  5/3/2026 6:49:44 AM ::1 Returned 200 in 1 ms
- HTTP  5/3/2026 6:49:44 AM ::1 GET /_expo/static/js/web/index-2bb377c1f704a7a02025e997cd462bbd.js
- HTTP  5/3/2026 6:49:44 AM ::1 Returned 200 in 1 ms
- HTTP  5/3/2026 6:49:44 AM ::1 GET /assets/assets/images/logo.eb1064f0991e90eeb266fc4821fe2165.png
- HTTP  5/3/2026 6:49:44 AM ::1 Returned 200 in 1 ms
- HTTP  5/3/2026 6:52:24 AM ::1 GET /
- HTTP  5/3/2026 6:52:24 AM ::1 Returned 200 in 3 ms
- HTTP  5/3/2026 6:52:24 AM ::1 GET /_expo/static/js/web/index-2bb377c1f704a7a02025e997cd462bbd.js
- HTTP  5/3/2026 6:52:24 AM ::1 Returned 200 in 5 ms
- HTTP  5/3/2026 6:52:25 AM ::1 GET /assets/assets/images/logo.eb1064f0991e90eeb266fc4821fe2165.png
- HTTP  5/3/2026 6:52:25 AM ::1 Returned 200 in 2 ms
- HTTP  5/3/2026 6:55:03 AM ::1 GET /
- HTTP  5/3/2026 6:55:03 AM ::1 Returned 200 in 2 ms
- HTTP  5/3/2026 6:55:03 AM ::1 GET /_expo/static/js/web/index-2bb377c1f704a7a02025e997cd462bbd.js
- HTTP  5/3/2026 6:55:03 AM ::1 Returned 200 in 1 ms
- HTTP  5/3/2026 6:55:03 AM ::1 GET /assets/assets/images/logo.eb1064f0991e90eeb266fc4821fe2165.png
- HTTP  5/3/2026 6:55:03 AM ::1 Returned 200 in 1 ms
- HTTP  5/3/2026 6:58:09 AM ::1 GET /
- HTTP  5/3/2026 6:58:09 AM ::1 Returned 200 in 3 ms
- HTTP  5/3/2026 6:58:09 AM ::1 GET /_expo/static/js/web/index-2bb377c1f704a7a02025e997cd462bbd.js
- HTTP  5/3/2026 6:58:09 AM ::1 Returned 200 in 1 ms
- HTTP  5/3/2026 6:58:09 AM ::1 GET /assets/assets/images/logo.eb1064f0991e90eeb266fc4821fe2165.png
- HTTP  5/3/2026 6:58:09 AM ::1 Returned 200 in 3 ms
 
- INFO  Gracefully shutting down. Please wait...
+> frontend@1.0.0 web
+> expo start --web
+
+Starting project at /app/frontend
+Starting Metro Bundler
+The following packages should be updated for best compatibility with the installed expo version:
+  @react-native-async-storage/async-storage@3.0.2 - expected version: 2.2.0
+  react-native-safe-area-context@5.7.0 - expected version: ~5.6.0
+  react-native-screens@4.24.0 - expected version: ~4.16.0
+Your project may not work correctly until you install the expected versions of the packages.
+Waiting on http://localhost:8081
+Logs for your project will appear below.

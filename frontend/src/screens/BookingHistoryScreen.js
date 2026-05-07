@@ -1,33 +1,22 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import { Title, Card, Button, Text, ActivityIndicator } from 'react-native-paper';
-import { AuthContext } from '../contexts/AuthContext';
-import { SocketContext } from '../contexts/SocketContext';
 import api from '../api/axios';
 
-const WorkerDashboard = ({ navigation }) => {
-  const { logout, user } = useContext(AuthContext);
-  const socket = useContext(SocketContext);
+const BookingHistoryScreen = ({ navigation }) => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchBookings();
-
-    if(socket) {
-        socket.on('newBookingAvailable', (booking) => {
-            setBookings(prev => [booking, ...prev]);
-        });
-        return () => socket.off('newBookingAvailable');
-    }
-  }, [socket]);
+  }, []);
 
   const fetchBookings = async () => {
     try {
       const response = await api.get('/bookings');
       setBookings(response.data.data);
     } catch (error) {
-      console.log('Error fetching bookings', error);
+      console.log('Error fetching history', error);
     } finally {
       setLoading(false);
     }
@@ -37,12 +26,12 @@ const WorkerDashboard = ({ navigation }) => {
     <Card style={styles.card}>
       <Card.Title title={item.serviceType} subtitle={`Status: ${item.status}`} />
       <Card.Content>
-        <Text>Location: {item.location.address}</Text>
-        <Text style={styles.bold}>Est. Earnings: ₱{item.priceAtBooking}</Text>
+        <Text>Location: {item.location?.address}</Text>
+        <Text>Amount: ₱{item.priceAtBooking}</Text>
       </Card.Content>
       <Card.Actions>
         <Button mode="contained" onPress={() => navigation.navigate('BookingDetails', { bookingId: item._id })}>
-          Manage Booking
+          View
         </Button>
       </Card.Actions>
     </Card>
@@ -50,16 +39,12 @@ const WorkerDashboard = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Title>Worker Dashboard</Title>
-        <Button mode="outlined" onPress={logout}>Logout</Button>
-      </View>
       {loading ? <ActivityIndicator animating={true} style={{marginTop: 20}} /> : (
         <FlatList
           data={bookings}
           keyExtractor={(item) => item._id}
           renderItem={renderBooking}
-          ListEmptyComponent={<Text style={styles.empty}>No bookings yet.</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>No bookings found.</Text>}
         />
       )}
     </View>
@@ -68,10 +53,8 @@ const WorkerDashboard = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 15, backgroundColor: '#f5f5f5' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
   card: { marginBottom: 10 },
-  bold: { fontWeight: 'bold', marginTop: 5 },
   empty: { textAlign: 'center', marginTop: 20, fontStyle: 'italic', color: 'gray' }
 });
 
-export default WorkerDashboard;
+export default BookingHistoryScreen;

@@ -2,15 +2,19 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const { protect } = require('../middleware/authMiddleware');
 
 const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
 router.post('/register', async (req, res) => {
     try {
-        const { firstName, lastName, email, password, role, category } = req.body;
+        const { firstName, lastName, email, password } = req.body;
         const userExists = await User.findOne({ email });
         if (userExists) return res.status(400).json({ success: false, message: 'User already exists' });
-        const user = await User.create({ firstName, lastName, email, password, role: role || 'customer', category: role === 'worker' ? category : undefined });
+
+        // All users default to 'customer' upon registration
+        const user = await User.create({ firstName, lastName, email, password, role: 'customer' });
         res.status(201).json({ success: true, data: { _id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role, token: generateToken(user._id) }});
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
@@ -25,14 +29,12 @@ router.post('/login', async (req, res) => {
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
 
-router.get('/me', require('../middleware/authMiddleware').protect, async (req, res) => {
+router.get('/me', protect, async (req, res) => {
     try {
         const user = await User.findById(req.user._id).select('-password');
         res.json({ success: true, data: user });
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
-
-const nodemailer = require('nodemailer');
 
 router.post('/forgot-password', async (req, res) => {
     try {
@@ -80,6 +82,20 @@ router.post('/reset-password', async (req, res) => {
         user.resetPasswordExpires = undefined;
         await user.save();
         res.json({ success: true, message: 'Password reset successful' });
+    } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+});
+
+router.put('/become-worker', protect, async (req, res) => {
+    try {
+        const { category } = req.body;
+        if (!category) return res.status(400).json({ success: false, message: 'Service category is required' });
+
+        const user = await User.findById(req.user._id);
+        user.role = 'worker';
+        user.category = category;
+        await user.save();
+
+        res.json({ success: true, data: { _id: user._id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role, category: user.category }});
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
 
