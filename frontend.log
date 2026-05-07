@@ -11,3 +11,69 @@ The following packages should be updated for best compatibility with the install
 Your project may not work correctly until you install the expected versions of the packages.
 Waiting on http://localhost:8081
 Logs for your project will appear below.
+Web ./index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 98.8% (164/165)
+Web Bundling failed 5550ms index.js (167 modules)
+Unable to resolve "./src/navigation/AppNavigator" from "App.js"
+[0m [90m 4 |[39m [36mimport[39m { [33mAuthProvider[39m } [36mfrom[39m [32m'./src/contexts/AuthContext'[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { [33mSocketProvider[39m } [36mfrom[39m [32m'./src/contexts/SocketContext'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33mAppNavigator[39m [36mfrom[39m [32m'./src/navigation/AppNavigator'[39m[33m;[39m
+ [90m   |[39m                           [31m[1m^[22m[39m
+ [90m 7 |[39m
+ [90m 8 |[39m [36mconst[39m theme [33m=[39m {
+ [90m 9 |[39m   [33m...[39m[33mDefaultTheme[39m[33m,[39m[0m
+
+Import stack:
+
+ App.js
+ | import "./src/navigation/AppNavigator"
+
+ index.js
+ | import "./App"
+
+
+ | import "./index"
+
+Web ./index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundling failed 212ms index.js (156 modules)
+Unable to resolve "./src/navigation/AppNavigator" from "App.js"
+[0m [90m 4 |[39m [36mimport[39m { [33mAuthProvider[39m } [36mfrom[39m [32m'./src/contexts/AuthContext'[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { [33mSocketProvider[39m } [36mfrom[39m [32m'./src/contexts/SocketContext'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33mAppNavigator[39m [36mfrom[39m [32m'./src/navigation/AppNavigator'[39m[33m;[39m
+ [90m   |[39m                           [31m[1m^[22m[39m
+ [90m 7 |[39m
+ [90m 8 |[39m [36mconst[39m theme [33m=[39m {
+ [90m 9 |[39m   [33m...[39m[33mDefaultTheme[39m[33m,[39m[0m
+
+Import stack:
+
+ App.js
+ | import "./src/navigation/AppNavigator"
+
+ index.js
+ | import "./App"
+
+
+ | import "./index"
+
+Web ./index.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundling failed 215ms index.js (151 modules)
+Unable to resolve "./src/navigation/AppNavigator" from "App.js"
+[0m [90m 4 |[39m [36mimport[39m { [33mAuthProvider[39m } [36mfrom[39m [32m'./src/contexts/AuthContext'[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { [33mSocketProvider[39m } [36mfrom[39m [32m'./src/contexts/SocketContext'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33mAppNavigator[39m [36mfrom[39m [32m'./src/navigation/AppNavigator'[39m[33m;[39m
+ [90m   |[39m                           [31m[1m^[22m[39m
+ [90m 7 |[39m
+ [90m 8 |[39m [36mconst[39m theme [33m=[39m {
+ [90m 9 |[39m   [33m...[39m[33mDefaultTheme[39m[33m,[39m[0m
+
+Import stack:
+
+ App.js
+ | import "./src/navigation/AppNavigator"
+
+ index.js
+ | import "./App"
+
+
+ | import "./index"
