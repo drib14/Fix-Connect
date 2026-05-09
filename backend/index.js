@@ -17,40 +17,34 @@ const app = express();
 /* ---------------- TRUST PROXY ---------------- */
 app.set('trust proxy', 1);
 
-/* ---------------- SECURITY MIDDLEWARE ---------------- */
+/* ---------------- SECURITY ---------------- */
 app.use(helmet());
 app.use(xss());
 
 /* ---------------- RATE LIMIT ---------------- */
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 15 * 60 * 1000,
     max: 200,
-    message: "Too many requests, try again later."
+    message: "Too many requests, please try again later."
 });
 app.use('/api', limiter);
 
 /* ---------------- CORS CONFIG ---------------- */
-const allowedOrigins = [
-    "http://localhost:8081",
-    "http://127.0.0.1:8081",
-    "http://localhost:19006"
-];
-
-app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error("Blocked by CORS"));
-        }
-    },
+const corsOptions = {
+    origin: [
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
+        "http://localhost:19006"
+    ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
-}));
+};
 
-// Handle preflight requests
-app.options("*", cors());
+app.use(cors(corsOptions));
+
+/* ✅ FIX: correct preflight handling (NO "*") */
+app.options(/.*/, cors(corsOptions));
 
 /* ---------------- BODY PARSER ---------------- */
 app.use(express.json());
