@@ -22,6 +22,7 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [stats, setStats] = useState(null);
   const [pendingWorkers, setPendingWorkers] = useState([]);
   const [usersList, setUsersList] = useState([]);
+  const [disputesList, setDisputesList] = useState([]);
   
   // UI states
   const [loading, setLoading] = useState(false);
@@ -53,6 +54,11 @@ const AdminDashboard = ({ user, onLogout }) => {
         const usersResponse = await axios.get(`${API_URL}/users`, { headers });
         if (usersResponse.data.success) {
           setUsersList(usersResponse.data.users);
+        }
+      } else if (activeSubTab === 'disputes') {
+        const disputesResponse = await axios.get(`${API_URL}/disputes`, { headers });
+        if (disputesResponse.data.success) {
+          setDisputesList(disputesResponse.data.disputes);
         }
       }
     } catch (err) {
@@ -97,6 +103,29 @@ const AdminDashboard = ({ user, onLogout }) => {
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to moderate user.');
+    }
+  };
+
+  const handleResolveDispute = async (bookingId, resolutionStatus) => {
+    const confirmMsg = resolutionStatus === 'resolved'
+      ? 'Are you sure you want to approve this dispute ticket? This will mark it as resolved and issue a full sandbox refund to the client.'
+      : 'Are you sure you want to dismiss this dispute claim?';
+
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const token = localStorage.getItem('fixconnect_token');
+      const response = await axios.put(
+        `${API_URL}/disputes/${bookingId}/resolve`,
+        { resolutionStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        alert(`Dispute successfully ${resolutionStatus === 'resolved' ? 'refunded' : 'dismissed'}!`);
+        fetchAdminData();
+      }
+    } catch (err) {
+      alert('Failed to resolve dispute.');
     }
   };
 
@@ -147,6 +176,13 @@ const AdminDashboard = ({ user, onLogout }) => {
             onClick={() => setActiveSubTab('moderate')}
           >
             Moderate Users
+          </button>
+          <button
+            className={`btn ${activeSubTab === 'disputes' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ padding: '8px 16px', fontSize: '13px' }}
+            onClick={() => setActiveSubTab('disputes')}
+          >
+            Moderate Disputes ({disputesList.length})
           </button>
         </div>
 
@@ -441,6 +477,147 @@ const AdminDashboard = ({ user, onLogout }) => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* MODERATE DISPUTES TAB */}
+        {activeSubTab === 'disputes' && (
+          <div className="glass-card" style={{ padding: '32px', transform: 'none' }}>
+            <h3 style={{ fontSize: '20px', marginBottom: '24px' }}>Administrative Dispute Center</h3>
+
+            {loading ? (
+              <p>Loading active disputes...</p>
+            ) : disputesList.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                <CheckCircle size={44} color="#10b981" style={{ margin: '0 auto 12px auto' }} />
+                <h4>Dispute Registry Clean</h4>
+                <p style={{ fontSize: '13px', marginTop: '4px' }}>
+                  No active customer dispute complaints are registered on the platform!
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {disputesList.map((booking) => (
+                  <div
+                    key={booking._id}
+                    style={{
+                      border: '1.5px solid #cbd5e1',
+                      borderRadius: '20px',
+                      padding: '24px',
+                      background: '#ffffff',
+                    }}
+                  >
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', marginBottom: '14px' }}>
+                      <div>
+                        <span style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 'bold' }}>Service Category</span>
+                        <strong style={{ display: 'block', fontSize: '15px', color: '#0f172a' }}>{booking.category}</strong>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 'bold' }}>Mock Payment Gate</span>
+                        <strong style={{ display: 'block', fontSize: '15px', color: '#10b981' }}>PayMongo Sandbox</strong>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 'bold' }}>Total Fare Charges</span>
+                        <strong style={{ display: 'block', fontSize: '18px', color: '#10b981' }}>{formatPrice(booking.totalAmount, user)}</strong>
+                      </div>
+                    </div>
+
+                    {/* Parties */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', background: '#f8fafc', padding: '16px', borderRadius: '16px', marginBottom: '16px' }}>
+                      <div>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>CLIENT PARTY:</span>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '6px' }}>
+                          <img src={booking.customerId?.avatar} style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+                          <div>
+                            <span style={{ fontSize: '13px', fontWeight: 'bold', display: 'block' }}>{booking.customerId?.name}</span>
+                            <span style={{ fontSize: '11px', color: '#64748b' }}>{booking.customerId?.email}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold' }}>TECHNICIAN PARTY:</span>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '6px' }}>
+                          <img src={booking.workerId?.avatar} style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+                          <div>
+                            <span style={{ fontSize: '13px', fontWeight: 'bold', display: 'block' }}>{booking.workerId?.name}</span>
+                            <span style={{ fontSize: '11px', color: '#64748b' }}>{booking.workerId?.email}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Description & Complains */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ border: '1px solid #fee2e2', background: '#fef2f2', padding: '12px 16px', borderRadius: '12px', color: '#b91c1c' }}>
+                        <strong style={{ fontSize: '13px', display: 'block', marginBottom: '4px' }}>Client Dispute Complaint:</strong>
+                        <p style={{ margin: 0, fontSize: '13px' }}>{booking.dispute?.reason}</p>
+                      </div>
+
+                      {booking.completionReport && booking.completionReport.notes && (
+                        <div style={{ border: '1px solid #d1fae5', background: '#f0fdf4', padding: '12px 16px', borderRadius: '12px', color: '#047857' }}>
+                          <strong style={{ fontSize: '13px', display: 'block', marginBottom: '4px' }}>Worker Service Completion Report:</strong>
+                          <p style={{ margin: 0, fontSize: '13px' }}>{booking.completionReport.notes}</p>
+                          {booking.completionReport.proofPhoto && (
+                            <div style={{ marginTop: '8px' }}>
+                              <span style={{ display: 'block', fontSize: '11px', fontWeight: 'bold', marginBottom: '4px' }}>Proof of service photo:</span>
+                              <a href={booking.completionReport.proofPhoto} target="_blank" rel="noreferrer">
+                                <img src={booking.completionReport.proofPhoto} style={{ height: '100px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #cbd5e1' }} />
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Checklist Summary */}
+                      {booking.checklist && (
+                        <div>
+                          <strong style={{ fontSize: '12px', color: '#1e293b', display: 'block', marginBottom: '6px' }}>Technician Job Checklist Summary:</strong>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                            {booking.checklist.map((item, idx) => (
+                              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.completed ? '#10b981' : '#cbd5e1' }} />
+                                <span style={{ textDecoration: item.completed ? 'line-through' : 'none', color: item.completed ? '#64748b' : '#1e293b' }}>
+                                  {item.task}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Resolve Buttons */}
+                      <div style={{ display: 'flex', gap: '12px', justifyContent: 'end', borderTop: '1px solid #f1f5f9', paddingTop: '14px', marginTop: '10px' }}>
+                        {booking.dispute?.status === 'pending' ? (
+                          <>
+                            <button
+                              onClick={() => handleResolveDispute(booking._id, 'dismissed')}
+                              className="btn btn-secondary"
+                              style={{ borderColor: '#cbd5e1', color: '#64748b', padding: '8px 18px', fontSize: '13px' }}
+                            >
+                              Dismiss Claim
+                            </button>
+                            <button
+                              onClick={() => handleResolveDispute(booking._id, 'resolved')}
+                              className="btn btn-primary"
+                              style={{ padding: '8px 18px', fontSize: '13px', background: '#10b981', borderColor: '#10b981' }}
+                            >
+                              Approve PayMongo Sandbox Refund
+                            </button>
+                          </>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 'bold', color: booking.dispute?.status === 'resolved' ? '#10b981' : '#ef4444' }}>
+                            <CheckCircle size={16} />
+                            <span>Dispute Moderation: {booking.dispute?.status.toUpperCase()} ({booking.paymentStatus.toUpperCase()})</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

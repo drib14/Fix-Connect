@@ -138,4 +138,51 @@ router.put('/users/:id/status', protect, authorize('admin'), async (req, res) =>
   }
 });
 
+// @route   GET /api/admin/disputes
+// @desc    List all disputed booking tickets
+// @access  Private/Admin
+router.get('/disputes', protect, authorize('admin'), async (req, res) => {
+  try {
+    const disputes = await Booking.find({ 'dispute.isDisputed': true })
+      .populate('customerId', 'name email phone avatar')
+      .populate('workerId', 'name email phone avatar')
+      .sort('-updatedAt');
+
+    res.status(200).json({ success: true, count: disputes.length, disputes });
+  } catch (error) {
+    console.error(`Fetch Disputes Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/disputes/:id/resolve
+// @desc    Resolve a disputed booking claim
+// @access  Private/Admin
+router.put('/disputes/:id/resolve', protect, authorize('admin'), async (req, res) => {
+  const { resolutionStatus } = req.body; // 'resolved' or 'dismissed'
+
+  if (!['resolved', 'dismissed'].includes(resolutionStatus)) {
+    return res.status(400).json({ success: false, message: 'Invalid resolution status' });
+  }
+
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    booking.dispute.status = resolutionStatus;
+    if (resolutionStatus === 'resolved') {
+      booking.paymentStatus = 'refunded';
+    }
+
+    await booking.save();
+
+    res.status(200).json({ success: true, message: `Dispute ticket marked as ${resolutionStatus}`, booking });
+  } catch (error) {
+    console.error(`Resolve Dispute Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 module.exports = router;

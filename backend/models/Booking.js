@@ -50,6 +50,41 @@ const BookingSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    checklist: {
+      type: [
+        {
+          task: { type: String, required: true },
+          completed: { type: Boolean, default: false },
+        }
+      ],
+      default: [
+        { task: 'Arrive at client location', completed: false },
+        { task: 'Perform initial diagnostics', completed: false },
+        { task: 'Discuss options with client', completed: false },
+        { task: 'Perform repair or maintenance task', completed: false },
+        { task: 'Test and verify resolution', completed: false },
+        { task: 'Clean up workspace', completed: false },
+      ],
+    },
+    completionReport: {
+      notes: { type: String, default: '' },
+      proofPhoto: { type: String, default: '' },
+      completedAt: { type: Date, default: null },
+    },
+    dispute: {
+      isDisputed: { type: Boolean, default: false },
+      reason: { type: String, default: '' },
+      status: { type: String, enum: ['pending', 'resolved', 'dismissed'], default: 'pending' },
+      refundRequested: { type: Boolean, default: false },
+    },
+    couponCode: {
+      type: String,
+      default: '',
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
     rating: {
       type: Number,
       min: 1,

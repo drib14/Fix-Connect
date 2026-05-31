@@ -22,6 +22,7 @@ import {
   Hammer,
   Leaf,
   Navigation,
+  Loader,
 } from 'lucide-react';
 
 const ClientDashboard = ({ user, onLogout }) => {
@@ -86,6 +87,258 @@ const ClientDashboard = ({ user, onLogout }) => {
   const [currentMatchingIndex, setCurrentMatchingIndex] = useState(0);
   const [loadingClosest, setLoadingClosest] = useState(false);
   const [isDispatchCheckout, setIsDispatchCheckout] = useState(false);
+  const [isMatchingActive, setIsMatchingActive] = useState(false);
+  const [matchingProgressText, setMatchingProgressText] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState('');
+  const [discountPercentage, setDiscountPercentage] = useState(0);
+
+  // Chat states
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatBooking, setChatBooking] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatImage, setChatImage] = useState(null);
+  const chatEndRef = useRef(null);
+
+  // Dispute states
+  const [isDisputeOpen, setIsDisputeOpen] = useState(false);
+  const [disputeBookingId, setDisputeBookingId] = useState('');
+  const [disputeReason, setDisputeReason] = useState('');
+  const [disputeRefund, setDisputeRefund] = useState(false);
+  const [submittingDispute, setSubmittingDispute] = useState(false);
+
+  const API_URL = 'http://localhost:5050/api';
+
+  const getCalculatedAmount = (base) => {
+    if (discountPercentage > 0) {
+      return base - (base * discountPercentage) / 100;
+    }
+    return base;
+  };
+
+  const fetchBookings = async () => {
+    setLoadingBookings(true);
+    try {
+      const token = localStorage.getItem('fixconnect_token');
+      const response = await axios.get(`${API_URL}/bookings/my-bookings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data.success) {
+        setMyBookings(response.data.bookings);
+      }
+    } catch (err) {
+      console.error('Error fetching bookings:', err.message);
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
+
+  const fetchWorkers = async (searchVal = searchQuery) => {
+    setLoadingWorkers(true);
+    try {
+      const lat = user.location?.coordinates?.[1] || 14.5995;
+      const lng = user.location?.coordinates?.[0] || 121.0494;
+      const response = await axios.get(
+        `${API_URL}/workers/search?category=${activeCategory}&search=${searchVal}&lat=${lat}&lng=${lng}&maxDist=${maxDistance}`
+      );
+      if (response.data.success) {
+        setWorkers(response.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching workers:', err.message);
+    } finally {
+      setLoadingWorkers(false);
+    }
+  };
+
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    fetchWorkers();
+  };
+
+  const handleOpenDetails = (worker) => {
+    setSelectedWorker(worker);
+    setIsDetailOpen(true);
+  };
+
+  const handleStartBooking = () => {
+    setIsDetailOpen(false);
+    setIsBookingOpen(true);
+    setPaymentStep(false);
+    setBookingDate('');
+    setBookingTime('10:00');
+    setJobDescription('');
+    setJobFiles([]);
+    setCouponCode('');
+    setAppliedCoupon('');
+    setDiscountPercentage(0);
+  };
+
+  const handleBookingDetailsSubmit = async (e) => {
+    e.preventDefault();
+    if (!bookingDate || !bookingTime || !jobDescription) {
+      alert('Please complete all booking details.');
+      return;
+    }
+    setProcessingPayment(true);
+    try {
+      const token = localStorage.getItem('fixconnect_token');
+      const formData = new FormData();
+      formData.append('workerId', selectedWorker.userId);
+      formData.append('category', selectedWorker.skills[0] || 'Home Repair');
+      formData.append('bookingDate', bookingDate);
+      formData.append('bookingTime', bookingTime);
+      formData.append('description', jobDescription);
+      formData.append('address', user.address || '');
+      formData.append('longitude', user.location?.coordinates?.[0] || 0);
+      formData.append('latitude', user.location?.coordinates?.[1] || 0);
+      
+      const baseAmount = selectedWorker.hourlyRate * 2;
+      const finalAmount = getCalculatedAmount(baseAmount);
+      formData.append('totalAmount', finalAmount);
+      if (appliedCoupon) {
+        formData.append('couponCode', appliedCoupon);
+        formData.append('discountAmount', baseAmount - finalAmount);
+      }
+
+      jobFiles.forEach((file) => {
+        formData.append('images', file);
+      });
+
+      const response = await axios.post(`${API_URL}/bookings`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data.success) {
+        setBookingIdForPay(response.data.booking._id);
+        setPaymentStep(true);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to create booking request.');
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files) {
+      setJobFiles(Array.from(e.target.files));
+    }
+  };
+
+  const fetchChatMessages = async (bookingId) => {
+    try {
+      const token = localStorage.getItem('fixconnect_token');
+      const response = await axios.get(`${API_URL}/bookings/${bookingId}/messages`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data.success) {
+        setChatMessages(response.data.messages);
+      }
+    } catch (err) {
+      console.error('Chat fetch error:', err.message);
+    }
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim() && !chatImage) return;
+
+    try {
+      const token = localStorage.getItem('fixconnect_token');
+      const formData = new FormData();
+      formData.append('message', chatInput);
+      if (chatImage) {
+        formData.append('image', chatImage);
+      }
+
+      const response = await axios.post(
+        `${API_URL}/bookings/${chatBooking._id}/messages`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setChatInput('');
+        setChatImage(null);
+        fetchChatMessages(chatBooking._id);
+      }
+    } catch (err) {
+      alert('Failed to send message.');
+    }
+  };
+
+  const handleOpenDispute = (bookingId) => {
+    setDisputeBookingId(bookingId);
+    setDisputeReason('');
+    setDisputeRefund(false);
+    setIsDisputeOpen(true);
+  };
+
+  const handleDisputeSubmit = async (e) => {
+    e.preventDefault();
+    if (!disputeReason.trim()) {
+      alert('Please specify the dispute reason.');
+      return;
+    }
+
+    setSubmittingDispute(true);
+    try {
+      const token = localStorage.getItem('fixconnect_token');
+      const response = await axios.post(
+        `${API_URL}/bookings/${disputeBookingId}/dispute`,
+        { reason: disputeReason, refundRequested: disputeRefund },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        alert('Dispute ticket registered successfully! Admin will moderate.');
+        setIsDisputeOpen(false);
+        fetchBookings();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to file dispute.');
+    } finally {
+      setSubmittingDispute(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  // Sync worker lists when filters modify
+  useEffect(() => {
+    if (activeTab === 'explore') {
+      fetchWorkers();
+    }
+  }, [activeCategory, maxDistance, activeTab]);
+
+  // Scroll to bottom of chat
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages]);
+
+  // Chat message stream polling
+  useEffect(() => {
+    if (!isChatOpen || !chatBooking) return;
+    fetchChatMessages(chatBooking._id);
+    const interval = setInterval(() => {
+      fetchChatMessages(chatBooking._id);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isChatOpen, chatBooking]);
 
   // Fetch closest worker for dynamic instant dispatch
   useEffect(() => {
@@ -213,7 +466,13 @@ const ClientDashboard = ({ user, onLogout }) => {
         formData.append('address', dispatchAddress);
         formData.append('longitude', dispatchCoords.lng);
         formData.append('latitude', dispatchCoords.lat);
-        formData.append('totalAmount', getDynamicFare());
+        const baseFare = getDynamicFare();
+        const finalFare = getCalculatedAmount(baseFare);
+        formData.append('totalAmount', finalFare);
+        if (appliedCoupon) {
+          formData.append('couponCode', appliedCoupon);
+          formData.append('discountAmount', baseFare - finalFare);
+        }
 
         dispatchFiles.forEach((file) => {
           formData.append('images', file);
@@ -1211,7 +1470,49 @@ const ClientDashboard = ({ user, onLogout }) => {
                     </p>
 
                     {/* Actions */}
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'end' }}>
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'end', flexWrap: 'wrap' }}>
+                      {['pending', 'accepted', 'in_progress'].includes(booking.status) && (
+                        <button
+                          onClick={() => {
+                            setChatBooking(booking);
+                            setIsChatOpen(true);
+                          }}
+                          className="btn btn-secondary"
+                          style={{ padding: '8px 16px', fontSize: '13px', borderColor: '#10b981', color: '#10b981' }}
+                        >
+                          💬 Chat with Pro
+                        </button>
+                      )}
+
+                      {booking.status === 'completed' && !booking.dispute?.isDisputed && (
+                        <button
+                          onClick={() => handleOpenDispute(booking._id)}
+                          className="btn btn-danger"
+                          style={{ padding: '8px 16px', fontSize: '13px', background: 'transparent', borderColor: '#ef4444', color: '#ef4444' }}
+                        >
+                          ⚠️ Dispute
+                        </button>
+                      )}
+
+                      {booking.status === 'completed' && booking.dispute?.isDisputed && (
+                        <div
+                          style={{
+                            fontSize: '12.5px',
+                            fontWeight: 'bold',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            background: '#fef2f2',
+                            border: '1px solid #fee2e2',
+                            color: '#ef4444',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <span>⚠️ Dispute Filed ({booking.dispute.status})</span>
+                        </div>
+                      )}
+
                       {booking.status === 'pending' && (
                         <button
                           onClick={() => handleCancelBooking(booking._id)}
@@ -1373,6 +1674,60 @@ const ClientDashboard = ({ user, onLogout }) => {
                   />
                 </div>
 
+                {/* Coupon Code Input */}
+                <div className="form-group" style={{ marginTop: '8px' }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>Apply Promo / Coupon Code</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. WELCOME20, SAVE10"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      style={{ fontSize: '13px', textTransform: 'uppercase' }}
+                      disabled={!!appliedCoupon}
+                    />
+                    {appliedCoupon ? (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => {
+                          setAppliedCoupon('');
+                          setDiscountPercentage(0);
+                          setCouponCode('');
+                        }}
+                        style={{ padding: '0 12px', fontSize: '11px', color: '#ef4444', borderColor: '#fee2e2' }}
+                      >
+                        Remove
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => {
+                          if (couponCode === 'WELCOME20') {
+                            setAppliedCoupon('WELCOME20');
+                            setDiscountPercentage(20);
+                          } else if (couponCode === 'SAVE10') {
+                            setAppliedCoupon('SAVE10');
+                            setDiscountPercentage(10);
+                          } else {
+                            alert('Invalid coupon code entered!');
+                          }
+                        }}
+                        style={{ padding: '0 16px', fontSize: '12px', whiteSpace: 'nowrap' }}
+                      >
+                        Apply
+                      </button>
+                    )}
+                  </div>
+                  {appliedCoupon && (
+                    <small style={{ color: '#10b981', fontWeight: 'bold', display: 'block', marginTop: '4px' }}>
+                      Promo Code {appliedCoupon} Applied! Saved {discountPercentage}% on estimated fare.
+                    </small>
+                  )}
+                </div>
+
                 <div
                   style={{
                     background: '#f0fdf4',
@@ -1391,8 +1746,8 @@ const ClientDashboard = ({ user, onLogout }) => {
                   </div>
                   <strong style={{ fontSize: '20px', color: '#10b981' }}>
                     {isDispatchCheckout 
-                      ? formatPrice(getDynamicFare(), user)
-                      : formatPrice(selectedWorker.hourlyRate * 2, user)}
+                      ? formatPrice(getCalculatedAmount(getDynamicFare()), user)
+                      : formatPrice(getCalculatedAmount(selectedWorker.hourlyRate * 2), user)}
                   </strong>
                 </div>
 
@@ -1588,6 +1943,134 @@ const ClientDashboard = ({ user, onLogout }) => {
             {submittingReview ? 'Submitting...' : 'Submit Review'}
           </button>
         </form>
+      </ModalDrawer>
+
+      {/* DISPUTE MODAL */}
+      <ModalDrawer
+        isOpen={isDisputeOpen}
+        onClose={() => setIsDisputeOpen(false)}
+        title="File Dispute Ticket"
+      >
+        <form onSubmit={handleDisputeSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ color: '#64748b', fontSize: '13px' }}>
+            We will open an administrative dispute review. Please provide details of the issue.
+          </p>
+          
+          <div className="form-group">
+            <label className="form-label">Dispute Reason / Details</label>
+            <textarea
+              className="form-input"
+              rows={4}
+              required
+              style={{ resize: 'none' }}
+              placeholder="Please describe why this service was unsatisfactory..."
+              value={disputeReason}
+              onChange={(e) => setDisputeReason(e.target.value)}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              type="checkbox"
+              id="refundRequested"
+              checked={disputeRefund}
+              onChange={(e) => setDisputeRefund(e.target.checked)}
+              style={{ accentColor: '#10b981', width: '18px', height: '18px' }}
+            />
+            <label htmlFor="refundRequested" style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', cursor: 'pointer' }}>
+              Request PayMongo Sandbox Refund
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%', marginTop: '8px' }}
+            disabled={submittingDispute}
+          >
+            {submittingDispute ? 'Filing Complaint...' : 'Register Dispute'}
+          </button>
+        </form>
+      </ModalDrawer>
+
+      {/* CHAT MESSENGER MODAL */}
+      <ModalDrawer
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        title={`Chat with ${chatBooking?.workerId?.name || 'Professional'}`}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', height: '480px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '12px', background: '#f8fafc', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+            {chatMessages.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#64748b', fontSize: '13px', margin: 'auto' }}>
+                No messages yet. Send a message to coordinate service!
+              </div>
+            ) : (
+              chatMessages.map((msg) => {
+                const isMe = msg.senderId === user._id;
+                return (
+                  <div
+                    key={msg._id}
+                    style={{
+                      alignSelf: isMe ? 'flex-end' : 'flex-start',
+                      background: isMe ? '#10b981' : '#ffffff',
+                      color: isMe ? '#ffffff' : '#0f172a',
+                      border: isMe ? 'none' : '1px solid #e2e8f0',
+                      borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                      padding: '10px 14px',
+                      maxWidth: '75%',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                    }}
+                  >
+                    {msg.message && <p style={{ margin: 0, fontSize: '13px', whiteSpace: 'pre-wrap' }}>{msg.message}</p>}
+                    {msg.image && (
+                      <img
+                        src={msg.image}
+                        alt="Chat Attachment"
+                        style={{ maxWidth: '100%', borderRadius: '8px', marginTop: '6px', maxHeight: '180px', objectFit: 'cover' }}
+                      />
+                    )}
+                    <span style={{ fontSize: '9px', display: 'block', textAlign: 'right', marginTop: '4px', opacity: 0.7 }}>
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          <form onSubmit={handleSendMessage} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Type message here..."
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <button type="submit" className="btn btn-primary" style={{ padding: '0 16px' }}>
+                Send
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b', cursor: 'pointer', background: '#f1f5f9', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                📎 Attach Image
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) setChatImage(e.target.files[0]);
+                  }}
+                />
+              </label>
+              {chatImage && <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 'bold' }}>✓ {chatImage.name}</span>}
+            </div>
+          </form>
+        </div>
       </ModalDrawer>
     </div>
   );

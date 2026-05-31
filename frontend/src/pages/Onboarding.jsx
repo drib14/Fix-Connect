@@ -25,6 +25,7 @@ const Onboarding = ({ user, onOnboardSuccess }) => {
   const [customSkillInput, setCustomSkillInput] = useState('');
   const [startHour, setStartHour] = useState('08:00');
   const [endHour, setEndHour] = useState('17:00');
+  const [workingDays, setWorkingDays] = useState(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']);
   const [files, setFiles] = useState([]); // File array for certifications
 
   const handleAddCustomSkill = () => {
@@ -139,6 +140,7 @@ const Onboarding = ({ user, onOnboardSuccess }) => {
       formData.append('latitude', coords.lat);
       const mergedSkills = [...workerSkills, ...customSkills];
       formData.append('skills', JSON.stringify(mergedSkills));
+      formData.append('workingDays', JSON.stringify(workingDays));
 
       files.forEach((file) => {
         formData.append('certifications', file);
@@ -566,6 +568,46 @@ const Onboarding = ({ user, onOnboardSuccess }) => {
                         value={endHour}
                         onChange={(e) => setEndHour(e.target.value)}
                       />
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ marginTop: '14px' }}>
+                    <label className="form-label font-bold">Active Working Days</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
+                      {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
+                        const active = workingDays.includes(day);
+                        return (
+                          <button
+                            key={day}
+                            type="button"
+                            onClick={() => {
+                              if (active) {
+                                setWorkingDays(workingDays.filter((d) => d !== day));
+                              } else {
+                                setWorkingDays([...workingDays, day]);
+                              }
+                            }}
+                            style={{
+                              padding: '8px 12px',
+                              borderRadius: '8px',
+                              border: '1px solid',
+                              borderColor: active ? '#10b981' : '#cbd5e1',
+                              background: active ? '#f0fdf4' : 'transparent',
+                              color: active ? '#10b981' : '#64748b',
+                              fontSize: '12px',
+                              fontWeight: '700',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.3s ease',
+                            }}
+                          >
+                            {active && <Check size={12} strokeWidth={3} />}
+                            {day.slice(0, 3)}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 

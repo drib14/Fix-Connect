@@ -211,4 +211,152 @@ router.post('/:id/review', protect, async (req, res) => {
   }
 });
 
+// @route   PUT /api/bookings/:id/checklist
+// @desc    Update checklist items
+// @access  Private
+router.put('/:id/checklist', protect, async (req, res) => {
+  const { checklist } = req.body;
+
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    if (booking.workerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Unauthorized professional' });
+    }
+
+    booking.checklist = checklist;
+    await booking.save();
+
+    res.status(200).json({ success: true, booking });
+  } catch (error) {
+    console.error(`Update Checklist Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/bookings/:id/complete
+// @desc    Technician submits completion notes and proof photo
+// @access  Private
+router.put('/:id/complete', protect, upload.single('proofPhoto'), async (req, res) => {
+  const { notes } = req.body;
+
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    if (booking.workerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Unauthorized professional' });
+    }
+
+    booking.status = 'completed';
+    booking.paymentStatus = 'paid';
+    booking.completionReport = {
+      notes: notes || '',
+      proofPhoto: req.file ? req.file.path : '',
+      completedAt: new Date(),
+    };
+
+    await booking.save();
+
+    res.status(200).json({ success: true, message: 'Service marked as completed successfully', booking });
+  } catch (error) {
+    console.error(`Complete Service Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/bookings/:id/dispute
+// @desc    Open a dispute claim on a completed job
+// @access  Private
+router.post('/:id/dispute', protect, async (req, res) => {
+  const { reason, refundRequested } = req.body;
+
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    if (booking.customerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Unauthorized client' });
+    }
+
+    booking.dispute = {
+      isDisputed: true,
+      reason: reason || 'Service quality issue',
+      status: 'pending',
+      refundRequested: !!refundRequested,
+    };
+
+    await booking.save();
+
+    res.status(200).json({ success: true, message: 'Dispute ticket registered successfully', booking });
+  } catch (error) {
+    console.error(`Dispute Service Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   GET /api/bookings/:id/messages
+// @desc    Get chat message logs between client and worker
+// @access  Private
+router.get('/:id/messages', protect, async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    // Ensure user is client or worker of this booking
+    if (booking.customerId.toString() !== req.user._id.toString() && booking.workerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Unauthorized chat stream' });
+    }
+
+    const Message = require('../models/Message');
+    const messages = await Message.find({ bookingId: req.params.id }).sort('createdAt');
+
+    res.status(200).json({ success: true, messages });
+  } catch (error) {
+    console.error(`Get Messages Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/bookings/:id/messages
+// @desc    Post a message to chat
+// @access  Private
+router.post('/:id/messages', protect, upload.single('image'), async (req, res) => {
+  const { message } = req.body;
+
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    const receiverId = req.user._id.toString() === booking.customerId.toString() 
+      ? booking.workerId 
+      : booking.customerId;
+
+    const Message = require('../models/Message');
+    const msg = await Message.create({
+      bookingId: req.params.id,
+      senderId: req.user._id,
+      receiverId,
+      message: message || '',
+      image: req.file ? req.file.path : '',
+    });
+
+    res.status(201).json({ success: true, message: msg });
+  } catch (error) {
+    console.error(`Post Message Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 module.exports = router;

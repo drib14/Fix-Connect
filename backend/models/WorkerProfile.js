@@ -54,6 +54,10 @@ const WorkerProfileSchema = new mongoose.Schema(
         default: '17:00',
       },
     },
+    workingDays: {
+      type: [String],
+      default: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+    },
     isVerifiedByAdmin: {
       type: Boolean,
       default: false,

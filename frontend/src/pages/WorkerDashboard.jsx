@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import {
   Clock,
@@ -37,6 +37,148 @@ const WorkerDashboard = ({ user, onLogout }) => {
   const [offerTimer, setOfferTimer] = useState(15);
 
   const API_URL = 'http://localhost:5050/api';
+
+  // Chat states
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatBooking, setChatBooking] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatImage, setChatImage] = useState(null);
+  const chatEndRef = useRef(null);
+
+  // Complete Job states
+  const [isCompleteOpen, setIsCompleteOpen] = useState(false);
+  const [completeBookingId, setCompleteBookingId] = useState('');
+  const [completeNotes, setCompleteNotes] = useState('');
+  const [completePhoto, setCompletePhoto] = useState(null);
+  const [submittingCompletion, setSubmittingCompletion] = useState(false);
+
+  const handleToggleChecklistItem = async (bookingId, itemIndex) => {
+    const booking = bookings.find((b) => b._id === bookingId);
+    if (!booking) return;
+
+    const updatedChecklist = booking.checklist.map((item, idx) => {
+      if (idx === itemIndex) {
+        return { ...item, completed: !item.completed };
+      }
+      return item;
+    });
+
+    try {
+      const token = localStorage.getItem('fixconnect_token');
+      const response = await axios.put(
+        `${API_URL}/bookings/${bookingId}/checklist`,
+        { checklist: updatedChecklist },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        fetchBookingsSilent();
+      }
+    } catch (err) {
+      console.error('Error updating checklist item:', err.message);
+    }
+  };
+
+  const handleCompleteSubmit = async (e) => {
+    e.preventDefault();
+    setSubmittingCompletion(true);
+    try {
+      const token = localStorage.getItem('fixconnect_token');
+      const formData = new FormData();
+      formData.append('notes', completeNotes);
+      if (completePhoto) {
+        formData.append('proofPhoto', completePhoto);
+      }
+
+      const response = await axios.put(
+        `${API_URL}/bookings/${completeBookingId}/complete`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (response.data.success) {
+        alert('Job completed successfully!');
+        setIsCompleteOpen(false);
+        setCompleteNotes('');
+        setCompletePhoto(null);
+        setIsDetailOpen(false);
+        fetchProfileAndBookings();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to complete booking.');
+    } finally {
+      setSubmittingCompletion(false);
+    }
+  };
+
+  const fetchChatMessages = async (bookingId) => {
+    try {
+      const token = localStorage.getItem('fixconnect_token');
+      const response = await axios.get(`${API_URL}/bookings/${bookingId}/messages`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data.success) {
+        setChatMessages(response.data.messages);
+      }
+    } catch (err) {
+      console.error('Chat fetch error:', err.message);
+    }
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim() && !chatImage) return;
+
+    try {
+      const token = localStorage.getItem('fixconnect_token');
+      const formData = new FormData();
+      formData.append('message', chatInput);
+      if (chatImage) {
+        formData.append('image', chatImage);
+      }
+
+      const response = await axios.post(
+        `${API_URL}/bookings/${chatBooking._id}/messages`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setChatInput('');
+        setChatImage(null);
+        fetchChatMessages(chatBooking._id);
+      }
+    } catch (err) {
+      alert('Failed to send message.');
+    }
+  };
+
+  // Scroll to bottom of chat
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages]);
+
+  // Chat message stream polling
+  useEffect(() => {
+    if (!isChatOpen || !chatBooking) return;
+    fetchChatMessages(chatBooking._id);
+    const interval = setInterval(() => {
+      fetchChatMessages(chatBooking._id);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isChatOpen, chatBooking]);
 
   useEffect(() => {
     fetchProfileAndBookings();
@@ -566,7 +708,19 @@ const WorkerDashboard = ({ user, onLogout }) => {
                       </div>
 
                       {/* Action buttons */}
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {['pending', 'accepted', 'in_progress'].includes(booking.status) && (
+                          <button
+                            onClick={() => {
+                              setChatBooking(booking);
+                              setIsChatOpen(true);
+                            }}
+                            className="btn btn-secondary"
+                            style={{ padding: '8px 12px', fontSize: '12px', borderColor: '#10b981', color: '#10b981' }}
+                          >
+                            💬 Chat
+                          </button>
+                        )}
                         <button
                           onClick={() => handleOpenBookingDetails(booking)}
                           className="btn btn-secondary"
@@ -641,7 +795,42 @@ const WorkerDashboard = ({ user, onLogout }) => {
               </div>
             )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
+            {['accepted', 'in_progress', 'completed'].includes(selectedBooking.status) && selectedBooking.checklist && (
+              <div style={{ marginTop: '14px', borderTop: '1px solid #cbd5e1', paddingTop: '14px' }}>
+                <h4 style={{ fontSize: '14px', marginBottom: '8px', color: '#0f172a', fontWeight: 'bold' }}>Job Tasks Checklist:</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {selectedBooking.checklist.map((item, idx) => (
+                    <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        disabled={selectedBooking.status === 'completed'}
+                        checked={item.completed}
+                        onChange={() => handleToggleChecklistItem(selectedBooking._id, idx)}
+                        style={{ width: '16px', height: '16px', accentColor: '#10b981', cursor: 'pointer' }}
+                      />
+                      <span style={{ fontSize: '13px', textDecoration: item.completed ? 'line-through' : 'none', color: item.completed ? '#94a3b8' : '#1e293b' }}>
+                        {item.task}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
+              {['pending', 'accepted', 'in_progress'].includes(selectedBooking.status) && (
+                <button
+                  onClick={() => {
+                    setChatBooking(selectedBooking);
+                    setIsChatOpen(true);
+                  }}
+                  className="btn btn-secondary"
+                  style={{ width: '100%', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderColor: '#10b981', color: '#10b981' }}
+                >
+                  💬 Chat with Customer
+                </button>
+              )}
+
               {selectedBooking.status === 'pending' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <button
@@ -673,7 +862,12 @@ const WorkerDashboard = ({ user, onLogout }) => {
 
               {selectedBooking.status === 'in_progress' && (
                 <button
-                  onClick={() => handleUpdateBookingStatus(selectedBooking._id, 'completed')}
+                  onClick={() => {
+                    setCompleteBookingId(selectedBooking._id);
+                    setCompleteNotes('');
+                    setCompletePhoto(null);
+                    setIsCompleteOpen(true);
+                  }}
                   className="btn btn-primary"
                   style={{ width: '100%', padding: '12px' }}
                 >
@@ -690,6 +884,134 @@ const WorkerDashboard = ({ user, onLogout }) => {
             </div>
           </div>
         )}
+      </ModalDrawer>
+
+      {/* COMPLETE SERVICE MODAL */}
+      <ModalDrawer
+        isOpen={isCompleteOpen}
+        onClose={() => setIsCompleteOpen(false)}
+        title="Complete Job Service Report"
+      >
+        <form onSubmit={handleCompleteSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ color: '#64748b', fontSize: '13px' }}>
+            Please write service notes and upload a proof photo to close this job assignment.
+          </p>
+
+          <div className="form-group">
+            <label className="form-label">Completion Summary Notes</label>
+            <textarea
+              className="form-input"
+              rows={4}
+              required
+              style={{ resize: 'none' }}
+              placeholder="e.g. Replaced leaking drain pipe and tested sink under full flow..."
+              value={completeNotes}
+              onChange={(e) => setCompleteNotes(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Proof of Service Image</label>
+            <input
+              type="file"
+              accept="image/*"
+              className="form-input"
+              required
+              onChange={(e) => {
+                if (e.target.files?.[0]) setCompletePhoto(e.target.files[0]);
+              }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%', marginTop: '8px' }}
+            disabled={submittingCompletion}
+          >
+            {submittingCompletion ? 'Uploading Service Report...' : 'Submit Service Completion'}
+          </button>
+        </form>
+      </ModalDrawer>
+
+      {/* CHAT MESSENGER MODAL */}
+      <ModalDrawer
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        title={`Chat with Customer: ${chatBooking?.customerId?.name || 'Client'}`}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', height: '480px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '12px', background: '#f8fafc', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+            {chatMessages.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#64748b', fontSize: '13px', margin: 'auto' }}>
+                No messages yet. Send a message to coordinate coordinates!
+              </div>
+            ) : (
+              chatMessages.map((msg) => {
+                const isMe = msg.senderId === user._id;
+                return (
+                  <div
+                    key={msg._id}
+                    style={{
+                      alignSelf: isMe ? 'flex-end' : 'flex-start',
+                      background: isMe ? '#10b981' : '#ffffff',
+                      color: isMe ? '#ffffff' : '#0f172a',
+                      border: isMe ? 'none' : '1px solid #e2e8f0',
+                      borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                      padding: '10px 14px',
+                      maxWidth: '75%',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                    }}
+                  >
+                    {msg.message && <p style={{ margin: 0, fontSize: '13px', whiteSpace: 'pre-wrap' }}>{msg.message}</p>}
+                    {msg.image && (
+                      <img
+                        src={msg.image}
+                        alt="Chat Attachment"
+                        style={{ maxWidth: '100%', borderRadius: '8px', marginTop: '6px', maxHeight: '180px', objectFit: 'cover' }}
+                      />
+                    )}
+                    <span style={{ fontSize: '9px', display: 'block', textAlign: 'right', marginTop: '4px', opacity: 0.7 }}>
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          <form onSubmit={handleSendMessage} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Type message here..."
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <button type="submit" className="btn btn-primary" style={{ padding: '0 16px' }}>
+                Send
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b', cursor: 'pointer', background: '#f1f5f9', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                📎 Attach Image
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) setChatImage(e.target.files[0]);
+                  }}
+                />
+              </label>
+              {chatImage && <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 'bold' }}>✓ {chatImage.name}</span>}
+            </div>
+          </form>
+        </div>
       </ModalDrawer>
     </div>
   );
