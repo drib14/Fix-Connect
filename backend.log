@@ -1,0 +1,10 @@
+
+> fixconnect-backend@1.0.0 dev
+> node server.js
+
+(node:431261) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Server is running on port 5000
+MongoDB Connected: localhost
+FixConnect Seeder: Service categories populated.
+FixConnect Seeder: Admin account seeded (admin@fixconnect.com / AdminPassword123)

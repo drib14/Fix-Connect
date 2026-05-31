@@ -1,0 +1,38 @@
+
+> fixconnect-frontend@1.0.0 dev
+> vite
+
+
+  VITE v4.5.14  ready in 309 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.0.2:5173/
+9:36:07 AM [vite] hmr update /src/App.jsx
+9:36:07 AM [vite] hmr update /src/pages/Auth.jsx
+9:39:44 AM [vite] hmr update /src/components/AddressAutocomplete.jsx
+9:39:44 AM [vite] hmr update /src/components/Logo.jsx
+9:39:44 AM [vite] hmr update /src/components/Splash.jsx
+9:39:44 AM [vite] hmr update /src/components/Footer.jsx
+9:39:44 AM [vite] hmr update /src/components/ModalDrawer.jsx
+9:39:44 AM [vite] hmr update /src/components/Skeleton.jsx
+9:39:44 AM [vite] hmr update /src/index.css
+9:39:44 AM [vite] hmr update /src/pages/Onboarding.jsx, /src/pages/WorkerDashboard.jsx, /src/pages/ClientDashboard.jsx, /src/pages/AdminDashboard.jsx
+9:39:44 AM [vite] hmr update /src/pages/AdminDashboard.jsx
+9:39:44 AM [vite] hmr update /src/pages/Onboarding.jsx
+9:39:44 AM [vite] hmr update /src/pages/WorkerDashboard.jsx
+9:39:44 AM [vite] hmr update /src/pages/ClientDashboard.jsx
+9:39:44 AM [vite] hmr update /src/pages/Legal.jsx
+9:39:44 AM [vite] hmr update /src/pages/Landing.jsx
+9:39:44 AM [vite] hmr update /src/pages/Auth.jsx
+9:39:44 AM [vite] hmr update /src/App.jsx
+9:39:44 AM [vite] page reload src/main.jsx
+9:47:15 AM [vite] hmr update /src/pages/AdminDashboard.jsx
+9:54:43 AM [vite] hmr update /src/pages/AdminDashboard.jsx
+9:56:35 AM [vite] hmr update /src/pages/AdminDashboard.jsx
+10:02:51 AM [vite] hmr update /src/pages/AdminDashboard.jsx
+10:06:10 AM [vite] hmr update /src/pages/AdminDashboard.jsx
+11:20:36 AM [vite] hmr update /src/pages/AdminDashboard.jsx
+11:23:26 AM [vite] hmr update /src/pages/AdminDashboard.jsx
+11:24:04 AM [vite] page reload dist/index.html
+11:25:56 AM [vite] hmr update /src/pages/AdminDashboard.jsx
+11:26:32 AM [vite] page reload dist/index.html

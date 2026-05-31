@@ -8,6 +8,7 @@ import ClientDashboard from './pages/ClientDashboard';
 import WorkerDashboard from './pages/WorkerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Legal from './pages/Legal';
+import Footer from './components/Footer';
 import { Loader } from 'lucide-react';
 
 const App = () => {
@@ -20,7 +21,7 @@ const App = () => {
   const [showLegal, setShowLegal] = useState(false);
   const [initialLegalTab, setInitialLegalTab] = useState('tos');
 
-  const API_URL = 'http://localhost:5050/api/auth';
+  const API_URL = 'http://localhost:5000/api/auth';
 
   // Restore persistent user session on boot
   useEffect(() => {
@@ -105,35 +106,45 @@ const App = () => {
     );
   }
 
-  // 5. Authenticated & Onboarded -> Roles Dashboards
-  if (user && user.onboardingCompleted) {
-    if (user.role === 'admin') {
-      return <AdminDashboard user={user} onLogout={handleLogout} />;
+  // Content Wrapper
+  const renderContent = () => {
+    // 5. Authenticated & Onboarded -> Roles Dashboards
+    if (user && user.onboardingCompleted) {
+      if (user.role === 'admin') {
+        return <AdminDashboard user={user} onLogout={handleLogout} />;
+      }
+      if (user.role === 'worker') {
+        return <WorkerDashboard user={user} onLogout={handleLogout} />;
+      }
+      return <ClientDashboard user={user} onLogout={handleLogout} />;
     }
-    if (user.role === 'worker') {
-      return <WorkerDashboard user={user} onLogout={handleLogout} />;
-    }
-    return <ClientDashboard user={user} onLogout={handleLogout} />;
-  }
 
-  // 6. Auth Dialog panel
-  if (showAuth) {
+    // 6. Auth Dialog panel
+    if (showAuth) {
+      return (
+        <div style={{ flexGrow: 1, background: 'var(--bg-gradient)', display: 'flex', flexDirection: 'column' }}>
+          <Auth
+            onLoginSuccess={(loggedInUser) => setUser(loggedInUser)}
+            onBackToLanding={() => setShowAuth(false)}
+          />
+        </div>
+      );
+    }
+
+    // 7. Public guest homepage (Landing page loaded by default!)
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg-gradient)', display: 'flex', flexDirection: 'column' }}>
-        <Auth
-          onLoginSuccess={(loggedInUser) => setUser(loggedInUser)}
-          onBackToLanding={() => setShowAuth(false)}
-        />
-      </div>
+      <Landing
+        onGetStarted={() => setShowAuth(true)}
+        onLegalClick={handleOpenLegal}
+      />
     );
-  }
+  };
 
-  // 7. Public guest homepage (Landing page loaded by default!)
   return (
-    <Landing
-      onGetStarted={() => setShowAuth(true)}
-      onLegalClick={handleOpenLegal}
-    />
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      {renderContent()}
+      <Footer />
+    </div>
   );
 };
 

@@ -266,4 +266,148 @@ router.delete('/categories/:id', protect, authorize('admin'), async (req, res) =
   }
 });
 
+
+
+// === CURRENCY MANAGEMENT ===
+const Currency = require('../models/Currency');
+
+// @route   GET /api/admin/currencies
+// @desc    Get all currencies
+// @access  Private/Admin
+router.get('/currencies', protect, authorize('admin'), async (req, res) => {
+  try {
+    const currencies = await Currency.find();
+    res.status(200).json({ success: true, currencies });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/currencies
+// @desc    Add a currency
+// @access  Private/Admin
+router.post('/currencies', protect, authorize('admin'), async (req, res) => {
+  try {
+    const currency = await Currency.create(req.body);
+    res.status(201).json({ success: true, currency });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/currencies/:id
+// @desc    Update a currency
+// @access  Private/Admin
+router.put('/currencies/:id', protect, authorize('admin'), async (req, res) => {
+  try {
+    const currency = await Currency.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json({ success: true, currency });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// === TESTIMONIAL MANAGEMENT ===
+const Testimonial = require('../models/Testimonial');
+
+// @route   GET /api/admin/testimonials
+// @desc    Get all testimonials
+// @access  Private/Admin
+router.get('/testimonials', protect, authorize('admin'), async (req, res) => {
+  try {
+    const testimonials = await Testimonial.find();
+    res.status(200).json({ success: true, testimonials });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/testimonials
+// @desc    Add a testimonial
+// @access  Private/Admin
+router.post('/testimonials', protect, authorize('admin'), async (req, res) => {
+  try {
+    const testimonial = await Testimonial.create(req.body);
+    res.status(201).json({ success: true, testimonial });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/testimonials/:id
+// @desc    Update a testimonial
+// @access  Private/Admin
+router.put('/testimonials/:id', protect, authorize('admin'), async (req, res) => {
+  try {
+    const testimonial = await Testimonial.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json({ success: true, testimonial });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// === PROMO MANAGEMENT ===
+const Promo = require('../models/Promo');
+
+// @route   GET /api/admin/promos
+// @desc    Get all promos
+// @access  Private/Admin
+router.get('/promos', protect, authorize('admin'), async (req, res) => {
+  try {
+    const promos = await Promo.find();
+    res.status(200).json({ success: true, promos });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/promos
+// @desc    Create a promo
+// @access  Private/Admin
+router.post('/promos', protect, authorize('admin'), async (req, res) => {
+  try {
+    const promo = await Promo.create(req.body);
+    res.status(201).json({ success: true, promo });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// === NOTIFICATION MANAGEMENT ===
+const Notification = require('../models/Notification');
+
+// @route   GET /api/admin/notifications
+// @desc    Get system notifications (all users)
+// @access  Private/Admin
+router.get('/notifications', protect, authorize('admin'), async (req, res) => {
+  try {
+    const notifications = await Notification.find().populate('userId', 'name email');
+    res.status(200).json({ success: true, notifications });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+
+// === PAYMENTS & BOOKINGS ===
+router.get('/payments', protect, authorize('admin'), async (req, res) => {
+  try {
+    const bookings = await Booking.find().populate('customerId workerId').sort('-createdAt');
+    res.status(200).json({ success: true, bookings });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// === LOCATIONS ===
+router.get('/locations', protect, authorize('admin'), async (req, res) => {
+  try {
+    const workers = await WorkerProfile.find({ status: 'Active' }).populate('userId', 'name email');
+    res.status(200).json({ success: true, workers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+
 module.exports = router;

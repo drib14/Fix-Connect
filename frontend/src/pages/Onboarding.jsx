@@ -94,7 +94,7 @@ const Onboarding = ({ user, onOnboardSuccess }) => {
     try {
       const token = localStorage.getItem('fixconnect_token');
       const response = await axios.put(
-        'http://localhost:5050/api/users/onboard',
+        'http://localhost:5000/api/users/onboard',
         {
           phone,
           address,
@@ -147,7 +147,7 @@ const Onboarding = ({ user, onOnboardSuccess }) => {
       });
 
       const response = await axios.put(
-        'http://localhost:5050/api/workers/onboard',
+        'http://localhost:5000/api/workers/onboard',
         formData,
         {
           headers: {

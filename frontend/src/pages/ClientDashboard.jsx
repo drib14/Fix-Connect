@@ -108,8 +108,15 @@ const ClientDashboard = ({ user, onLogout }) => {
   const [disputeReason, setDisputeReason] = useState('');
   const [disputeRefund, setDisputeRefund] = useState(false);
   const [submittingDispute, setSubmittingDispute] = useState(false);
+  // Review states
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [reviewBookingId, setReviewBookingId] = useState("");
+  const [ratingInput, setRatingInput] = useState(5);
+  const [reviewTextInput, setReviewTextInput] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
 
-  const API_URL = 'http://localhost:5050/api';
+
+  const API_URL = 'http://localhost:5000/api';
 
   const getCalculatedAmount = (base) => {
     if (discountPercentage > 0) {

@@ -36,7 +36,7 @@ const WorkerDashboard = ({ user, onLogout }) => {
   const [activeOffer, setActiveOffer] = useState(null);
   const [offerTimer, setOfferTimer] = useState(15);
 
-  const API_URL = 'http://localhost:5050/api';
+  const API_URL = 'http://localhost:5000/api';
 
   // Chat states
   const [isChatOpen, setIsChatOpen] = useState(false);

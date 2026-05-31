@@ -47,7 +47,7 @@ const Auth = ({ onLoginSuccess, onBackToLanding }) => {
   // Auto focus ref for 6-digit code input
   const codeInputRef = useRef(null);
 
-  const API_URL = 'http://localhost:5050/api/auth';
+  const API_URL = 'http://localhost:5000/api/auth';
 
   // Force autofocus on code verification view entry
   useEffect(() => {

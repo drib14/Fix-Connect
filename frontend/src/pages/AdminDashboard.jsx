@@ -56,6 +56,7 @@ const CategoryIcon = ({ name, size = 20, ...props }) => {
 import { SkeletonMetrics } from '../components/Skeleton';
 import Logo from '../components/Logo';
 import { formatPrice } from '../utils/currency';
+import { DollarSign, MapPin } from 'lucide-react';
 
 const AdminDashboard = ({ user, onLogout }) => {
   const [stats, setStats] = useState(null);
@@ -63,11 +64,31 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [usersList, setUsersList] = useState([]);
   const [disputesList, setDisputesList] = useState([]);
   
+  // New modules state
+  const [payments, setPayments] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [categories, setCategories] = useState([]);
+
+  // System config state
+  const [currencies, setCurrencies] = useState([]);
+  const [promos, setPromos] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
+
+  // Forms state
+  const [showAddCurrency, setShowAddCurrency] = useState(false);
+  const [newCurrency, setNewCurrency] = useState({ code: '', symbol: '', name: '' });
+
+  const [showAddPromo, setShowAddPromo] = useState(false);
+  const [newPromo, setNewPromo] = useState({ code: '', discountPercentage: '' });
+
+  const [showAddTestimonial, setShowAddTestimonial] = useState(false);
+  const [newTestimonial, setNewTestimonial] = useState({ authorName: '', content: '', rating: '', role: 'Customer' });
+
   // UI states
   const [loading, setLoading] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState('overview'); // 'overview' | 'verify' | 'moderate'
 
-  const API_URL = 'http://localhost:5050/api/admin';
+  const API_URL = 'http://localhost:5000/api/admin';
 
   useEffect(() => {
     fetchAdminData();
@@ -99,12 +120,61 @@ const AdminDashboard = ({ user, onLogout }) => {
         if (disputesResponse.data.success) {
           setDisputesList(disputesResponse.data.disputes);
         }
+      } else if (activeSubTab === 'payments') {
+        const res = await axios.get(`${API_URL}/payments`, { headers });
+        if (res.data.success) setPayments(res.data.bookings || []);
+      } else if (activeSubTab === 'locations') {
+        const res = await axios.get(`${API_URL}/locations`, { headers });
+        if (res.data.success) setLocations(res.data.workers || []);
+      } else if (activeSubTab === 'services') {
+        const res = await axios.get('http://localhost:5000/api/services/categories');
+        if (res.data.success) setCategories(res.data.categories);
+      } else if (activeSubTab === 'system') {
+        const curRes = await axios.get('http://localhost:5000/api/admin/currencies', { headers });
+        if (curRes.data.success) setCurrencies(curRes.data.currencies || []);
+
+        const proRes = await axios.get('http://localhost:5000/api/admin/promos', { headers });
+        if (proRes.data.success) setPromos(proRes.data.promos || []);
+
+        const testRes = await axios.get('http://localhost:5000/api/admin/testimonials', { headers });
+        if (testRes.data.success) setTestimonials(testRes.data.testimonials || []);
       }
     } catch (err) {
       console.error('Error fetching admin dashboard data:', err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Add Forms Handlers
+  const handleAddCurrency = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('fixconnect_token');
+      await axios.post('http://localhost:5000/api/admin/currencies', newCurrency, { headers: { Authorization: `Bearer ${token}` } });
+      fetchAdminData();
+      setShowAddCurrency(false);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleAddPromo = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('fixconnect_token');
+      await axios.post('http://localhost:5000/api/admin/promos', newPromo, { headers: { Authorization: `Bearer ${token}` } });
+      fetchAdminData();
+      setShowAddPromo(false);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleAddTestimonial = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('fixconnect_token');
+      await axios.post('http://localhost:5000/api/admin/testimonials', newTestimonial, { headers: { Authorization: `Bearer ${token}` } });
+      fetchAdminData();
+      setShowAddTestimonial(false);
+    } catch (err) { console.error(err); }
   };
 
   // Verify Worker Action
@@ -221,7 +291,35 @@ const AdminDashboard = ({ user, onLogout }) => {
             style={{ padding: '8px 16px', fontSize: '13px' }}
             onClick={() => setActiveSubTab('disputes')}
           >
-            Moderate Disputes ({disputesList.length})
+            Disputes
+          </button>
+          <button
+            className={`btn ${activeSubTab === 'services' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ padding: '8px 16px', fontSize: '13px' }}
+            onClick={() => setActiveSubTab('services')}
+          >
+            Services
+          </button>
+          <button
+            className={`btn ${activeSubTab === 'payments' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ padding: '8px 16px', fontSize: '13px' }}
+            onClick={() => setActiveSubTab('payments')}
+          >
+            Payments
+          </button>
+          <button
+            className={`btn ${activeSubTab === 'locations' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ padding: '8px 16px', fontSize: '13px' }}
+            onClick={() => setActiveSubTab('locations')}
+          >
+            Locations
+          </button>
+          <button
+            className={`btn ${activeSubTab === 'system' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ padding: '8px 16px', fontSize: '13px', background: activeSubTab === 'system' ? '#10b981' : undefined, color: activeSubTab === 'system' ? 'white' : undefined, borderColor: activeSubTab === 'system' ? '#10b981' : undefined }}
+            onClick={() => setActiveSubTab('system')}
+          >
+            System
           </button>
         </div>
 
@@ -661,6 +759,144 @@ const AdminDashboard = ({ user, onLogout }) => {
             )}
           </div>
         )}
+
+
+        {/* SYSTEM MODULES */}
+        {activeSubTab === 'system' && (
+          <div className="glass-card" style={{ padding: '32px' }}>
+            <h3 style={{ fontSize: '20px', marginBottom: '24px' }}>System Configuration & Settings</h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 'bold' }}>Global Currencies ({currencies.length})</h4>
+                  <button onClick={() => setShowAddCurrency(!showAddCurrency)} className="btn btn-primary" style={{ padding: '4px 12px', fontSize: '12px' }}><Plus size={14}/> Add Currency</button>
+                </div>
+                {showAddCurrency && (
+                  <form onSubmit={handleAddCurrency} style={{ marginBottom: '16px', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                    <input type="text" placeholder="Code (e.g. USD)" required className="input" style={{ width: '100px', marginRight: '8px' }} onChange={e => setNewCurrency({...newCurrency, code: e.target.value})} />
+                    <input type="text" placeholder="Symbol ($)" required className="input" style={{ width: '100px', marginRight: '8px' }} onChange={e => setNewCurrency({...newCurrency, symbol: e.target.value})} />
+                    <input type="text" placeholder="Name (US Dollar)" required className="input" style={{ width: '200px', marginRight: '8px' }} onChange={e => setNewCurrency({...newCurrency, name: e.target.value})} />
+                    <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px' }}>Save</button>
+                  </form>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                  {currencies.map(c => (
+                    <div key={c._id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
+                      <strong>{c.code}</strong> - {c.symbol} <p style={{ fontSize: '12px', color: '#64748b' }}>{c.name}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 'bold' }}>Active Promotions ({promos.length})</h4>
+                  <button onClick={() => setShowAddPromo(!showAddPromo)} className="btn btn-primary" style={{ padding: '4px 12px', fontSize: '12px' }}><Plus size={14}/> Add Promo</button>
+                </div>
+                {showAddPromo && (
+                  <form onSubmit={handleAddPromo} style={{ marginBottom: '16px', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                    <input type="text" placeholder="Code (e.g. SAVE20)" required className="input" style={{ width: '200px', marginRight: '8px' }} onChange={e => setNewPromo({...newPromo, code: e.target.value})} />
+                    <input type="number" placeholder="Discount %" required className="input" style={{ width: '100px', marginRight: '8px' }} onChange={e => setNewPromo({...newPromo, discountPercentage: e.target.value})} />
+                    <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px' }}>Save</button>
+                  </form>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+                  {promos.map(p => (
+                    <div key={p._id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
+                      <strong style={{ color: '#10b981' }}>{p.code}</strong> <p style={{ fontSize: '13px' }}>Discount: {p.discountPercentage}%</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 'bold' }}>Customer Testimonials ({testimonials.length})</h4>
+                  <button onClick={() => setShowAddTestimonial(!showAddTestimonial)} className="btn btn-primary" style={{ padding: '4px 12px', fontSize: '12px' }}><Plus size={14}/> Add Testimonial</button>
+                </div>
+                {showAddTestimonial && (
+                  <form onSubmit={handleAddTestimonial} style={{ marginBottom: '16px', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <input type="text" placeholder="Author Name" required className="input" onChange={e => setNewTestimonial({...newTestimonial, authorName: e.target.value})} />
+                    <textarea placeholder="Content" required className="input" onChange={e => setNewTestimonial({...newTestimonial, content: e.target.value})}></textarea>
+                    <input type="number" min="1" max="5" placeholder="Rating (1-5)" required className="input" onChange={e => setNewTestimonial({...newTestimonial, rating: e.target.value})} />
+                    <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px', alignSelf: 'flex-start' }}>Save</button>
+                  </form>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                  {testimonials.map(t => (
+                    <div key={t._id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
+                      <strong>{t.authorName} ({t.role})</strong> <p style={{ fontSize: '13px', margin: '8px 0', fontStyle: 'italic' }}>"{t.content}"</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PAYMENTS MODULE */}
+        {activeSubTab === 'payments' && (
+          <div className="glass-card" style={{ padding: '32px' }}>
+            <h3 style={{ fontSize: '20px', marginBottom: '24px' }}><DollarSign size={20} style={{ display: 'inline', verticalAlign: 'middle'}}/> Payment Management</h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #f1f5f9', color: '#64748b' }}>
+                  <th style={{ padding: '12px' }}>ID</th>
+                  <th style={{ padding: '12px' }}>Customer</th>
+                  <th style={{ padding: '12px' }}>Worker</th>
+                  <th style={{ padding: '12px' }}>Amount</th>
+                  <th style={{ padding: '12px' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((p) => (
+                  <tr key={p._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '12px' }}>{p._id.slice(-6)}</td>
+                    <td style={{ padding: '12px' }}>{p.customerId?.name || 'N/A'}</td>
+                    <td style={{ padding: '12px' }}>{p.workerId?.name || 'N/A'}</td>
+                    <td style={{ padding: '12px' }}>{formatPrice(p.totalAmount, user)}</td>
+                    <td style={{ padding: '12px' }}>{p.paymentStatus.toUpperCase()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* LOCATIONS MODULE */}
+        {activeSubTab === 'locations' && (
+          <div className="glass-card" style={{ padding: '32px' }}>
+            <h3 style={{ fontSize: '20px', marginBottom: '24px' }}><MapPin size={20} style={{ display: 'inline', verticalAlign: 'middle'}}/> Worker Locations</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+              {locations.map((w) => (
+                <div key={w._id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
+                  <h4 style={{ fontWeight: 'bold' }}>{w.userId?.name}</h4>
+                  <p style={{ fontSize: '12px', color: '#64748b' }}>Lat: {w.location?.coordinates[1]}</p>
+                  <p style={{ fontSize: '12px', color: '#64748b' }}>Lng: {w.location?.coordinates[0]}</p>
+                  <p style={{ fontSize: '12px', color: '#10b981' }}>Status: {w.status}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SERVICES MODULE */}
+        {activeSubTab === 'services' && (
+          <div className="glass-card" style={{ padding: '32px' }}>
+            <h3 style={{ fontSize: '20px', marginBottom: '24px' }}><Briefcase size={20} style={{ display: 'inline', verticalAlign: 'middle'}}/> Service Categories Management</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              {categories.map((c) => (
+                <div key={c._id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', textAlign: 'center' }}>
+                  <CategoryIcon name={c.icon} size={32} color="#10b981" style={{ margin: '0 auto 12px' }}/>
+                  <h4 style={{ fontWeight: 'bold' }}>{c.name}</h4>
+                  <p style={{ fontSize: '12px', color: '#64748b' }}>Base Price: {formatPrice(c.basePrice, user)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

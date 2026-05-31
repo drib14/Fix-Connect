@@ -102,6 +102,7 @@ app.use('/api/workers', require('./routes/worker'));
 app.use('/api/bookings', require('./routes/booking'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/payments', require('./routes/payment'));
+app.use('/api/system', require('./routes/system'));
 
 app.get('/api/categories', async (req, res) => {
   try {
