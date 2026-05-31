@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { SkeletonCard } from '../components/Skeleton';
 import ModalDrawer from '../components/ModalDrawer';
+import Logo from '../components/Logo';
+import { getCurrency, formatPrice } from '../utils/currency';
 import {
   Search,
   Star,
@@ -54,131 +56,141 @@ const ClientDashboard = ({ user, onLogout }) => {
   // Active bookings list
   const [myBookings, setMyBookings] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
-  const [activeTab, setActiveTab] = useState('explore'); 
 
-  // Ride-Hailing Radar search states
-  const [isMatchingActive, setIsMatchingActive] = useState(false);
-  const [matchingProgressText, setMatchingProgressText] = useState('');
+  const [activeTab, setActiveTab] = useState('dispatch'); 
 
-  // Review states
-  const [reviewBookingId, setReviewBookingId] = useState(null);
-  const [isReviewOpen, setIsReviewOpen] = useState(false);
-  const [ratingInput, setRatingInput] = useState(5);
-  const [reviewTextInput, setReviewTextInput] = useState('');
-  const [submittingReview, setSubmittingReview] = useState(false);
+  // Direct Ride-Hailing Dispatch states
+  const [dispatchCategory, setDispatchCategory] = useState('plumbing');
+  const [dispatchDescription, setDispatchDescription] = useState('');
+  const [dispatchAddress, setDispatchAddress] = useState(user.address || '');
+  const [dispatchCoords, setDispatchCoords] = useState({
+    lat: user.location?.coordinates?.[1] || 14.5995,
+    lng: user.location?.coordinates?.[0] || 121.0494,
+  });
 
-  // API URL updated to port 5050 to resolve EADDRINUSE conflict
-  const API_URL = 'http://localhost:5050/api';
+  const getTodayDateString = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    let mm = today.getMonth() + 1;
+    let dd = today.getDate();
+    if (mm < 10) mm = '0' + mm;
+    if (dd < 10) dd = '0' + dd;
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
+  const [dispatchDate, setDispatchDate] = useState(getTodayDateString());
+  const [dispatchTime, setDispatchTime] = useState('12:00');
+  const [dispatchFiles, setDispatchFiles] = useState([]);
+  const [closestWorker, setClosestWorker] = useState(null);
+  const [allMatchingWorkers, setAllMatchingWorkers] = useState([]);
+  const [currentMatchingIndex, setCurrentMatchingIndex] = useState(0);
+  const [loadingClosest, setLoadingClosest] = useState(false);
+  const [isDispatchCheckout, setIsDispatchCheckout] = useState(false);
+
+  // Fetch closest worker for dynamic instant dispatch
   useEffect(() => {
-    fetchWorkers();
-    fetchBookings();
-  }, [activeCategory, maxDistance]);
-
-  const fetchWorkers = async () => {
-    setLoadingWorkers(true);
-    try {
-      const lat = user.location?.coordinates?.[1] || 14.5995;
-      const lng = user.location?.coordinates?.[0] || 121.0494;
-      
-      const response = await axios.get(
-        `${API_URL}/workers/search?category=${activeCategory}&lat=${lat}&lng=${lng}&maxDist=${maxDistance}&search=${searchQuery}`
-      );
-      if (response.data.success) {
-        setWorkers(response.data.data);
+    if (activeTab !== 'dispatch') return;
+    
+    const getClosest = async () => {
+      setLoadingClosest(true);
+      try {
+        const response = await axios.get(
+          `${API_URL}/workers/search?category=${dispatchCategory}&lat=${dispatchCoords.lat}&lng=${dispatchCoords.lng}&maxDist=100`
+        );
+        if (response.data.success && response.data.data.length > 0) {
+          setAllMatchingWorkers(response.data.data);
+          setClosestWorker(response.data.data[0]);
+          setCurrentMatchingIndex(0);
+        } else {
+          setAllMatchingWorkers([]);
+          setClosestWorker(null);
+        }
+      } catch (err) {
+        console.error('Error matching closest provider:', err.message);
+      } finally {
+        setLoadingClosest(false);
       }
-    } catch (err) {
-      console.error('Error fetching workers:', err.message);
-    } finally {
-      setLoadingWorkers(false);
+    };
+
+    getClosest();
+  }, [dispatchCategory, dispatchCoords, activeTab]);
+
+  const getDynamicFare = () => {
+    if (closestWorker) {
+      const base = closestWorker.hourlyRate * 2;
+      const distance = closestWorker.distance || 0;
+      const distanceFee = distance * 2;
+      return base + distanceFee;
     }
+    return 80; // fallback standard service flat rate
   };
 
-  const fetchBookings = async () => {
-    setLoadingBookings(true);
-    try {
-      const token = localStorage.getItem('fixconnect_token');
-      const response = await axios.get(`${API_URL}/bookings/my-bookings`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.data.success) {
-        setMyBookings(response.data.bookings);
+  const currentCurrency = getCurrency(user);
+
+  const runMatchingEngine = (bookingId, currentWorkerId) => {
+    let attempts = 0;
+    let workerId = currentWorkerId;
+    let matchingIndex = 0;
+
+    const checkInterval = setInterval(async () => {
+      attempts++;
+      try {
+        const token = localStorage.getItem('fixconnect_token');
+        const response = await axios.get(`${API_URL}/bookings/my-bookings`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.data.success) {
+          const currentBooking = response.data.bookings.find((b) => b._id === bookingId);
+          if (currentBooking) {
+            // Worker accepted!
+            if (currentBooking.status === 'accepted' || currentBooking.status === 'in_progress') {
+              clearInterval(checkInterval);
+              setMatchingProgressText(`Match complete! ${currentBooking.workerId?.name || 'Technician'} accepted your request!`);
+              setTimeout(() => {
+                setIsMatchingActive(false);
+                setActiveTab('bookings');
+                fetchBookings();
+              }, 2000);
+              return;
+            }
+
+            // Worker rejected! Try next!
+            if (currentBooking.status === 'rejected') {
+              const nextIndex = matchingIndex + 1;
+              if (allMatchingWorkers && allMatchingWorkers[nextIndex]) {
+                const nextWorker = allMatchingWorkers[nextIndex];
+                matchingIndex = nextIndex;
+                workerId = nextWorker.userId;
+
+                setMatchingProgressText(`${currentBooking.workerId?.name || 'Technician'} was busy. Redirecting dispatch request to: ${nextWorker.name}...`);
+                
+                await axios.put(
+                  `${API_URL}/bookings/${bookingId}/status`,
+                  { status: 'pending', newWorkerId: nextWorker.userId },
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+              } else {
+                clearInterval(checkInterval);
+                setMatchingProgressText(`All nearby experts are currently busy. Try again soon.`);
+                setTimeout(() => {
+                  setIsMatchingActive(false);
+                  fetchBookings();
+                }, 3000);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Matching engine polling error:', err.message);
       }
-    } catch (err) {
-      console.error('Error fetching bookings:', err.message);
-    } finally {
-      setLoadingBookings(false);
-    }
-  };
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    fetchWorkers();
-  };
-
-  const handleOpenDetails = (worker) => {
-    setSelectedWorker(worker);
-    setIsDetailOpen(true);
-  };
-
-  const handleStartBooking = () => {
-    setIsDetailOpen(false);
-    setIsBookingOpen(true);
-    setPaymentStep(false);
-    setBookingDate('');
-    setJobDescription('');
-    setJobFiles([]);
-  };
-
-  const handleFileChange = (e) => {
-    if (e.target.files) {
-      setJobFiles(Array.from(e.target.files));
-    }
-  };
-
-  const handleBookingDetailsSubmit = async (e) => {
-    e.preventDefault();
-    if (!bookingDate || !jobDescription) {
-      alert('Please fill in booking date and description.');
-      return;
-    }
-
-    setLoadingWorkers(true);
-    try {
-      const token = localStorage.getItem('fixconnect_token');
-      const formData = new FormData();
-      formData.append('workerId', selectedWorker.userId);
-      formData.append('category', selectedWorker.skills[0] || 'General');
-      formData.append('bookingDate', bookingDate);
-      formData.append('bookingTime', bookingTime);
-      formData.append('description', jobDescription);
-      formData.append('address', user.address);
-      formData.append('longitude', user.location?.coordinates?.[0] || 0);
-      formData.append('latitude', user.location?.coordinates?.[1] || 0);
-      
-      const totalAmount = selectedWorker.hourlyRate * 2;
-      formData.append('totalAmount', totalAmount);
-
-      jobFiles.forEach((file) => {
-        formData.append('images', file);
-      });
-
-      const response = await axios.post(`${API_URL}/bookings`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      if (response.data.success) {
-        setBookingIdForPay(response.data.booking._id);
-        setPaymentStep(true);
+      if (attempts >= 15) {
+        clearInterval(checkInterval);
+        setIsMatchingActive(false);
+        alert('Matchmaking timed out. No nearby technician was available.');
       }
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to initialize booking.');
-    } finally {
-      setLoadingWorkers(false);
-    }
+    }, 4000);
   };
 
   const handlePayMongoSubmit = async (e) => {
@@ -187,39 +199,103 @@ const ClientDashboard = ({ user, onLogout }) => {
 
     try {
       const token = localStorage.getItem('fixconnect_token');
-      const response = await axios.post(
-        `${API_URL}/payments/checkout`,
-        {
-          bookingId: bookingIdForPay,
-          paymentMethod: 'card',
-          cardNumber,
-          cardName,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
 
-      if (response.data.success) {
-        setPaymentSuccess(true);
-        setTimeout(() => {
-          setIsBookingOpen(false);
-          setPaymentStep(false);
-          setPaymentSuccess(false);
+      if (isDispatchCheckout) {
+        // Create booking details dynamically for dispatch re-routing
+        const formData = new FormData();
+        // Target the closest worker or default fallback if none online
+        const targetWorkerId = closestWorker ? closestWorker.userId : '64bf350c33a92b238cd23267'; 
+        formData.append('workerId', targetWorkerId);
+        formData.append('category', dispatchCategory);
+        formData.append('bookingDate', dispatchDate);
+        formData.append('bookingTime', dispatchTime);
+        formData.append('description', dispatchDescription);
+        formData.append('address', dispatchAddress);
+        formData.append('longitude', dispatchCoords.lng);
+        formData.append('latitude', dispatchCoords.lat);
+        formData.append('totalAmount', getDynamicFare());
+
+        dispatchFiles.forEach((file) => {
+          formData.append('images', file);
+        });
+
+        // 1. Create booking
+        const bookResponse = await axios.post(`${API_URL}/bookings`, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        if (bookResponse.data.success) {
+          const newBookingId = bookResponse.data.booking._id;
           
-          // Trigger the Ride-Hailing Radar search screens
-          setIsMatchingActive(true);
-          setMatchingProgressText(`Broadcasting your request to ${selectedWorker.name || 'nearest provider'}...`);
-          
+          // 2. Perform PayMongo Payment
+          const payResponse = await axios.post(
+            `${API_URL}/payments/checkout`,
+            {
+              bookingId: newBookingId,
+              paymentMethod: 'card',
+              cardNumber,
+              cardName,
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          if (payResponse.data.success) {
+            setPaymentSuccess(true);
+            setTimeout(() => {
+              setIsBookingOpen(false);
+              setPaymentStep(false);
+              setPaymentSuccess(false);
+              setIsDispatchCheckout(false);
+
+              // 3. Trigger Fullscreen Matchmaking Radar
+              setIsMatchingActive(true);
+              const workerName = closestWorker ? closestWorker.name : 'nearest expert';
+              setMatchingProgressText(`Broadcasting request to ${workerName}...`);
+
+              // Start real-time dispatch matching engine!
+              runMatchingEngine(newBookingId, targetWorkerId);
+            }, 1200);
+          }
+        }
+      } else {
+        // Standard hand-picked booking
+        const response = await axios.post(
+          `${API_URL}/payments/checkout`,
+          {
+            bookingId: bookingIdForPay,
+            paymentMethod: 'card',
+            cardNumber,
+            cardName,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (response.data.success) {
+          setPaymentSuccess(true);
           setTimeout(() => {
-            setMatchingProgressText(`Matching complete! ${selectedWorker.name} accepted your request.`);
+            setIsBookingOpen(false);
+            setPaymentStep(false);
+            setPaymentSuccess(false);
+            
+            // Trigger standard radar simulation
+            setIsMatchingActive(true);
+            setMatchingProgressText(`Broadcasting your request to ${selectedWorker.name || 'nearest provider'}...`);
             
             setTimeout(() => {
-              setIsMatchingActive(false);
-              setActiveTab('bookings');
-              fetchBookings();
-            }, 1800);
-          }, 2000);
+              setMatchingProgressText(`Matching complete! ${selectedWorker.name} accepted your request.`);
+              
+              setTimeout(() => {
+                setIsMatchingActive(false);
+                setActiveTab('bookings');
+                fetchBookings();
+              }, 1800);
+            }, 2000);
 
-        }, 1200);
+          }, 1200);
+        }
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Payment simulation failed.');
@@ -361,15 +437,24 @@ const ClientDashboard = ({ user, onLogout }) => {
           boxShadow: 'var(--shadow-sm)',
         }}
       >
-        <div style={{ flex: 1 }}>
-          <h2 style={{ fontSize: '20px', color: '#0f172a' }}>FixConnect</h2>
-          <p style={{ color: '#64748b', fontSize: '13px' }}>
-            Logged in as <strong style={{ color: '#10b981' }}>{user.name}</strong>
-          </p>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Logo size={32} showText={true} />
+          <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '16px' }}>
+            <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
+              Logged in as <strong style={{ color: '#10b981' }}>{user.name}</strong>
+            </p>
+          </div>
         </div>
 
         {/* Tab Controls */}
         <div style={{ display: 'flex', gap: '12px', marginRight: '24px' }}>
+          <button
+            className={`btn ${activeTab === 'dispatch' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ padding: '8px 16px', fontSize: '13px' }}
+            onClick={() => setActiveTab('dispatch')}
+          >
+            Instant Dispatch
+          </button>
           <button
             className={`btn ${activeTab === 'explore' ? 'btn-primary' : 'btn-secondary'}`}
             style={{ padding: '8px 16px', fontSize: '13px' }}
@@ -394,6 +479,267 @@ const ClientDashboard = ({ user, onLogout }) => {
           Sign Out
         </button>
       </header>
+
+      {/* INSTANT DISPATCH TAB (RIDE-HAILING DIRECT BOOKING) */}
+      {activeTab === 'dispatch' && (
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
+            {/* Left side: Booking details form */}
+            <div className="glass-card" style={{ padding: '32px', transform: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', borderBottom: '1px solid #e2e8f0', paddingBottom: '14px' }}>
+                <Sparkles size={22} color="#10b981" />
+                <h3 style={{ fontSize: '18px', color: '#0f172a' }}>Direct Instant Dispatch</h3>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!dispatchDescription) {
+                    alert('Please specify the exact home service you need.');
+                    return;
+                  }
+                  setIsDispatchCheckout(true);
+                  setIsBookingOpen(true);
+                  setPaymentStep(true); // Direct to checkout card details!
+                }}
+                style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}
+              >
+                <div className="form-group">
+                  <label className="form-label">What service do you need?</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. Plumbing, Roof sealing, Lock repair, Sofa washing..."
+                    value={dispatchCategory}
+                    onChange={(e) => setDispatchCategory(e.target.value)}
+                    style={{ fontWeight: '600', color: '#0f172a' }}
+                    required
+                  />
+                  <small style={{ color: '#64748b', fontSize: '11px', display: 'block', marginTop: '6px' }}>
+                    Type any custom repair or home maintenance service directly.
+                  </small>
+                  
+                  {/* Premium quick-category suggestion pills */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
+                    {[
+                      { name: 'Plumbing', slug: 'plumbing' },
+                      { name: 'Electrical', slug: 'electrical' },
+                      { name: 'Cleaning', slug: 'cleaning' },
+                      { name: 'Appliance Repair', slug: 'appliance' },
+                      { name: 'Carpentry', slug: 'carpentry' },
+                      { name: 'Gardening', slug: 'gardening' },
+                    ].map((pill) => {
+                      const isSelected = dispatchCategory.toLowerCase() === pill.slug.toLowerCase() || dispatchCategory.toLowerCase() === pill.name.toLowerCase();
+                      return (
+                        <button
+                          key={pill.slug}
+                          type="button"
+                          onClick={() => setDispatchCategory(pill.name)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '99px',
+                            border: '1px solid',
+                            borderColor: isSelected ? '#10b981' : '#e2e8f0',
+                            background: isSelected ? '#f0fdf4' : '#ffffff',
+                            color: isSelected ? '#10b981' : '#64748b',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                          }}
+                        >
+                          {pill.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Preferred Date</label>
+                    <input
+                      type="date"
+                      className="form-input"
+                      required
+                      value={dispatchDate}
+                      onChange={(e) => setDispatchDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Preferred Time Slot</label>
+                    <input
+                      type="time"
+                      className="form-input"
+                      required
+                      value={dispatchTime}
+                      onChange={(e) => setDispatchTime(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Describe the exact issue or job needed</label>
+                  <textarea
+                    className="form-input"
+                    rows={3}
+                    required
+                    style={{ resize: 'none' }}
+                    placeholder="e.g. My bathroom sink pipe has a major leak, water is pooling on the floor..."
+                    value={dispatchDescription}
+                    onChange={(e) => setDispatchDescription(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Service Request Location</label>
+                  <AddressAutocomplete
+                    placeholder="Enter dispatch address..."
+                    initialValue={dispatchAddress}
+                    onSelectLocation={(loc) => {
+                      setDispatchAddress(loc.address);
+                      if (loc.lat !== 0 && loc.lng !== 0) {
+                        setDispatchCoords({ lat: loc.lat, lng: loc.lng });
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Site snap (optional)</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="form-input"
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        setDispatchFiles(Array.from(e.target.files));
+                      }
+                    }}
+                  />
+                </div>
+
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '10px', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.35)' }}>
+                  Request Instant Match
+                </button>
+              </form>
+            </div>
+
+            {/* Right side: Live Estimation & Technician Map Radar preview */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div className="glass-card" style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', transform: 'none' }}>
+                <h4 style={{ fontSize: '15px', color: '#1e293b', marginBottom: '14px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
+                  Live Matchmaker Estimate
+                </h4>
+
+                {loadingClosest ? (
+                  <div style={{ display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '120px', gap: '8px' }}>
+                    <Loader className="animate-spin" size={24} style={{ color: '#10b981', animation: 'rotateRing 1.5s linear infinite' }} />
+                    <span style={{ fontSize: '13px', color: '#64748b' }}>Scanning nearby online experts...</span>
+                  </div>
+                ) : closestWorker ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1 }}>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <img
+                        src={closestWorker.avatar}
+                        alt="Technician"
+                        style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '1.5px solid #10b981' }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ fontSize: '15px', color: '#0f172a' }}>{closestWorker.name}</h4>
+                        <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 'bold' }}>{closestWorker.title}</span>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '12px', justifyContent: 'end' }}>
+                          <Star size={12} fill="#d97706" color="#d97706" />
+                          <strong>{closestWorker.rating}</strong>
+                        </div>
+                        <span style={{ fontSize: '11px', color: '#64748b' }}>({closestWorker.reviewCount} reviews)</span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: '#f8fafc', padding: '14px', borderRadius: '12px' }}>
+                      <div>
+                        <span style={{ display: 'block', fontSize: '10px', color: '#64748b' }}>CLOSEST DISPATCH</span>
+                        <strong style={{ fontSize: '13px', color: '#0f172a' }}>{closestWorker.distance} km away</strong>
+                      </div>
+                      <div>
+                        <span style={{ display: 'block', fontSize: '10px', color: '#64748b' }}>EST. ARRIVAL</span>
+                        <strong style={{ fontSize: '13px', color: '#0f172a' }}>~{Math.max(5, Math.round(closestWorker.distance * 2.5))} mins</strong>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f0fdf4', padding: '14px', borderRadius: '12px', marginTop: 'auto' }}>
+                      <div>
+                        <strong style={{ fontSize: '13px', color: '#047857', display: 'block' }}>Dynamic Match Fare</strong>
+                        <span style={{ fontSize: '10px', color: '#64748b' }}>2h min + distance fare ({closestWorker.distance}km)</span>
+                      </div>
+                      <strong style={{ fontSize: '20px', color: '#10b981' }}>{formatPrice(getDynamicFare(), user)}</strong>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1 }}>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: '#fffbeb', border: '1.5px dashed #fcd34d', padding: '14px', borderRadius: '12px' }}>
+                      <AlertCircle size={20} color="#b45309" />
+                      <div>
+                        <strong style={{ fontSize: '13px', color: '#b45309', display: 'block' }}>No Experts Online Nearby</strong>
+                        <p style={{ fontSize: '11px', color: '#d97706', marginTop: '2px' }}>
+                          We will broadcast your request as a pending dispatcher match to the entire pool.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '14px', borderRadius: '12px', marginTop: 'auto' }}>
+                      <div>
+                        <strong style={{ fontSize: '13px', color: '#1e293b', display: 'block' }}>Category Standard Fare</strong>
+                        <span style={{ fontSize: '10px', color: '#64748b' }}>Includes 2h min flat estimate</span>
+                      </div>
+                      <strong style={{ fontSize: '20px', color: '#10b981' }}>{formatPrice(getDynamicFare(), user)}</strong>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Map Preview Grid */}
+              <div className="glass-card" style={{ padding: '0', overflow: 'hidden', height: '200px', position: 'relative', transform: 'none' }}>
+                <div className="map-canvas-container" style={{ height: '100%', borderRadius: '20px' }}>
+                  <div className="map-road-grid"></div>
+                  
+                  <svg viewBox="0 0 500 200" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 2 }}>
+                    {/* Active routing path preview */}
+                    <path 
+                      d="M 100,50 L 250,50 L 250,150 L 400,150" 
+                      fill="none" 
+                      stroke="#10b981" 
+                      strokeWidth="3.5" 
+                      strokeLinecap="round" 
+                      opacity="0.8"
+                      strokeDasharray="8 6"
+                      className="animate-pulse"
+                      style={{ animation: 'radarPing 1.8s infinite' }}
+                    />
+                    
+                    {/* Client pin */}
+                    <g transform="translate(400, 150)">
+                      <circle r="6" fill="#10b981" stroke="#ffffff" strokeWidth="2" />
+                    </g>
+                    
+                    {/* Worker pin */}
+                    <g transform="translate(100, 50)">
+                      <circle r="6" fill="#10b981" stroke="#ffffff" strokeWidth="2" />
+                    </g>
+                  </svg>
+                  
+                  <div style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(15, 23, 42, 0.85)', padding: '6px 12px', borderRadius: '20px', color: '#ffffff', fontSize: '10px', fontWeight: 'bold', zIndex: 3 }}>
+                    Live Routing Coordinates active
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* EXPLORE PAGE TAB */}
       {activeTab === 'explore' && (
@@ -647,7 +993,7 @@ const ClientDashboard = ({ user, onLogout }) => {
 
                       <div style={{ textAlign: 'right' }}>
                         <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>Hourly Price</span>
-                        <strong style={{ color: '#10b981', fontSize: '18px' }}>${worker.hourlyRate}/hr</strong>
+                        <strong style={{ color: '#10b981', fontSize: '18px' }}>{formatPrice(worker.hourlyRate, user)}/hr</strong>
                       </div>
                     </div>
 
@@ -810,7 +1156,7 @@ const ClientDashboard = ({ user, onLogout }) => {
 
                       {/* Price & Payments */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <strong style={{ fontSize: '18px', color: '#10b981' }}>${booking.totalAmount}</strong>
+                        <strong style={{ fontSize: '18px', color: '#10b981' }}>{formatPrice(booking.totalAmount, user)}</strong>
                         <span
                           style={{
                             fontSize: '11px',
@@ -943,7 +1289,7 @@ const ClientDashboard = ({ user, onLogout }) => {
                 <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>Base Hourly Rate</span>
                 <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                   <DollarSign size={14} color="#10b981" />
-                  ${selectedWorker.hourlyRate}/hour
+                  {formatPrice(selectedWorker.hourlyRate, user)}/hour
                 </span>
               </div>
             </div>
@@ -953,7 +1299,7 @@ const ClientDashboard = ({ user, onLogout }) => {
               className="btn btn-primary"
               style={{ width: '100%', marginTop: '12px' }}
             >
-              Book Service (Starts at ${selectedWorker.hourlyRate * 2} min.)
+              Book Service (Starts at {formatPrice(selectedWorker.hourlyRate * 2, user)} min.)
             </button>
           </div>
         )}
@@ -965,7 +1311,7 @@ const ClientDashboard = ({ user, onLogout }) => {
         onClose={() => setIsBookingOpen(false)}
         title={paymentStep ? 'PayMongo Secure Checkout' : 'Book Professional'}
       >
-        {selectedWorker && (
+        {(selectedWorker || isDispatchCheckout) && (
           <div>
             {!paymentStep ? (
               <form onSubmit={handleBookingDetailsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -975,7 +1321,7 @@ const ClientDashboard = ({ user, onLogout }) => {
                     type="text"
                     className="form-input"
                     disabled
-                    value={selectedWorker.skills[0] || 'Home Repair'}
+                    value={selectedWorker?.skills[0] || dispatchCategory || 'Home Repair'}
                     style={{ textTransform: 'capitalize', background: '#f1f5f9' }}
                   />
                 </div>
@@ -1043,7 +1389,11 @@ const ClientDashboard = ({ user, onLogout }) => {
                     <strong style={{ display: 'block', fontSize: '14px', color: '#047857' }}>Estimated Bill Sum</strong>
                     <span style={{ fontSize: '11px', color: '#64748b' }}>Includes 2h minimum scheduling</span>
                   </div>
-                  <strong style={{ fontSize: '20px', color: '#10b981' }}>${selectedWorker.hourlyRate * 2}</strong>
+                  <strong style={{ fontSize: '20px', color: '#10b981' }}>
+                    {isDispatchCheckout 
+                      ? formatPrice(getDynamicFare(), user)
+                      : formatPrice(selectedWorker.hourlyRate * 2, user)}
+                  </strong>
                 </div>
 
                 <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }}>
@@ -1073,7 +1423,11 @@ const ClientDashboard = ({ user, onLogout }) => {
                       }}
                     >
                       <span style={{ fontSize: '13px', fontWeight: 'bold' }}>PayMongo Sandbox Invoice:</span>
-                      <strong style={{ color: '#10b981', fontSize: '18px' }}>${selectedWorker.hourlyRate * 2}</strong>
+                      <strong style={{ color: '#10b981', fontSize: '18px' }}>
+                        {isDispatchCheckout 
+                          ? formatPrice(getDynamicFare(), user)
+                          : formatPrice(selectedWorker.hourlyRate * 2, user)}
+                      </strong>
                     </div>
 
                     <div className="form-group">

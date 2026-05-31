@@ -20,6 +20,8 @@ import {
   BellRing,
 } from 'lucide-react';
 import ModalDrawer from '../components/ModalDrawer';
+import Logo from '../components/Logo';
+import { formatPrice } from '../utils/currency';
 
 const WorkerDashboard = ({ user, onLogout }) => {
   const [profile, setProfile] = useState(null);
@@ -242,7 +244,7 @@ const WorkerDashboard = ({ user, onLogout }) => {
               >
                 <div>
                   <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>EST. FARE</span>
-                  <strong style={{ fontSize: '20px', color: '#10b981' }}>${activeOffer.totalAmount}</strong>
+                  <strong style={{ fontSize: '20px', color: '#10b981' }}>{formatPrice(activeOffer.totalAmount, user)}</strong>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>SCHEDULE</span>
@@ -306,11 +308,13 @@ const WorkerDashboard = ({ user, onLogout }) => {
           boxShadow: 'var(--shadow-sm)',
         }}
       >
-        <div style={{ flex: 1 }}>
-          <h2 style={{ fontSize: '20px', color: '#0f172a' }}>FixConnect</h2>
-          <p style={{ color: '#64748b', fontSize: '13px' }}>
-            Professional Portal &bull; <strong style={{ color: '#10b981' }}>{user.name}</strong>
-          </p>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Logo size={32} showText={true} />
+          <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '16px' }}>
+            <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
+              Professional Portal &bull; <strong style={{ color: '#10b981' }}>{user.name}</strong>
+            </p>
+          </div>
         </div>
 
         {/* GO ONLINE / OFFLINE Switcher */}
@@ -429,7 +433,7 @@ const WorkerDashboard = ({ user, onLogout }) => {
                 <span style={{ fontSize: '13px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <TrendingUp size={16} color="#10b981" /> Total Earned Revenue
                 </span>
-                <h2 style={{ fontSize: '32px', color: '#10b981', marginTop: '8px' }}>${totalEarnings.toFixed(2)}</h2>
+                <h2 style={{ fontSize: '32px', color: '#10b981', marginTop: '8px' }}>{formatPrice(totalEarnings, user)}</h2>
               </div>
 
               <div className="glass-card" style={{ padding: '24px', transform: 'none' }}>
@@ -526,7 +530,7 @@ const WorkerDashboard = ({ user, onLogout }) => {
 
                       {/* Cost */}
                       <div style={{ minWidth: '90px' }}>
-                        <strong style={{ fontSize: '18px', color: '#10b981' }}>${booking.totalAmount}</strong>
+                        <strong style={{ fontSize: '18px', color: '#10b981' }}>{formatPrice(booking.totalAmount, user)}</strong>
                         <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>Estimated bill</span>
                       </div>
 

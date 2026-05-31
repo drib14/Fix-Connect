@@ -156,9 +156,6 @@ const Auth = ({ onLoginSuccess, onBackToLanding }) => {
         setSuccessMsg(response.data.message);
         setVerificationEmail(email);
         setNeedsVerification(true);
-        if (response.data.devCode) {
-          setDevFailsafeCode(response.data.devCode);
-        }
       }
     } catch (err) {
       setErrorMsg(err.response?.data?.message || 'Registration failed. Try again.');
@@ -192,9 +189,6 @@ const Auth = ({ onLoginSuccess, onBackToLanding }) => {
         setVerificationEmail(email);
         setNeedsVerification(true);
         setErrorMsg(err.response.data.message);
-        if (err.response.data.devCode) {
-          setDevFailsafeCode(err.response.data.devCode);
-        }
       } else {
         setErrorMsg(err.response?.data?.message || 'Invalid email or password.');
       }
@@ -250,9 +244,6 @@ const Auth = ({ onLoginSuccess, onBackToLanding }) => {
         setSuccessMsg(response.data.message);
         setVerificationEmail(email);
         setActiveView('forgot-verify');
-        if (response.data.devCode) {
-          setDevFailsafeCode(response.data.devCode);
-        }
       }
     } catch (err) {
       setErrorMsg(err.response?.data?.message || 'Failed to dispatch reset request.');
@@ -460,24 +451,7 @@ const Auth = ({ onLoginSuccess, onBackToLanding }) => {
               </div>
             </div>
 
-            {devFailsafeCode && (
-              <div
-                style={{
-                  background: '#f0fdf4',
-                  border: '1px solid #10b981',
-                  borderRadius: '12px',
-                  padding: '12px 16px',
-                  fontSize: '13px',
-                  color: '#047857',
-                  textAlign: 'center',
-                }}
-              >
-                <span>Failsafe Dev Code: </span>
-                <strong style={{ fontSize: '16px', color: '#10b981', letterSpacing: '2px' }}>
-                  {devFailsafeCode}
-                </strong>
-              </div>
-            )}
+
 
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
               {loading ? 'Verifying...' : 'Verify & Continue'}
@@ -595,24 +569,7 @@ const Auth = ({ onLoginSuccess, onBackToLanding }) => {
                   </div>
                 </div>
 
-                {devFailsafeCode && (
-                  <div
-                    style={{
-                      background: '#f0fdf4',
-                      border: '1px solid #10b981',
-                      borderRadius: '12px',
-                      padding: '12px 16px',
-                      fontSize: '13px',
-                      color: '#047857',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <span>Failsafe Recovery Code: </span>
-                    <strong style={{ fontSize: '16px', color: '#10b981', letterSpacing: '2px' }}>
-                      {devFailsafeCode}
-                    </strong>
-                  </div>
-                )}
+
 
                 <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
                   {loading ? 'Validating...' : 'Verify Recovery Code'}

@@ -128,6 +128,11 @@ router.put('/:id/status', protect, async (req, res) => {
 
     booking.status = status;
     
+    // Support matchmaking re-routing redirect
+    if (status === 'pending' && req.body.newWorkerId) {
+      booking.workerId = req.body.newWorkerId;
+    }
+    
     // Automatically set payment status to paid upon completion as a simulation default if unpaid
     if (status === 'completed' && booking.paymentStatus === 'pending') {
       booking.paymentStatus = 'paid';

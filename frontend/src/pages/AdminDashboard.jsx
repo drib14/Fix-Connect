@@ -15,6 +15,8 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { SkeletonMetrics } from '../components/Skeleton';
+import Logo from '../components/Logo';
+import { formatPrice } from '../utils/currency';
 
 const AdminDashboard = ({ user, onLogout }) => {
   const [stats, setStats] = useState(null);
@@ -114,11 +116,13 @@ const AdminDashboard = ({ user, onLogout }) => {
           boxShadow: 'var(--shadow-sm)',
         }}
       >
-        <div style={{ flex: 1 }}>
-          <h2 style={{ fontSize: '20px', color: '#0f172a' }}>FixConnect</h2>
-          <p style={{ color: '#64748b', fontSize: '13px' }}>
-            Control Center &bull; <strong style={{ color: '#10b981' }}>{user.name}</strong>
-          </p>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Logo size={32} showText={true} />
+          <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '16px' }}>
+            <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
+              Control Center &bull; <strong style={{ color: '#10b981' }}>{user.name}</strong>
+            </p>
+          </div>
         </div>
 
         {/* Tab Controls */}
@@ -178,7 +182,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                         <TrendingUp size={16} color="#10b981" /> Total Platform Revenue
                       </span>
                       <h2 style={{ fontSize: '32px', color: '#10b981', marginTop: '8px' }}>
-                        ${stats.totalEarnings.toFixed(2)}
+                        {formatPrice(stats.totalEarnings, user)}
                       </h2>
                     </div>
 
@@ -292,7 +296,7 @@ const AdminDashboard = ({ user, onLogout }) => {
 
                       <div style={{ textAlign: 'right' }}>
                         <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>Set Billing Rate</span>
-                        <strong style={{ fontSize: '18px', color: '#10b981' }}>${worker.hourlyRate}/hr</strong>
+                        <strong style={{ fontSize: '18px', color: '#10b981' }}>{formatPrice(worker.hourlyRate, user)}/hr</strong>
                       </div>
                     </div>
 

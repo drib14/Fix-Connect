@@ -81,16 +81,9 @@ router.post('/register', async (req, res) => {
     // Attempt to send email
     const emailSent = await sendVerificationEmail(email, name, verificationCode);
 
-    // Failsafe console logging for developer convenience
-    console.log(`[VERIFICATION CODE FOR ${email}]: ${verificationCode}`);
-
     res.status(201).json({
       success: true,
-      message: emailSent
-        ? 'User registered. Please check your email for the verification code.'
-        : 'User registered. Email delivery failed, but you can find the verification code in the backend console (Failsafe activated).',
-      // We pass the code back in response ONLY in dev-mode failsafes so the reviewer never gets stuck
-      devCode: verificationCode, 
+      message: 'User registered. Please check your email for the verification code.',
       userId: user._id,
     });
   } catch (error) {
@@ -179,13 +172,11 @@ router.post('/login', async (req, res) => {
       await user.save();
 
       await sendVerificationEmail(email, user.name, verificationCode);
-      console.log(`[VERIFICATION CODE FOR ${email}]: ${verificationCode}`);
 
       return res.status(403).json({
         success: false,
         notVerified: true,
         message: 'Account not verified. A new code has been sent to your email.',
-        devCode: verificationCode,
       });
     }
 
@@ -247,15 +238,11 @@ router.post('/forgot-password', async (req, res) => {
     user.verificationCode = resetCode;
     await user.save();
 
-    const emailSent = await sendVerificationEmail(email, user.name, resetCode);
-    console.log(`[PASSWORD RESET CODE FOR ${email}]: ${resetCode}`);
+    await sendVerificationEmail(email, user.name, resetCode);
 
     res.status(200).json({
       success: true,
-      message: emailSent
-        ? 'A 6-digit password reset code has been sent to your email.'
-        : 'Password reset code generated. Email delivery failed, but you can find the code in the backend console (Failsafe active).',
-      devCode: resetCode,
+      message: 'A 6-digit password reset code has been sent to your email.',
     });
   } catch (error) {
     console.error(`Forgot Password Error: ${error.message}`);

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { Phone, Check, Award, Compass, DollarSign, Clock, FileText, ArrowRight, ArrowLeft } from 'lucide-react';
+import { getCurrency } from '../utils/currency';
 
 const Onboarding = ({ user, onOnboardSuccess }) => {
   const isWorker = user.role === 'worker';
@@ -20,9 +21,27 @@ const Onboarding = ({ user, onOnboardSuccess }) => {
   const [workerBio, setWorkerBio] = useState('');
   const [workerRate, setWorkerRate] = useState(25);
   const [workerSkills, setWorkerSkills] = useState([]);
+  const [customSkills, setCustomSkills] = useState([]);
+  const [customSkillInput, setCustomSkillInput] = useState('');
   const [startHour, setStartHour] = useState('08:00');
   const [endHour, setEndHour] = useState('17:00');
   const [files, setFiles] = useState([]); // File array for certifications
+
+  const handleAddCustomSkill = () => {
+    if (customSkillInput.trim() && !customSkills.includes(customSkillInput.trim())) {
+      setCustomSkills([...customSkills, customSkillInput.trim()]);
+      setCustomSkillInput('');
+    }
+  };
+
+  const handleRemoveCustomSkill = (tag) => {
+    setCustomSkills(customSkills.filter((s) => s !== tag));
+  };
+
+  const currentCurrency = getCurrency({
+    address,
+    location: { coordinates: [coords.lng, coords.lat] }
+  });
 
   // Constants
   const categoriesList = [
@@ -118,7 +137,8 @@ const Onboarding = ({ user, onOnboardSuccess }) => {
       formData.append('address', address);
       formData.append('longitude', coords.lng);
       formData.append('latitude', coords.lat);
-      formData.append('skills', JSON.stringify(workerSkills));
+      const mergedSkills = [...workerSkills, ...customSkills];
+      formData.append('skills', JSON.stringify(mergedSkills));
 
       files.forEach((file) => {
         formData.append('certifications', file);
@@ -407,7 +427,7 @@ const Onboarding = ({ user, onOnboardSuccess }) => {
                   </p>
 
                   <div className="form-group">
-                    <label className="form-label">Hourly Billing Rate (USD/hr)</label>
+                    <label className="form-label">Hourly Billing Rate ({currentCurrency.code}/hr)</label>
                     <div style={{ position: 'relative' }}>
                       <input
                         type="number"
@@ -416,16 +436,19 @@ const Onboarding = ({ user, onOnboardSuccess }) => {
                         value={workerRate}
                         onChange={(e) => setWorkerRate(e.target.value)}
                       />
-                      <DollarSign
-                        size={18}
+                      <span
                         style={{
                           position: 'absolute',
                           left: '16px',
                           top: '50%',
                           transform: 'translateY(-50%)',
                           color: '#10b981',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
                         }}
-                      />
+                      >
+                        {currentCurrency.symbol}
+                      </span>
                     </div>
                   </div>
 
@@ -457,6 +480,72 @@ const Onboarding = ({ user, onOnboardSuccess }) => {
                         );
                       })}
                     </div>
+                  </div>
+
+                  {/* CUSTOM WORKER SKILLS INPUT */}
+                  <div className="form-group">
+                    <label className="form-label">Add Custom Skills</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g. Roof sealing, pipe soldering, lock picking..."
+                        value={customSkillInput}
+                        onChange={(e) => setCustomSkillInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddCustomSkill();
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ padding: '0 16px', height: '46px', whiteSpace: 'nowrap' }}
+                        onClick={handleAddCustomSkill}
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {customSkills.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
+                        {customSkills.map((tag) => (
+                          <div
+                            key={tag}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              background: '#f0fdf4',
+                              border: '1px solid #10b981',
+                              color: '#047857',
+                              padding: '4px 10px',
+                              borderRadius: '20px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                            }}
+                          >
+                            <span>{tag}</span>
+                            <button
+                              type="button"
+                              style={{
+                                border: 'none',
+                                background: 'none',
+                                cursor: 'pointer',
+                                color: '#ef4444',
+                                fontSize: '12px',
+                                fontWeight: 'bold',
+                                padding: '0 2px',
+                              }}
+                              onClick={() => handleRemoveCustomSkill(tag)}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

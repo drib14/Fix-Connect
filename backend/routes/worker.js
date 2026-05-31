@@ -104,10 +104,11 @@ router.get('/search', async (req, res) => {
       availability: true,
     }).populate('userId');
 
-    // 3. Filter by category if requested
     if (category) {
+      const searchCat = category.toLowerCase();
       profiles = profiles.filter((p) =>
-        p.skills.some((skill) => skill.toLowerCase() === category.toLowerCase())
+        p.skills.some((skill) => skill.toLowerCase().includes(searchCat)) ||
+        p.title.toLowerCase().includes(searchCat)
       );
     }
 
