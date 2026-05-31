@@ -1,5 +1,0 @@
-◇ injected env (11) from .env // tip: ⌘ suppress logs { quiet: true }
-(node:2366037) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-Server running on port 5000
-MongoDB Connected: ac-widk2dh-shard-00-00.5sycajj.mongodb.net
