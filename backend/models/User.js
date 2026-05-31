@@ -42,6 +42,10 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    verificationCodeExpiry: {
+      type: Date,
+      default: null,
+    },
     onboardingCompleted: {
       type: Boolean,
       default: false,

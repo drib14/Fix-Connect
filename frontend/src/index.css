@@ -675,3 +675,198 @@ a {
   background: hsl(var(--primary-emerald-light));
   color: hsl(var(--primary-emerald-hover));
 }
+
+/* ─── Leaflet Map Custom Overrides ─────────────────────────────────── */
+.custom-map-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2) !important;
+  border: 1px solid hsl(var(--primary-emerald) / 0.2) !important;
+}
+
+.leaflet-popup-tip {
+  box-shadow: none !important;
+}
+
+.leaflet-control-zoom a {
+  background: rgba(15, 23, 42, 0.85) !important;
+  color: #10b981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  font-weight: 700 !important;
+}
+.leaflet-control-zoom a:hover {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+
+/* ─── Toast Notification System ────────────────────────────────────── */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  animation: toastSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  max-width: 380px;
+}
+
+.toast-success {
+  background: #f0fdf4;
+  color: #047857;
+  border: 1px solid #10b981;
+}
+
+.toast-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #ef4444;
+}
+
+.toast-info {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #3b82f6;
+}
+
+.toast-exit {
+  animation: toastSlideOut 0.3s ease forwards;
+}
+
+@keyframes toastSlideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes toastSlideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+
+/* ─── Matching Step Progress ───────────────────────────────────────── */
+.matching-steps {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin: 24px 0 16px 0;
+}
+
+.matching-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.35;
+  transition: all 0.5s ease;
+}
+
+.matching-step.active {
+  opacity: 1;
+}
+
+.matching-step.completed {
+  opacity: 0.7;
+}
+
+.matching-step-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.15);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.5s ease;
+}
+
+.matching-step.active .matching-step-dot {
+  background: #10b981;
+  border-color: #10b981;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.5);
+  animation: logoPulse 1.5s infinite;
+}
+
+.matching-step.completed .matching-step-dot {
+  background: #047857;
+  border-color: #047857;
+}
+
+.matching-step-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+}
+
+.matching-step.active .matching-step-label {
+  color: #10b981;
+}
+
+.matching-step.completed .matching-step-label {
+  color: #047857;
+}
+
+.matching-step-connector {
+  width: 32px;
+  height: 2px;
+  background: rgba(16, 185, 129, 0.2);
+  margin-bottom: 18px;
+}
+
+.matching-step-connector.active {
+  background: #10b981;
+}
+
+/* ─── Fare Breakdown ───────────────────────────────────────────────── */
+.fare-breakdown {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-radius: 14px;
+  padding: 16px;
+  margin: 12px 0;
+}
+
+.fare-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.fare-line.total {
+  border-top: 1px solid rgba(16, 185, 129, 0.2);
+  margin-top: 8px;
+  padding-top: 10px;
+  font-weight: 800;
+  font-size: 16px;
+  color: #10b981;
+}
+
+.fare-line .discount {
+  color: #10b981;
+  font-weight: 700;
+}
+
