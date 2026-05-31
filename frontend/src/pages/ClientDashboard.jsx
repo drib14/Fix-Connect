@@ -3,6 +3,7 @@ import axios from 'axios';
 import { SkeletonCard } from '../components/Skeleton';
 import ModalDrawer from '../components/ModalDrawer';
 import Logo from '../components/Logo';
+import AddressAutocomplete from '../components/AddressAutocomplete';
 import { getCurrency, formatPrice } from '../utils/currency';
 import {
   Search,

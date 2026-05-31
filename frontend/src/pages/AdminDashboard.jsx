@@ -13,7 +13,46 @@ import {
   UserX,
   Clock,
   ExternalLink,
+  Plus,
+  Edit,
+  Trash2,
+  Wrench,
+  Zap,
+  Sparkles,
+  Tv,
+  Hammer,
+  Leaf,
 } from 'lucide-react';
+
+const IconMap = {
+  Wrench,
+  Zap,
+  Sparkles,
+  Tv,
+  Hammer,
+  Leaf,
+  Plus,
+  Edit,
+  Trash2,
+  TrendingUp,
+  Users,
+  Briefcase,
+  Layers,
+  Award,
+  AlertTriangle,
+  CheckCircle,
+  FileText,
+  UserCheck,
+  UserX,
+  Clock,
+  ExternalLink,
+};
+
+const CategoryIcon = ({ name, size = 20, ...props }) => {
+  const IconComponent = IconMap[name] || Wrench;
+  return <IconComponent size={size} {...props} />;
+};
+
 import { SkeletonMetrics } from '../components/Skeleton';
 import Logo from '../components/Logo';
 import { formatPrice } from '../utils/currency';

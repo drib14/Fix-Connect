@@ -103,6 +103,16 @@ app.use('/api/bookings', require('./routes/booking'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/payments', require('./routes/payment'));
 
+app.get('/api/categories', async (req, res) => {
+  try {
+    const Category = require('./models/Category');
+    const categories = await Category.find().sort('name');
+    res.status(200).json({ success: true, categories });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // Root Endpoint
 app.get('/', (req, res) => {
   res.send('FixConnect API is running smoothly.');

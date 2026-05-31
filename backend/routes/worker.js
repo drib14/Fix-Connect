@@ -244,4 +244,78 @@ router.put('/availability', protect, async (req, res) => {
   }
 });
 
+// @route   PUT /api/workers/profile
+// @desc    Update worker profile & schedule configuration
+// @access  Private
+router.put('/profile', protect, async (req, res) => {
+  const { title, skills, hourlyRate, bio, startHour, endHour, workingDays, address, longitude, latitude } = req.body;
+
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    let profile = await WorkerProfile.findOne({ userId: req.user._id });
+    if (!profile) {
+      profile = new WorkerProfile({ userId: req.user._id });
+    }
+
+    // Sync geographic coordinates and address if passed
+    if (address) user.address = address;
+    if (longitude && latitude) {
+      user.location = {
+        type: 'Point',
+        coordinates: [parseFloat(longitude), parseFloat(latitude)],
+      };
+    }
+    await user.save();
+
+    // Update profile attributes
+    if (title) profile.title = title;
+    if (hourlyRate !== undefined) profile.hourlyRate = parseFloat(hourlyRate || 0);
+    if (bio !== undefined) profile.bio = bio;
+    
+    if (startHour || endHour) {
+      profile.workingHours = {
+        start: startHour || profile.workingHours.start || '08:00',
+        end: endHour || profile.workingHours.end || '17:00',
+      };
+    }
+
+    if (workingDays) {
+      profile.workingDays = Array.isArray(workingDays)
+        ? workingDays
+        : JSON.parse(workingDays || '[]');
+    }
+
+    if (skills) {
+      profile.skills = Array.isArray(skills)
+        ? skills
+        : JSON.parse(skills || '[]');
+    }
+
+    await profile.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Worker profile and schedule updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        avatar: user.avatar,
+        address: user.address,
+        location: user.location,
+        onboardingCompleted: user.onboardingCompleted,
+      },
+      profile,
+    });
+  } catch (error) {
+    console.error(`Update Worker Profile Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 module.exports = router;

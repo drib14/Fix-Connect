@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const WorkerProfile = require('../models/WorkerProfile');
 const Booking = require('../models/Booking');
+const Category = require('../models/Category');
 const { protect, authorize } = require('../middleware/auth');
 
 // @route   GET /api/admin/stats
@@ -181,6 +182,86 @@ router.put('/disputes/:id/resolve', protect, authorize('admin'), async (req, res
     res.status(200).json({ success: true, message: `Dispute ticket marked as ${resolutionStatus}`, booking });
   } catch (error) {
     console.error(`Resolve Dispute Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/categories
+// @desc    Create a new service category
+// @access  Private/Admin
+router.post('/categories', protect, authorize('admin'), async (req, res) => {
+  const { name, icon, basePrice, description } = req.body;
+
+  if (!name || !icon) {
+    return res.status(400).json({ success: false, message: 'Please specify category name and icon' });
+  }
+
+  try {
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const existing = await Category.findOne({ $or: [{ name }, { slug }] });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Category name or slug already exists' });
+    }
+
+    const category = await Category.create({
+      name,
+      slug,
+      icon,
+      basePrice: parseFloat(basePrice || 0),
+      description: description || '',
+    });
+
+    res.status(201).json({ success: true, message: 'Category created successfully', category });
+  } catch (error) {
+    console.error(`Create Category Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/categories/:id
+// @desc    Update a service category
+// @access  Private/Admin
+router.put('/categories/:id', protect, authorize('admin'), async (req, res) => {
+  const { name, icon, basePrice, description } = req.body;
+
+  try {
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Category not found' });
+    }
+
+    if (name) {
+      category.name = name;
+      category.slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    }
+    if (icon) category.icon = icon;
+    if (basePrice !== undefined) category.basePrice = parseFloat(basePrice || 0);
+    if (description !== undefined) category.description = description;
+
+    await category.save();
+
+    res.status(200).json({ success: true, message: 'Category updated successfully', category });
+  } catch (error) {
+    console.error(`Update Category Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/admin/categories/:id
+// @desc    Delete a service category
+// @access  Private/Admin
+router.delete('/categories/:id', protect, authorize('admin'), async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Category not found' });
+    }
+
+    await category.deleteOne();
+
+    res.status(200).json({ success: true, message: 'Category deleted successfully' });
+  } catch (error) {
+    console.error(`Delete Category Error: ${error.message}`);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
