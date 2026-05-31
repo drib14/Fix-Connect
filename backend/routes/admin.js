@@ -189,6 +189,15 @@ router.put('/disputes/:id/resolve', protect, authorize('admin'), async (req, res
 // @route   POST /api/admin/categories
 // @desc    Create a new service category
 // @access  Private/Admin
+router.get('/categories', async (req, res) => {
+  try {
+    const categories = await Category.find();
+    res.status(200).json({ success: true, categories });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 router.post('/categories', protect, authorize('admin'), async (req, res) => {
   const { name, icon, basePrice, description } = req.body;
 

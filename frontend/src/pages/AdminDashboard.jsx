@@ -22,6 +22,8 @@ import {
   Tv,
   Hammer,
   Leaf,
+  DollarSign,
+  MapPin,
 } from 'lucide-react';
 
 const IconMap = {
@@ -31,7 +33,6 @@ const IconMap = {
   Tv,
   Hammer,
   Leaf,
-  Plus,
   Edit,
   Trash2,
   TrendingUp,
@@ -56,7 +57,7 @@ const CategoryIcon = ({ name, size = 20, ...props }) => {
 import { SkeletonMetrics } from '../components/Skeleton';
 import Logo from '../components/Logo';
 import { formatPrice } from '../utils/currency';
-import { DollarSign, MapPin } from 'lucide-react';
+
 
 const AdminDashboard = ({ user, onLogout }) => {
   const [stats, setStats] = useState(null);
@@ -127,7 +128,7 @@ const AdminDashboard = ({ user, onLogout }) => {
         const res = await axios.get(`${API_URL}/locations`, { headers });
         if (res.data.success) setLocations(res.data.workers || []);
       } else if (activeSubTab === 'services') {
-        const res = await axios.get('http://localhost:5000/api/services/categories');
+        const res = await axios.get('http://localhost:5000/api/admin/categories');
         if (res.data.success) setCategories(res.data.categories);
       } else if (activeSubTab === 'system') {
         const curRes = await axios.get('http://localhost:5000/api/admin/currencies', { headers });
