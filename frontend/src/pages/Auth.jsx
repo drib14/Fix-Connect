@@ -13,7 +13,6 @@ import {
   Eye,
   EyeOff,
   ArrowLeft,
-  LockKeyhole,
 } from 'lucide-react';
 
 const Auth = ({ onLoginSuccess, onBackToLanding }) => {
@@ -696,7 +695,7 @@ const Auth = ({ onLoginSuccess, onBackToLanding }) => {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
                     />
-                    <LockKeyhole
+                    <Lock
                       size={18}
                       style={{
                         position: 'absolute',

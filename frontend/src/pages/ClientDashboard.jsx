@@ -751,7 +751,7 @@ const ClientDashboard = ({ user, onLogout }) => {
                               <circle r="8" fill="#10b981" stroke="#ffffff" strokeWidth="2" />
                             </g>
                             <text x="400" y="230" fill="#10b981" fontSize="10" fontWeight="bold" textAnchor="middle">
-                              Sarah's Residence
+                              {user?.name || 'Client'}'s Residence
                             </text>
                             
                             {/* Worker Vehicle node translating along route */}
