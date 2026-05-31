@@ -231,4 +231,92 @@ router.get('/me', protect, async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/forgot-password
+// @desc    Generate password reset code and email it
+// @access  Public
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'No account registered with this email' });
+    }
+
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    user.verificationCode = resetCode;
+    await user.save();
+
+    const emailSent = await sendVerificationEmail(email, user.name, resetCode);
+    console.log(`[PASSWORD RESET CODE FOR ${email}]: ${resetCode}`);
+
+    res.status(200).json({
+      success: true,
+      message: emailSent
+        ? 'A 6-digit password reset code has been sent to your email.'
+        : 'Password reset code generated. Email delivery failed, but you can find the code in the backend console (Failsafe active).',
+      devCode: resetCode,
+    });
+  } catch (error) {
+    console.error(`Forgot Password Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/auth/verify-reset-code
+// @desc    Check if password reset code is valid
+// @access  Public
+router.post('/verify-reset-code', async (req, res) => {
+  const { email, code } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.verificationCode !== code) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired verification code' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Verification code validated successfully.',
+    });
+  } catch (error) {
+    console.error(`Verify Code Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password with validated code
+// @access  Public
+router.post('/reset-password', async (req, res) => {
+  const { email, code, newPassword } = req.body;
+
+  try {
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.verificationCode !== code) {
+      return res.status(400).json({ success: false, message: 'Invalid verification token' });
+    }
+
+    user.password = newPassword;
+    user.verificationCode = null;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully. You can now log in with your new password.',
+    });
+  } catch (error) {
+    console.error(`Reset Password Error: ${error.message}`);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 module.exports = router;

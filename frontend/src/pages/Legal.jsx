@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldCheck, FileText, ArrowLeft } from 'lucide-react';
 
-const Legal = ({ onBack }) => {
-  const [activeTab, setActiveTab] = useState('tos'); // 'tos' | 'privacy'
+const Legal = ({ onBack, defaultTab = 'tos' }) => {
+  const [activeTab, setActiveTab] = useState(defaultTab);
+
+  useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab]);
 
   return (
     <div style={{ maxWidth: '800px', margin: '40px auto', padding: '0 24px' }}>

@@ -307,7 +307,7 @@ const WorkerDashboard = ({ user, onLogout }) => {
         }}
       >
         <div style={{ flex: 1 }}>
-          <h2 style={{ fontSize: '20px', color: '#0f172a' }}>FixConnect Pro</h2>
+          <h2 style={{ fontSize: '20px', color: '#0f172a' }}>FixConnect</h2>
           <p style={{ color: '#64748b', fontSize: '13px' }}>
             Professional Portal &bull; <strong style={{ color: '#10b981' }}>{user.name}</strong>
           </p>

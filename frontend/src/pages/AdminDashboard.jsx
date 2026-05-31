@@ -115,7 +115,7 @@ const AdminDashboard = ({ user, onLogout }) => {
         }}
       >
         <div style={{ flex: 1 }}>
-          <h2 style={{ fontSize: '20px', color: '#0f172a' }}>FixConnect Admin</h2>
+          <h2 style={{ fontSize: '20px', color: '#0f172a' }}>FixConnect</h2>
           <p style={{ color: '#64748b', fontSize: '13px' }}>
             Control Center &bull; <strong style={{ color: '#10b981' }}>{user.name}</strong>
           </p>

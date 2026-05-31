@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Splash from './components/Splash';
+import Landing from './pages/Landing';
 import Auth from './pages/Auth';
 import Onboarding from './pages/Onboarding';
 import ClientDashboard from './pages/ClientDashboard';
@@ -13,11 +14,15 @@ const App = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [user, setUser] = useState(null);
   const [loadingSession, setLoadingSession] = useState(true);
+  
+  // Navigation states
+  const [showAuth, setShowAuth] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
+  const [initialLegalTab, setInitialLegalTab] = useState('tos');
 
   const API_URL = 'http://localhost:5050/api/auth';
 
-  // Check persistent session on load
+  // Restore persistent user session on boot
   useEffect(() => {
     const restoreSession = async () => {
       const token = localStorage.getItem('fixconnect_token');
@@ -36,7 +41,7 @@ const App = () => {
         }
       } catch (err) {
         console.error('Session restoration failed:', err.message);
-        localStorage.removeItem('fixconnect_token'); // Clean corrupted tokens
+        localStorage.removeItem('fixconnect_token'); 
       } finally {
         setLoadingSession(false);
       }
@@ -48,14 +53,20 @@ const App = () => {
   const handleLogout = () => {
     localStorage.removeItem('fixconnect_token');
     setUser(null);
+    setShowAuth(false);
   };
 
-  // 1. Loading Splash Intro
+  const handleOpenLegal = (tab = 'tos') => {
+    setInitialLegalTab(tab);
+    setShowLegal(true);
+  };
+
+  // 1. Full-screen Splash Intro on load
   if (showSplash) {
     return <Splash onComplete={() => setShowSplash(false)} />;
   }
 
-  // 2. Loading Session Restore Loader
+  // 2. Loading Session Spinner
   if (loadingSession) {
     return (
       <div
@@ -76,16 +87,16 @@ const App = () => {
     );
   }
 
-  // 3. Legal pages
+  // 3. Legal guidelines router
   if (showLegal) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg-gradient)', padding: '20px 0' }}>
-        <Legal onBack={() => setShowLegal(false)} />
+        <Legal onBack={() => setShowLegal(false)} defaultTab={initialLegalTab} />
       </div>
     );
   }
 
-  // 4. Authenticated, but Onboarding Incomplete
+  // 4. Authenticated with Incomplete Onboarding
   if (user && !user.onboardingCompleted) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg-gradient)', padding: '20px 0' }}>
@@ -94,7 +105,7 @@ const App = () => {
     );
   }
 
-  // 5. Authenticated & Onboarding Complete -> Dashboard Routing
+  // 5. Authenticated & Onboarded -> Roles Dashboards
   if (user && user.onboardingCompleted) {
     if (user.role === 'admin') {
       return <AdminDashboard user={user} onLogout={handleLogout} />;
@@ -105,40 +116,24 @@ const App = () => {
     return <ClientDashboard user={user} onLogout={handleLogout} />;
   }
 
-  // 6. Public Guest (Not logged in)
+  // 6. Auth Dialog panel
+  if (showAuth) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg-gradient)', display: 'flex', flexDirection: 'column' }}>
+        <Auth
+          onLoginSuccess={(loggedInUser) => setUser(loggedInUser)}
+          onBackToLanding={() => setShowAuth(false)}
+        />
+      </div>
+    );
+  }
+
+  // 7. Public guest homepage (Landing page loaded by default!)
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'var(--bg-gradient)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'between',
-        paddingBottom: '20px',
-      }}
-    >
-      <Auth onLoginSuccess={(loggedInUser) => setUser(loggedInUser)} />
-      
-      {/* Footer Legal triggers */}
-      <footer style={{ textAlign: 'center', padding: '16px' }}>
-        <button
-          onClick={() => setShowLegal(true)}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#64748b',
-            fontSize: '13px',
-            cursor: 'pointer',
-            textDecoration: 'underline',
-            transition: 'color 0.3s ease',
-          }}
-          onMouseEnter={(e) => (e.target.style.color = '#10b981')}
-          onMouseLeave={(e) => (e.target.style.color = '#64748b')}
-        >
-          Terms of Service & Privacy Policy Guidelines
-        </button>
-      </footer>
-    </div>
+    <Landing
+      onGetStarted={() => setShowAuth(true)}
+      onLegalClick={handleOpenLegal}
+    />
   );
 };
 
