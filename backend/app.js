@@ -9,8 +9,10 @@ import { logger } from './utils/logger.js';
 
 // Import Routers
 import authRouter from './routes/authRoutes.js';
+import workerRouter from './routes/workerRoutes.js';
 
 const app = express();
+
 
 // Security Headers
 app.use(helmet());
@@ -58,6 +60,7 @@ app.get('/health', (_req, res) => {
 
 // Mount Routes
 app.use('/api/auth', authRouter);
+app.use('/api', workerRouter);
 
 // Fallback for Undefined Routes
 app.all('*', (req, _res, next) => {

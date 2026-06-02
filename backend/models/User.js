@@ -38,6 +38,15 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isOnboarded: {
+      type: Boolean,
+      default: false,
+    },
+    location: {
+      address: { type: String, default: '' },
+      lat: { type: Number, default: 0 },
+      lng: { type: Number, default: 0 },
+    },
     verificationToken: {
       type: String,
       select: false,

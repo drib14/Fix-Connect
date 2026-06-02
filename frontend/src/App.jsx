@@ -1,34 +1,45 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { checkAuthMe, setCredentials } from './store/authSlice.js';
 
 // Components & Pages
+import Splash from './components/Splash.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import Landing from './pages/Landing.jsx';
 import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import VerifyEmail from './pages/VerifyEmail.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
+import Onboarding from './pages/Onboarding.jsx';
+import Legal from './pages/Legal.jsx';
 
 export const App = () => {
   const dispatch = useDispatch();
-  const { accessToken } = useSelector((state) => state.auth);
+  const { accessToken, user } = useSelector((state) => state.auth);
+  
+  // App-level loading states for splash screen
+  const [isRestoringSession, setIsRestoringSession] = useState(true);
 
-  // Proactive Session Recovery Check on reload
   useEffect(() => {
     const restoreSession = async () => {
-      // Look for access token in session storage or state
       if (accessToken) {
-        dispatch(checkAuthMe(accessToken));
+        try {
+          await dispatch(checkAuthMe(accessToken)).unwrap();
+        } catch (err) {
+          // Access token invalid, reset will trigger
+        } finally {
+          // Hold splash screen for a short delay (1.2s) for visual aesthetic delight
+          setTimeout(() => setIsRestoringSession(false), 1200);
+        }
       } else {
         // Try a silent cookie credentials handshake
         try {
           const response = await fetch('/api/auth/refresh', { method: 'POST' });
           const data = await response.json();
           if (response.ok && data.data?.accessToken) {
-            // Restore user credential details
             const userResponse = await fetch('/api/auth/me', {
               headers: { 'Authorization': `Bearer ${data.data.accessToken}` }
             });
@@ -42,7 +53,9 @@ export const App = () => {
             }
           }
         } catch (err) {
-          // No active session cookie found, user will log in normally
+          // Silent refresh failed, user is a guest
+        } finally {
+          setTimeout(() => setIsRestoringSession(false), 1200);
         }
       }
     };
@@ -50,15 +63,35 @@ export const App = () => {
     restoreSession();
   }, [dispatch, accessToken]);
 
+  if (isRestoringSession) {
+    return <Splash />;
+  }
+
   return (
     <div className="app-container">
       <Routes>
-        {/* Protected Dashboard Routes */}
+        {/* Landing Page (Public Home) */}
         <Route 
           path="/" 
           element={
+            accessToken ? (
+              user?.isOnboarded ? (
+                <Home />
+              ) : (
+                <Navigate to="/onboarding" replace />
+              )
+            ) : (
+              <Landing />
+            )
+          } 
+        />
+
+        {/* SaaS Onboarding Flow */}
+        <Route 
+          path="/onboarding" 
+          element={
             <ProtectedRoute>
-              <Home />
+              <Onboarding />
             </ProtectedRoute>
           } 
         />
@@ -69,6 +102,7 @@ export const App = () => {
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/legal" element={<Legal />} />
 
         {/* Wildcard Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
