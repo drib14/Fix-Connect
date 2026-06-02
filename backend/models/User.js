@@ -34,6 +34,22 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    phone: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    bio: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: [500, 'Bio too long'],
+    },
+    currency: {
+      type: String,
+      default: 'USD',
+      uppercase: true,
+    },
     isVerified: {
       type: Boolean,
       default: false,
@@ -47,6 +63,20 @@ const UserSchema = new mongoose.Schema(
       lat: { type: Number, default: 0 },
       lng: { type: Number, default: 0 },
     },
+    // Multi-account switching support
+    savedAccounts: {
+      type: [
+        {
+          name: String,
+          email: String,
+          role: String,
+          avatar: String,
+        },
+      ],
+      default: [],
+      select: false,
+    },
+    // Token Management
     verificationToken: {
       type: String,
       select: false,
