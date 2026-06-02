@@ -26,6 +26,11 @@ export const markAllNotificationsRead = createAsyncThunk('notifications/markAll'
   catch (err) { return rejectWithValue(err.message); }
 });
 
+export const deleteNotification = createAsyncThunk('notifications/delete', async ({ token, id }, { rejectWithValue }) => {
+  try { return await authFetch(`/api/notifications/${id}`, token, { method: 'DELETE' }); }
+  catch (err) { return rejectWithValue(err.message); }
+});
+
 const notificationSlice = createSlice({
   name: 'notifications',
   initialState: {
@@ -60,6 +65,15 @@ const notificationSlice = createSlice({
       .addCase(markAllNotificationsRead.fulfilled, (state) => {
         state.notifications.forEach(n => { n.isRead = true; });
         state.unreadCount = 0;
+      })
+      .addCase(deleteNotification.fulfilled, (state, action) => {
+        // The deleted id comes back in action.meta.arg.id
+        const deletedId = action.meta.arg.id;
+        const idx = state.notifications.findIndex(n => (n.id || n._id) === deletedId);
+        if (idx !== -1) {
+          if (!state.notifications[idx].isRead && state.unreadCount > 0) state.unreadCount -= 1;
+          state.notifications.splice(idx, 1);
+        }
       });
   },
 });
