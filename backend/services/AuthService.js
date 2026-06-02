@@ -1,24 +1,27 @@
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import mongoose from 'mongoose';
-import { UserRepository } from '../repositories/UserRepository.js';
-import { EmailService } from './EmailService.js';
+import bcrypt from 'bcryptjs';
 import { AppError } from '../middleware/errorMiddleware.js';
+import { UserSessionManager } from '../models/User.js';
 import { logger } from '../utils/logger.js';
+import mongoose from 'mongoose';
 
 export class AuthService {
-  constructor() {
-    this.userRepository = new UserRepository();
-    this.emailService = new EmailService();
+  constructor(userRepository, emailService) {
+    this.userRepository = userRepository;
+    this.emailService = emailService;
   }
 
   generateTokens(user) {
-    const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET || 'superultramegasecret';
-    const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET || 'mandatorysuperultramegasecret';
+    const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
+    const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+
+    if (!accessTokenSecret || !refreshTokenSecret) {
+      throw new AppError('Server authentication configuration is missing.', 500);
+    }
 
     const accessToken = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, role: user.role, isOnboarded: user.isOnboarded },
       accessTokenSecret,
       { expiresIn: '15m' }
     );
@@ -32,26 +35,17 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async register(userData) {
-    const { name, email, passwordHash, role } = userData;
-
-    const existingUser = await this.userRepository.findByEmail(email);
+  async registerUser(userData) {
+    const existingUser = await this.userRepository.findByEmail(userData.email);
     if (existingUser) {
-      throw new AppError('Email address is already in use by another account.', 400);
+      throw new AppError('Email already in use', 400);
     }
-
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(passwordHash, salt);
 
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     const user = await this.userRepository.create({
-      name,
-      email,
-      passwordHash: hashedPassword,
-      role,
-      isVerified: false,
+      ...userData,
       verificationToken,
       verificationTokenExpiresAt,
       refreshTokens: [],
@@ -60,7 +54,7 @@ export class AuthService {
     try {
       await this.emailService.sendVerificationEmail(user.email, user.name, verificationToken);
     } catch (err) {
-      logger.error(`Register succeeded but verification email failed to send to ${email}:`, err);
+      logger.error('Failed to send verification email:', err);
     }
 
     return user;
@@ -69,41 +63,45 @@ export class AuthService {
   async verifyEmail(token) {
     const user = await this.userRepository.findByVerificationToken(token);
     if (!user) {
-      throw new AppError('Verification link is invalid or has already expired.', 400);
+      throw new AppError('Invalid or expired verification token.', 400);
     }
 
     user.isVerified = true;
     user.verificationToken = undefined;
     user.verificationTokenExpiresAt = undefined;
 
-    await user.save();
-    logger.info(`User ${user.email} verified email successfully.`);
+    const { accessToken, refreshToken } = this.generateTokens(user);
+    await UserSessionManager.appendSession(user, refreshToken);
+
+    await user.save({ validateBeforeSave: false });
+    return { user, accessToken, refreshToken };
   }
 
-  async login(email, passwordHash) {
-    const user = await this.userRepository.findByEmail(email, true);
-    if (!user) {
-      throw new AppError('Invalid email or password. Please try again.', 401);
-    }
-
-    const isMatch = await bcrypt.compare(passwordHash, user.passwordHash);
-    if (!isMatch) {
-      throw new AppError('Invalid email or password. Please try again.', 401);
+  async login(email, password) {
+    const user = await this.userRepository.findByEmail(email, '+passwordHash +refreshTokens');
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+      throw new AppError('Invalid email or password', 401);
     }
 
     if (!user.isVerified) {
-      throw new AppError('Your email address is not verified. Please verify your email first!', 403);
+      throw new AppError('Please verify your email address to log in.', 403);
     }
 
     const { accessToken, refreshToken } = this.generateTokens(user);
-
     await UserSessionManager.appendSession(user, refreshToken);
 
     return { user, accessToken, refreshToken };
   }
 
   async refreshToken(oldRefreshToken) {
-    const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET || 'mandatorysuperultramegasecret';
+    if (!oldRefreshToken) {
+      throw new AppError('Refresh token is required.', 400);
+    }
+
+    const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+    if (!refreshTokenSecret) {
+      throw new AppError('Server authentication configuration is missing.', 500);
+    }
 
     let decodedPayload;
     try {
@@ -115,36 +113,40 @@ export class AuthService {
 
     const user = await this.userRepository.findById(decodedPayload.id, '+refreshTokens');
     if (!user) {
-      throw new AppError('User session not found.', 401);
+      throw new AppError('User not found.', 401);
     }
 
     if (!user.refreshTokens.includes(oldRefreshToken)) {
       user.refreshTokens = [];
-      await user.save();
+      await user.save({ validateBeforeSave: false });
       logger.security(`Session compromise warning: Refresh token reuse detected for user ${user.email}. All sessions cleared!`);
-      throw new AppError('Session hijacked or reused. For security reasons, all sessions are terminated. Please login again.', 403);
+      throw new AppError('Security violation detected. Please log in again.', 401);
     }
 
     user.refreshTokens = user.refreshTokens.filter((token) => token !== oldRefreshToken);
 
     const { accessToken, refreshToken } = this.generateTokens(user);
-
     user.refreshTokens.push(refreshToken);
-    await user.save();
+    await user.save({ validateBeforeSave: false });
 
     return { accessToken, refreshToken };
   }
 
   async logout(refreshToken) {
-    const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET || 'mandatorysuperultramegasecret';
+    if (!refreshToken) return;
+
+    const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+    if (!refreshTokenSecret) {
+        return; // Don't crash on logout, just ignore
+    }
 
     try {
       const decodedPayload = jwt.verify(refreshToken, refreshTokenSecret);
       const user = await this.userRepository.findById(decodedPayload.id, '+refreshTokens');
-      if (user) {
+
+      if (user && user.refreshTokens) {
         user.refreshTokens = user.refreshTokens.filter((token) => token !== refreshToken);
-        await user.save();
-        logger.info(`User ${user.email} logged out successfully.`);
+        await user.save({ validateBeforeSave: false });
       }
     } catch (err) {
       logger.warn('Logout token parsing failed, proceeding to clear client side session.');
@@ -154,8 +156,8 @@ export class AuthService {
   async forgotPassword(email) {
     const user = await this.userRepository.findByEmail(email);
     if (!user) {
-      logger.info(`Forgot password requested for non-existing email: ${email}`);
-      return;
+      // Return success anyway to prevent email enumeration
+      return true;
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -163,31 +165,36 @@ export class AuthService {
 
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpiresAt = resetTokenExpiresAt;
-    await user.save();
+    await user.save({ validateBeforeSave: false });
 
-    await this.emailService.sendPasswordResetEmail(user.email, user.name, resetToken);
+    try {
+      await this.emailService.sendPasswordResetEmail(user.email, user.name, resetToken);
+    } catch (err) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpiresAt = undefined;
+      await user.save({ validateBeforeSave: false });
+      throw new AppError('There was an error sending the password reset email. Try again later.', 500);
+    }
+
+    return true;
   }
 
   async resetPassword(token, passwordHash) {
     const user = await this.userRepository.findByResetToken(token);
     if (!user) {
-      throw new AppError('Password reset link is invalid or has expired.', 400);
+      throw new AppError('Token is invalid or has expired', 400);
     }
 
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(passwordHash, salt);
-
-    user.passwordHash = hashedPassword;
+    user.passwordHash = passwordHash;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpiresAt = undefined;
+    // Clear sessions
     user.refreshTokens = [];
 
     await user.save();
-    logger.info(`User ${user.email} successfully reset their password.`);
+    return true;
   }
-}
 
-class UserSessionManager {
   static async appendSession(user, refreshToken) {
     const dbUser = await mongoose.model('User').findById(user.id).select('+refreshTokens');
     if (dbUser) {
@@ -195,10 +202,11 @@ class UserSessionManager {
         dbUser.refreshTokens = [];
       }
       dbUser.refreshTokens.push(refreshToken);
+      // Keep max 5 sessions
       if (dbUser.refreshTokens.length > 5) {
         dbUser.refreshTokens.shift();
       }
-      await dbUser.save();
+      await dbUser.save({ validateBeforeSave: false });
     }
   }
 }
