@@ -8,22 +8,23 @@ const BookingSchema = new mongoose.Schema(
       required: [true, 'Customer is required'],
       index: true,
     },
+    // Made optional for instant broadcasting
     provider: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Provider is required'],
       index: true,
     },
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
-      required: [true, 'Category is required'],
+    // Removed strict Category requirement for instant free-text service request
+    serviceRequestText: {
+      type: String,
+      required: [true, 'Service request text is required'],
+      trim: true,
+      minlength: [3, 'Request must be at least 3 characters'],
+      maxlength: [200, 'Request must not exceed 200 characters'],
     },
     description: {
       type: String,
-      required: [true, 'Job description is required'],
       trim: true,
-      minlength: [10, 'Description must be at least 10 characters'],
       maxlength: [1000, 'Description must not exceed 1000 characters'],
     },
     address: {
@@ -31,9 +32,10 @@ const BookingSchema = new mongoose.Schema(
       lat: { type: Number, default: 0 },
       lng: { type: Number, default: 0 },
     },
+    // Instant booking so it's no longer strictly required
     scheduledAt: {
       type: Date,
-      required: [true, 'Scheduled date is required'],
+      default: Date.now
     },
     estimatedDuration: {
       type: Number, // in hours
@@ -104,7 +106,6 @@ BookingSchema.pre('save', function (next) {
 
 BookingSchema.index({ customer: 1, status: 1 });
 BookingSchema.index({ provider: 1, status: 1 });
-BookingSchema.index({ scheduledAt: 1 });
 
 export const Booking = mongoose.model('Booking', BookingSchema);
 export default Booking;

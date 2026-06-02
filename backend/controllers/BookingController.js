@@ -12,47 +12,34 @@ export class BookingController {
         return next(new AppError('Only customers can create bookings', 403));
       }
 
-      const { providerId, categoryId, description, address, scheduledAt, estimatedDuration, currency } = req.body;
+      const { serviceRequestText, description, address, currency } = req.body;
 
-      if (!providerId || !categoryId || !description || !scheduledAt) {
-        return next(new AppError('Provider, category, description, and schedule date are required', 400));
+      if (!serviceRequestText) {
+        return next(new AppError('Service request text is required', 400));
       }
-
-      // Get provider hourly rate for cost estimate
-      const providerProfile = await WorkerProfile.findOne({ userId: providerId });
-      const hourlyRate = providerProfile?.hourlyRate || 0;
-      const duration = estimatedDuration || 1;
-      const totalAmount = hourlyRate * duration;
 
       const booking = await Booking.create({
         customer: req.user.id,
-        provider: providerId,
-        category: categoryId,
-        description,
-        address: address || {},
-        scheduledAt: new Date(scheduledAt),
-        estimatedDuration: duration,
-        totalAmount,
+        serviceRequestText,
+        description: description || serviceRequestText,
+        address: address || req.user.location || {},
         currency: currency || req.user.currency || 'USD',
+        status: 'pending' // explicit for instant booking queue
       });
 
       await booking.populate([
-        { path: 'customer', select: 'name avatar email phone' },
-        { path: 'provider', select: 'name avatar email phone' },
-        { path: 'category', select: 'name iconName' },
+        { path: 'customer', select: 'name avatar email phone' }
       ]);
 
-      // Notify provider of new booking request
-      await emitNotification(String(providerId), {
-        type: 'booking_request',
-        title: 'New Booking Request',
-        body: `${booking.customer.name} has requested your service for ${booking.category.name}`,
-        relatedBooking: booking._id,
-        relatedUser: req.user.id,
-        iconType: 'calendar',
-      });
+      // Instead of notifying one provider, we broadcast to all active providers
+      // Using the named exports already present in socket.js
+      const { getIO } = await import('../socket.js');
+      const io = getIO();
 
-      logger.info(`Booking created: ${booking.referenceNumber} by customer ${req.user.id}`);
+      // Emit real-time instant booking event to everyone
+      io.emit('new-instant-booking', booking);
+
+      logger.info(`Instant Booking created: ${booking.referenceNumber} by customer ${req.user.id}`);
       res.status(201).json({
         status: 'success',
         data: { booking },

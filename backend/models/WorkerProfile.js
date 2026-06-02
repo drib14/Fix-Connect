@@ -5,59 +5,50 @@ const WorkerProfileSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: [true, 'User ID is required'],
       unique: true,
       index: true,
     },
     businessName: {
       type: String,
+      required: [true, 'Business Name is required'],
       trim: true,
-      default: '',
     },
-    specialty: {
+    // REPLACED specialty and hourlyRate with transportType, identityVerified, baseRate
+    transportType: {
       type: String,
-      trim: true,
-      default: '',
+      enum: ['motorcycle', 'car', 'van', 'truck', 'walking'],
+      default: 'motorcycle',
     },
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
+    identityVerified: {
+      type: Boolean,
+      default: false,
     },
-    hourlyRate: {
+    baseRate: {
       type: Number,
-      default: 0,
+      required: [true, 'Base rate is required'],
+      min: [0, 'Base rate cannot be negative'],
     },
     bio: {
       type: String,
       trim: true,
+      maxlength: [1000, 'Bio must not exceed 1000 characters'],
       default: '',
-      maxlength: [800, 'Bio too long'],
     },
     rating: {
       type: Number,
       default: 0,
-      min: 0,
-      max: 5,
+      min: [0, 'Rating must be at least 0'],
+      max: [5, 'Rating must not exceed 5'],
     },
     reviewsCount: {
       type: Number,
       default: 0,
     },
-    completedJobs: {
-      type: Number,
-      default: 0,
-    },
-    responseTimeMinutes: {
-      type: Number,
-      default: 30, // average response time in minutes
-    },
-    isAvailable: {
-      type: Boolean,
-      default: true,
-    },
     serviceRadius: {
-      type: Number,
-      default: 15, // in kilometers
+      type: Number, // In Kilometers
+      default: 15,
+      min: [1, 'Radius must be at least 1 km'],
     },
     availability: {
       days: {
@@ -73,45 +64,6 @@ const WorkerProfileSchema = new mongoose.Schema(
         default: '17:00',
       },
     },
-    // Enhanced profile fields
-    yearsOfExperience: {
-      type: Number,
-      default: 0,
-    },
-    languages: {
-      type: [String],
-      default: ['English'],
-    },
-    certifications: {
-      type: [
-        {
-          name: String,
-          issuedBy: String,
-          year: Number,
-        },
-      ],
-      default: [],
-    },
-    portfolio: {
-      type: [
-        {
-          imageUrl: String,
-          caption: String,
-          addedAt: { type: Date, default: Date.now },
-        },
-      ],
-      default: [],
-    },
-    // Verification status
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
-    verificationDocuments: {
-      type: [String],
-      select: false,
-      default: [],
-    },
   },
   {
     timestamps: true,
@@ -120,7 +72,6 @@ const WorkerProfileSchema = new mongoose.Schema(
         ret.id = ret._id.toString();
         delete ret._id;
         delete ret.__v;
-        delete ret.verificationDocuments;
         return ret;
       },
     },

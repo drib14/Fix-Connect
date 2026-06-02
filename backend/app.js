@@ -16,6 +16,7 @@ import chatRouter from './routes/chatRoutes.js';
 import notificationRouter from './routes/notificationRoutes.js';
 import reviewRouter from './routes/reviewRoutes.js';
 import currencyRouter from './routes/currencyRoutes.js';
+import platformRouter from './routes/platformRoutes.js';
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.use('/api/chat', chatRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/reviews', reviewRouter);
 app.use('/api/currency', currencyRouter);
+app.use('/api/platform', platformRouter);
 app.use('/api', workerRouter); // categories & workers
 
 // Fallback for Undefined Routes

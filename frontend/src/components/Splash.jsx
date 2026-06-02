@@ -19,11 +19,10 @@ export const Splash = () => {
         alignItems: 'center',
         gap: '1.5rem',
       }}>
-        {/* Pulsing circular handyman logo wrapper */}
         <div style={{
           position: 'relative',
-          width: '100px',
-          height: '100px',
+          width: '120px',
+          height: '120px',
         }}>
           {/* Animated concentric pulse waves */}
           <div style={{
@@ -48,12 +47,13 @@ export const Splash = () => {
           }}></div>
 
           <img 
-            src="/logo.svg" 
-            alt="FixConnect" 
+            src="/FC-logo.png"
+            alt="FixConnect Logo"
             style={{
               position: 'relative',
-              width: '100px',
-              height: '100px',
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
               zIndex: 2,
               animation: 'logoScale 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) infinite alternate',
             }}
@@ -83,7 +83,6 @@ export const Splash = () => {
         </div>
       </div>
 
-      {/* Dynamic Keyframe style block injected locally */}
       <style>{`
         @keyframes pulseWave {
           0% { transform: scale(1); opacity: 0.35; }

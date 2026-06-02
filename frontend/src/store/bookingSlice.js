@@ -67,6 +67,7 @@ const bookingSlice = createSlice({
     clearBookingError: (state) => { state.error = null; },
     clearCreateSuccess: (state) => { state.createSuccess = false; },
     setActiveBooking: (state, action) => { state.activeBooking = action.payload; },
+    clearCurrentBooking: (state) => { state.activeBooking = null; },
     updateBookingInList: (state, action) => {
       const idx = state.bookings.findIndex(b => b.id === action.payload.id || b._id === action.payload._id);
       if (idx !== -1) state.bookings[idx] = action.payload;
@@ -107,5 +108,5 @@ const bookingSlice = createSlice({
   },
 });
 
-export const { clearBookingError, clearCreateSuccess, setActiveBooking, updateBookingInList } = bookingSlice.actions;
+export const { clearBookingError, clearCreateSuccess, setActiveBooking, clearCurrentBooking, updateBookingInList } = bookingSlice.actions;
 export default bookingSlice.reducer;

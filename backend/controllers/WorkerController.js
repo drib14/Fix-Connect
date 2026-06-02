@@ -85,11 +85,11 @@ export class WorkerController {
 
   async onboardProvider(req, res, next) {
     try {
-      const { businessName, specialty, hourlyRate, bio, serviceRadius, availability } = req.body;
+      const { businessName, transportType, baseRate, bio, serviceRadius, availability } = req.body;
       const user = req.user;
 
-      if (!businessName || !specialty || !hourlyRate) {
-        throw new AppError('Business Name, Specialty, and Hourly Rate are required fields.', 400);
+      if (!businessName || !transportType || !baseRate) {
+        throw new AppError('Business Name, Transport Type, and Base Rate are required fields.', 400);
       }
 
       // Upsert profile
@@ -98,8 +98,8 @@ export class WorkerController {
         {
           userId: user._id,
           businessName,
-          specialty,
-          hourlyRate: Number(hourlyRate),
+          transportType,
+          baseRate: Number(baseRate),
           bio: bio || '',
           serviceRadius: Number(serviceRadius) || 15,
           availability: availability || {

@@ -21,8 +21,8 @@ export const Onboarding = () => {
   // Provider Onboarding States
   const [businessName, setBusinessName] = useState('');
   const [bio, setBio] = useState('');
-  const [specialty, setSpecialty] = useState('plumbing');
-  const [hourlyRate, setHourlyRate] = useState('35');
+  const [transportType, setTransportType] = useState('motorcycle');
+  const [baseRate, setBaseRate] = useState('20');
   const [serviceRadius, setServiceRadius] = useState('15');
   const [availableDays, setAvailableDays] = useState(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']);
   const [startTime, setStartTime] = useState('08:00');
@@ -141,8 +141,8 @@ export const Onboarding = () => {
         },
         body: JSON.stringify({
           businessName,
-          specialty,
-          hourlyRate: Number(hourlyRate),
+          transportType,
+          baseRate: Number(baseRate),
           bio,
           serviceRadius: Number(serviceRadius),
           availability: {
@@ -343,38 +343,39 @@ export const Onboarding = () => {
             {step === 2 && (
               <div className="animate-fade">
                 <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Star size={20} style={{ color: 'var(--primary)' }} /> Step 2: Specialty & Rates
+                  <Star size={20} style={{ color: 'var(--primary)' }} /> Step 2: Transport & Rates
                 </h3>
                 <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '1.8rem' }}>
-                  Define your primary service division and set your per-hour service booking charge.
+                  Define your mode of transport and your minimum base rate.
                 </p>
 
                 <div className="form-group">
-                  <label className="form-label" htmlFor="specialty">Core Specialized Division</label>
+                  <label className="form-label" htmlFor="transportType">Transport Type</label>
                   <select
-                    id="specialty"
+                    id="transportType"
                     className="form-input"
-                    value={specialty}
-                    onChange={(e) => setSpecialty(e.target.value)}
+                    value={transportType}
+                    onChange={(e) => setTransportType(e.target.value)}
                   >
-                    <option value="plumbing">Plumbing Solutions</option>
-                    <option value="electrical">Electrical Engineering</option>
-                    <option value="cleaning">Home Cleaning Services</option>
-                    <option value="handyman">General Handyman</option>
+                    <option value="motorcycle">Motorcycle</option>
+                    <option value="car">Car</option>
+                    <option value="van">Van</option>
+                    <option value="truck">Truck</option>
+                    <option value="walking">Walking</option>
                   </select>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: '2rem' }}>
-                  <label className="form-label" htmlFor="rate">Hourly Rate ($ USD)</label>
+                  <label className="form-label" htmlFor="rate">Base Rate ($ USD)</label>
                   <input
                     type="number"
                     id="rate"
                     className="form-input"
-                    placeholder="35"
-                    min="15"
+                    placeholder="20"
+                    min="0"
                     max="300"
-                    value={hourlyRate}
-                    onChange={(e) => setHourlyRate(e.target.value)}
+                    value={baseRate}
+                    onChange={(e) => setBaseRate(e.target.value)}
                     required
                   />
                 </div>
