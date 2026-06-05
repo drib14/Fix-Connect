@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
+import logo from './assets/logo.png';
 
 function App() {
   const [isLogin, setIsLogin] = useState(true);
@@ -7,14 +8,14 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Dynamic Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-      <div className="absolute top-[20%] right-[-10%] w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-      <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-35 animate-blob"></div>
+      <div className="absolute top-[20%] right-[-10%] w-96 h-96 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000"></div>
+      <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-35 animate-blob animation-delay-4000"></div>
 
       <div className="w-full max-w-md z-10 animate-fade-in">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white shadow-xl shadow-primary-500/20 mb-6 transform transition hover:scale-105 duration-300">
-            <img src="/favicon.svg" alt="Fix-Connect Logo" className="w-10 h-10" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white shadow-xl shadow-primary-500/10 mb-6 transform transition hover:scale-105 duration-300 overflow-hidden border-2 border-primary-100">
+            <img src={logo} alt="Fix-Connect Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Fix-Connect</h1>
           <p className="text-slate-500 mt-2 font-medium">Your platform for local service workers</p>
@@ -67,7 +68,7 @@ function App() {
                   <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" />
                   <span className="ml-2 text-sm text-slate-600">Remember me</span>
                 </label>
-                <a href="#" className="text-sm font-semibold text-primary-600 hover:text-primary-500">
+                <a href="#" className="text-sm font-semibold text-accent-600 hover:text-accent-500">
                   Forgot password?
                 </a>
               </div>
@@ -83,7 +84,7 @@ function App() {
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button
               onClick={() => setIsLogin(!isLogin)}
-              className="font-semibold text-primary-600 hover:text-primary-500 hover:underline transition-all"
+              className="font-semibold text-accent-600 hover:text-accent-500 hover:underline transition-all"
             >
               {isLogin ? 'Sign up' : 'Log in'}
             </button>
