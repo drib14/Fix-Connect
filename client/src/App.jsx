@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Lock, User, ArrowRight, Home } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 
 function App() {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,7 +14,7 @@ function App() {
       <div className="w-full max-w-md z-10 animate-fade-in">
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white shadow-xl shadow-primary-500/20 mb-6 transform transition hover:scale-105 duration-300">
-            <Home className="w-8 h-8 text-primary-600" />
+            <img src="/favicon.svg" alt="Fix-Connect Logo" className="w-10 h-10" />
           </div>
           <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Fix-Connect</h1>
           <p className="text-slate-500 mt-2 font-medium">Your platform for local service workers</p>
