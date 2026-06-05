@@ -7,8 +7,12 @@ const cookieParser = require('cookie-parser');
 
 const authRoutes = require('./routes/auth.routes');
 const errorHandler = require('./middlewares/error.middleware');
+const connectDB = require('./config/db');
 
 const app = express();
+
+// Connect to database
+connectDB();
 
 // Middlewares
 app.use(express.json());

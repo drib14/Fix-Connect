@@ -1,4 +1,4 @@
-const prisma = require('../config/db');
+const User = require('../models/user.model');
 const { hashPassword, comparePassword } = require('../utils/hash');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken, generateResetToken, verifyResetToken } = require('../utils/jwt');
 const { sendResetPasswordEmail } = require('../utils/email');
@@ -6,34 +6,30 @@ const { sendResetPasswordEmail } = require('../utils/email');
 const register = async (data) => {
   const { fullName, email, phoneNumber, password, role } = data;
 
-  const existingUser = await prisma.user.findUnique({ where: { email } });
+  const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw new Error('Email already in use');
   }
 
   const hashedPassword = await hashPassword(password);
 
-  const user = await prisma.user.create({
-    data: {
-      fullName,
-      email,
-      phoneNumber,
-      passwordHash: hashedPassword,
-      role: role || 'USER',
-    },
+  const user = await User.create({
+    fullName,
+    email,
+    phoneNumber,
+    passwordHash: hashedPassword,
+    role: role || 'USER',
   });
 
-  const accessToken = generateAccessToken(user.id, user.role);
-  const refreshToken = generateRefreshToken(user.id);
+  const accessToken = generateAccessToken(user._id, user.role);
+  const refreshToken = generateRefreshToken(user._id);
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { refreshToken },
-  });
+  user.refreshToken = refreshToken;
+  await user.save();
 
   return {
     user: {
-      id: user.id,
+      id: user._id,
       fullName: user.fullName,
       email: user.email,
       role: user.role,
@@ -44,7 +40,7 @@ const register = async (data) => {
 };
 
 const login = async (email, password) => {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await User.findOne({ email });
   if (!user) {
     throw new Error('Invalid email or password');
   }
@@ -54,17 +50,15 @@ const login = async (email, password) => {
     throw new Error('Invalid email or password');
   }
 
-  const accessToken = generateAccessToken(user.id, user.role);
-  const refreshToken = generateRefreshToken(user.id);
+  const accessToken = generateAccessToken(user._id, user.role);
+  const refreshToken = generateRefreshToken(user._id);
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { refreshToken },
-  });
+  user.refreshToken = refreshToken;
+  await user.save();
 
   return {
     user: {
-      id: user.id,
+      id: user._id,
       fullName: user.fullName,
       email: user.email,
       role: user.role,
@@ -75,28 +69,23 @@ const login = async (email, password) => {
 };
 
 const logout = async (userId) => {
-  await prisma.user.update({
-    where: { id: userId },
-    data: { refreshToken: null },
-  });
+  await User.findByIdAndUpdate(userId, { refreshToken: null });
 };
 
 const refreshToken = async (token) => {
   try {
     const payload = verifyRefreshToken(token);
-    const user = await prisma.user.findUnique({ where: { id: payload.id } });
+    const user = await User.findById(payload.id);
 
     if (!user || user.refreshToken !== token) {
       throw new Error('Invalid refresh token');
     }
 
-    const newAccessToken = generateAccessToken(user.id, user.role);
-    const newRefreshToken = generateRefreshToken(user.id);
+    const newAccessToken = generateAccessToken(user._id, user.role);
+    const newRefreshToken = generateRefreshToken(user._id);
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: newRefreshToken },
-    });
+    user.refreshToken = newRefreshToken;
+    await user.save();
 
     return {
       accessToken: newAccessToken,
@@ -108,22 +97,18 @@ const refreshToken = async (token) => {
 };
 
 const forgotPassword = async (email) => {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await User.findOne({ email });
   if (!user) {
     // We don't throw an error to prevent email enumeration attacks
     return;
   }
 
-  const resetToken = generateResetToken(user.id);
+  const resetToken = generateResetToken(user._id);
   const expiresAt = new Date(Date.now() + 3600000); // 1 hour
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      resetPasswordToken: resetToken,
-      resetPasswordExpires: expiresAt,
-    },
-  });
+  user.resetPasswordToken = resetToken;
+  user.resetPasswordExpires = expiresAt;
+  await user.save();
 
   await sendResetPasswordEmail(user.email, resetToken);
 };
@@ -131,7 +116,7 @@ const forgotPassword = async (email) => {
 const resetPassword = async (token, newPassword) => {
   try {
     const payload = verifyResetToken(token);
-    const user = await prisma.user.findUnique({ where: { id: payload.id } });
+    const user = await User.findById(payload.id);
 
     if (!user || user.resetPasswordToken !== token || user.resetPasswordExpires < new Date()) {
       throw new Error('Invalid or expired reset token');
@@ -139,21 +124,17 @@ const resetPassword = async (token, newPassword) => {
 
     const hashedPassword = await hashPassword(newPassword);
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        passwordHash: hashedPassword,
-        resetPasswordToken: null,
-        resetPasswordExpires: null,
-      },
-    });
+    user.passwordHash = hashedPassword;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
   } catch (error) {
     throw new Error('Invalid or expired reset token');
   }
 };
 
 const changePassword = async (userId, oldPassword, newPassword) => {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await User.findById(userId);
   if (!user) {
     throw new Error('User not found');
   }
@@ -165,10 +146,8 @@ const changePassword = async (userId, oldPassword, newPassword) => {
 
   const hashedPassword = await hashPassword(newPassword);
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { passwordHash: hashedPassword },
-  });
+  user.passwordHash = hashedPassword;
+  await user.save();
 };
 
 module.exports = {
