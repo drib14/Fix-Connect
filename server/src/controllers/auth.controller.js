@@ -114,6 +114,110 @@ const changePassword = async (req, res, next) => {
   }
 };
 
+const registerUser = async (req, res, next) => {
+  try {
+    const data = authDto.registerSchema.parse(req.body);
+    data.role = 'USER';
+    const result = await authService.register(data);
+
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(201).json({ user: result.user, accessToken: result.accessToken });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const loginUser = async (req, res, next) => {
+  try {
+    const data = authDto.loginSchema.parse(req.body);
+    const result = await authService.login(data.email, data.password);
+
+    if (result.user.role !== 'USER') {
+      return res.status(403).json({ message: 'Access denied: Not a client account' });
+    }
+
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({ user: result.user, accessToken: result.accessToken });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const registerWorker = async (req, res, next) => {
+  try {
+    const data = authDto.registerSchema.parse(req.body);
+    data.role = 'WORKER';
+    const result = await authService.register(data);
+
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(201).json({ user: result.user, accessToken: result.accessToken });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const loginWorker = async (req, res, next) => {
+  try {
+    const data = authDto.loginSchema.parse(req.body);
+    const result = await authService.login(data.email, data.password);
+
+    if (result.user.role !== 'WORKER') {
+      return res.status(403).json({ message: 'Access denied: Not a worker account' });
+    }
+
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({ user: result.user, accessToken: result.accessToken });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const loginAdmin = async (req, res, next) => {
+  try {
+    const data = authDto.loginSchema.parse(req.body);
+    const result = await authService.login(data.email, data.password);
+
+    if (result.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Access denied: Insufficient permissions' });
+    }
+
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({ user: result.user, accessToken: result.accessToken });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -123,4 +227,9 @@ module.exports = {
   forgotPassword,
   resetPassword,
   changePassword,
+  registerUser,
+  loginUser,
+  registerWorker,
+  loginWorker,
+  loginAdmin,
 };

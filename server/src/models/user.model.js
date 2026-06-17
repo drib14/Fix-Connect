@@ -23,8 +23,67 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['USER', 'WORKER'],
+      enum: ['USER', 'WORKER', 'ADMIN'],
       default: 'USER',
+    },
+    avatar: {
+      type: String,
+      default: null,
+    },
+    onboardingCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    // Worker specific onboarding details
+    specialty: {
+      type: String,
+      default: null, // e.g., 'Plumbing', 'Electrical', 'Cleaning', 'Gardening', 'Repair'
+    },
+    hourlyRate: {
+      type: Number,
+      default: null,
+    },
+    bio: {
+      type: String,
+      default: null,
+    },
+    experienceYears: {
+      type: Number,
+      default: null,
+    },
+    governmentId: {
+      type: String,
+      default: null, // URL or base64 data
+    },
+    certificate: {
+      type: String,
+      default: null, // URL or base64 data
+    },
+    status: {
+      type: String,
+      enum: ['ACTIVE', 'BLOCKED', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED'],
+      default: 'ACTIVE',
+    },
+    isAvailable: {
+      type: Boolean,
+      default: true,
+    },
+    rating: {
+      type: Number,
+      default: 5.0,
+    },
+    ratingsCount: {
+      type: Number,
+      default: 0,
+    },
+    // User specific onboarding details
+    address: {
+      type: String,
+      default: null,
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      default: null,
     },
     refreshToken: {
       type: String,
