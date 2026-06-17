@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   getPendingWorkers, verifyWorker, getStats, getUsers, deleteUser,
-  updateUserStatus, getBookings, getBookingDetails, updateBookingStatus
+  updateUserStatus, getBookings, getBookingDetails, updateBookingStatus,
+  updateUserProfile, getPayments, getReviews, deleteReview
 } from '../services/adminService';
 import { 
   getTerms, updateTerms, getPrivacy, updatePrivacy,
@@ -11,12 +12,13 @@ import {
 import { 
   Users, BarChart2, ShieldAlert, CheckCircle, XCircle, 
   Trash2, DollarSign, Hammer, Calendar, LogOut, ArrowRight,
-  MessageSquare, FileText, Ban, Check, Edit3, Plus, X, Loader, Search, RefreshCw
+  MessageSquare, FileText, Ban, Check, Edit3, Plus, X, Loader, Search, RefreshCw,
+  Star, CreditCard, Edit, Save, MapPin
 } from 'lucide-react';
 
 const AdminPortal = () => {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'verifications', 'users', 'bookings', 'content'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'verifications', 'users', 'bookings', 'payments', 'reviews', 'content'
   const [stats, setStats] = useState(null);
   const [pendingWorkers, setPendingWorkers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
@@ -28,6 +30,29 @@ const AdminPortal = () => {
   const [bookingsList, setBookingsList] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [bookingDetailsLoading, setBookingDetailsLoading] = useState(false);
+
+  // Payments / Transactions States
+  const [paymentsList, setPaymentsList] = useState([]);
+
+  // Reviews Moderation States
+  const [reviewsList, setReviewsList] = useState([]);
+
+  // User Profile Editor States
+  const [editingUser, setEditingUser] = useState(null); // user object to edit
+  const [userForm, setUserForm] = useState({
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    role: '',
+    specialty: '',
+    hourlyRate: 0,
+    bio: '',
+    experienceYears: 0,
+    address: '',
+    coordinates: [0, 0],
+    status: '',
+    onboardingCompleted: true
+  });
 
   // Content Customizer States
   const [contentSubTab, setContentSubTab] = useState('terms'); // 'terms', 'privacy', 'blogs'
@@ -56,6 +81,12 @@ const AdminPortal = () => {
       } else if (activeTab === 'bookings') {
         const list = await getBookings();
         setBookingsList(list);
+      } else if (activeTab === 'payments') {
+        const list = await getPayments();
+        setPaymentsList(list);
+      } else if (activeTab === 'reviews') {
+        const list = await getReviews();
+        setReviewsList(list);
       } else if (activeTab === 'content') {
         const t = await getTerms();
         const p = await getPrivacy();
@@ -117,6 +148,41 @@ const AdminPortal = () => {
     }
   };
 
+  // User Profile editor handlers
+  const handleOpenUserEditor = (u) => {
+    setEditingUser(u);
+    setUserForm({
+      fullName: u.fullName || '',
+      email: u.email || '',
+      phoneNumber: u.phoneNumber || '',
+      role: u.role || 'USER',
+      specialty: u.specialty || '',
+      hourlyRate: u.hourlyRate || 0,
+      bio: u.bio || '',
+      experienceYears: u.experienceYears || 0,
+      address: u.address || '',
+      coordinates: u.coordinates && u.coordinates.length === 2 ? u.coordinates : [120.9842, 14.5995],
+      status: u.status || 'ACTIVE',
+      onboardingCompleted: u.onboardingCompleted ?? true
+    });
+  };
+
+  const handleSaveUserProfile = async (e) => {
+    e.preventDefault();
+    setActionLoading(true);
+    try {
+      await updateUserProfile(editingUser._id, userForm);
+      setEditingUser(null);
+      const list = await getUsers();
+      setAllUsers(list);
+      alert('User profile updated successfully.');
+    } catch (err) {
+      alert('Failed to save profile details: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Booking details chat transcript reader
   const handleInspectBooking = async (id) => {
     setBookingDetailsLoading(true);
@@ -141,6 +207,22 @@ const AdminPortal = () => {
       setBookingsList(list);
     } catch (err) {
       alert('Failed to cancel booking: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Review deletion & ratings recalculation
+  const handleDeleteReview = async (bookingId) => {
+    if (!window.confirm('Are you sure you want to moderate and DELETE this rating/review? The system will automatically recalculate this worker\'s average score rating.')) return;
+    setActionLoading(true);
+    try {
+      await deleteReview(bookingId);
+      const list = await getReviews();
+      setReviewsList(list);
+      alert('Review successfully moderated and deleted. Worker statistics updated.');
+    } catch (err) {
+      alert('Failed to delete review: ' + (err.response?.data?.message || err.message));
     } finally {
       setActionLoading(false);
     }
@@ -294,6 +376,28 @@ const AdminPortal = () => {
               <span>Booking Audits</span>
             </button>
             <button
+              onClick={() => setActiveTab('payments')}
+              className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
+                activeTab === 'payments'
+                  ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/15'
+                  : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+              }`}
+            >
+              <CreditCard className="w-5 h-5" />
+              <span>Financial Audits</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
+                activeTab === 'reviews'
+                  ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/15'
+                  : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+              }`}
+            >
+              <Star className="w-5 h-5" />
+              <span>Review Moderation</span>
+            </button>
+            <button
               onClick={() => setActiveTab('content')}
               className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
                 activeTab === 'content'
@@ -338,12 +442,14 @@ const AdminPortal = () => {
             {activeTab === 'verifications' && 'Worker Verifications'}
             {activeTab === 'users' && 'Manage User Directories'}
             {activeTab === 'bookings' && 'Booking Dispatch Audits'}
+            {activeTab === 'payments' && 'Financial Audits'}
+            {activeTab === 'reviews' && 'Reviews Moderation Queue'}
             {activeTab === 'content' && 'Content & Legal Customizer'}
           </h1>
           <div className="flex items-center space-x-4">
             <button 
               onClick={fetchAdminData} 
-              className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition"
+              className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition cursor-pointer"
               title="Refresh Roster Data"
             >
               <RefreshCw className="w-4 h-4" />
@@ -478,7 +584,7 @@ const AdminPortal = () => {
                         <tbody className="divide-y divide-slate-900">
                           {stats.recentBookings && stats.recentBookings.length === 0 ? (
                             <tr>
-                              <td colSpan="6" className="py-6 text-center text-slate-500">No transactions recorded on the platform yet.</td>
+                              <td colSpan="6" className="py-6 text-center text-slate-500">No bookings recorded on the platform yet.</td>
                             </tr>
                           ) : (
                             stats.recentBookings?.map((b) => (
@@ -596,7 +702,7 @@ const AdminPortal = () => {
 
               {/* PAGE: USER REGISTRY */}
               {activeTab === 'users' && (
-                <div className="space-y-4 text-left">
+                <div className="space-y-4 text-left animate-fade-in">
                   <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center shadow-md">
                     <div className="relative w-72">
                       <input
@@ -613,7 +719,7 @@ const AdminPortal = () => {
                     </span>
                   </div>
 
-                  <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-lg animate-fade-in">
+                  <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-lg">
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs text-left">
                         <thead>
@@ -691,6 +797,13 @@ const AdminPortal = () => {
                                 <td className="p-4 text-center">
                                   <div className="flex items-center justify-center space-x-2">
                                     <button
+                                      onClick={() => handleOpenUserEditor(u)}
+                                      className="p-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition cursor-pointer"
+                                      title="Edit Profile Details"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
                                       disabled={actionLoading}
                                       onClick={() => handleToggleUserBlock(u._id, u.status)}
                                       className={`p-1.5 border rounded-lg transition cursor-pointer ${
@@ -723,7 +836,7 @@ const AdminPortal = () => {
 
               {/* PAGE: BOOKINGS AUDITS */}
               {activeTab === 'bookings' && (
-                <div className="space-y-4 text-left">
+                <div className="space-y-4 text-left animate-fade-in">
                   <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center shadow-md">
                     <div className="relative w-72">
                       <input
@@ -740,7 +853,7 @@ const AdminPortal = () => {
                     </span>
                   </div>
 
-                  <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-lg animate-fade-in">
+                  <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-lg">
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs text-left">
                         <thead>
@@ -802,6 +915,194 @@ const AdminPortal = () => {
                       </table>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* PAGE: FINANCIAL AUDITS (PAYMENTS) */}
+              {activeTab === 'payments' && (
+                <div className="space-y-6 text-left animate-fade-in">
+                  
+                  {/* Financial KPIs */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Gross Volume Settled</span>
+                        <span className="text-2xl font-black mt-2 block text-emerald-400">
+                          ₱{paymentsList.filter(p => p.paymentStatus === 'PAID').reduce((sum, curr) => sum + curr.amount, 0).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center">
+                        <DollarSign className="w-6 h-6" />
+                      </div>
+                    </div>
+                    <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Pending / Unpaid Invoice Balance</span>
+                        <span className="text-2xl font-black mt-2 block text-amber-500">
+                          ₱{paymentsList.filter(p => p.paymentStatus !== 'PAID').reduce((sum, curr) => sum + curr.amount, 0).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-xl flex items-center justify-center">
+                        <Calendar className="w-6 h-6" />
+                      </div>
+                    </div>
+                    <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Settlement Completion Rate</span>
+                        <span className="text-2xl font-black mt-2 block text-primary-400">
+                          {paymentsList.length > 0 
+                            ? Math.round((paymentsList.filter(p => p.paymentStatus === 'PAID').length / paymentsList.length) * 100) 
+                            : 100}%
+                        </span>
+                      </div>
+                      <div className="w-12 h-12 bg-primary-500/10 text-primary-400 rounded-xl flex items-center justify-center">
+                        <CheckCircle className="w-6 h-6" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Transactions Table */}
+                  <div className="bg-slate-950 rounded-2xl border border-slate-800 p-6 shadow-lg">
+                    <h3 className="text-sm font-bold font-display text-white mb-4">Invoice & Settlement Logs</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs text-left">
+                        <thead>
+                          <tr className="border-b border-slate-800 text-slate-500 font-bold uppercase tracking-wider">
+                            <th className="pb-3">Reference ID</th>
+                            <th className="pb-3">Client User</th>
+                            <th className="pb-3">Worker Partner</th>
+                            <th className="pb-3">Service Requested</th>
+                            <th className="pb-3">Amount</th>
+                            <th className="pb-3">Payment ID</th>
+                            <th className="pb-3 text-right">Settlement status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-900">
+                          {paymentsList.length === 0 ? (
+                            <tr>
+                              <td colSpan="7" className="py-6 text-center text-slate-500">No payment transaction records found in the database.</td>
+                            </tr>
+                          ) : (
+                            paymentsList.map((p, idx) => (
+                              <tr key={idx} className="text-slate-300">
+                                <td className="py-3 font-mono text-[10px] text-slate-500">#{p.bookingId.slice(-6)}</td>
+                                <td className="py-3">
+                                  <span className="block font-semibold text-white">{p.clientName}</span>
+                                  <span className="text-[10px] text-slate-500">{p.clientEmail}</span>
+                                </td>
+                                <td className="py-3">
+                                  <span className="block font-semibold text-slate-400">{p.workerName}</span>
+                                  <span className="text-[10px] text-slate-500">{p.workerSpecialty}</span>
+                                </td>
+                                <td className="py-3">{p.serviceType}</td>
+                                <td className="py-3 font-bold text-white">₱{p.amount.toFixed(2)}</td>
+                                <td className="py-3 font-mono text-[10px] text-slate-400">{p.paymentId || 'N/A'}</td>
+                                <td className="py-3 text-right">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    p.paymentStatus === 'PAID' ? 'bg-emerald-500/10 text-emerald-400' :
+                                    p.paymentStatus === 'PENDING' ? 'bg-amber-500/10 text-amber-500' :
+                                    'bg-slate-800 text-slate-400'
+                                  }`}>
+                                    {p.paymentStatus}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+              {/* PAGE: REVIEWS MODERATION */}
+              {activeTab === 'reviews' && (
+                <div className="space-y-6 text-left animate-fade-in">
+                  
+                  {/* Reviews KPIs */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Ratings Moderated</span>
+                        <span className="text-2xl font-black mt-2 block text-primary-400">{reviewsList.length}</span>
+                      </div>
+                      <div className="w-12 h-12 bg-primary-500/10 text-primary-400 rounded-xl flex items-center justify-center">
+                        <Star className="w-6 h-6" />
+                      </div>
+                    </div>
+                    <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex justify-between items-center shadow-lg">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Average Platform Rating Score</span>
+                        <span className="text-2xl font-black mt-2 block text-amber-400">
+                          {reviewsList.length > 0 
+                            ? (reviewsList.reduce((sum, curr) => sum + curr.review.rating, 0) / reviewsList.length).toFixed(1)
+                            : '5.0'} / 5.0
+                        </span>
+                      </div>
+                      <div className="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-xl flex items-center justify-center">
+                        <CheckCircle className="w-6 h-6" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Reviews Cards Grid */}
+                  <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 shadow-lg space-y-4">
+                    <h3 className="text-sm font-bold text-white mb-2">Platform Reviews & Moderation Log</h3>
+                    
+                    {reviewsList.length === 0 ? (
+                      <div className="text-center text-slate-500 text-xs py-8">No user ratings or review comments left on the platform yet.</div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {reviewsList.map((rev) => (
+                          <div 
+                            key={rev._id} 
+                            className="bg-slate-900 border border-slate-800/80 p-5 rounded-xl flex flex-col justify-between space-y-4"
+                          >
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-start">
+                                <div className="flex items-center space-x-2">
+                                  <img 
+                                    src={rev.userId?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'} 
+                                    alt="avatar" 
+                                    className="w-8 h-8 rounded-full object-cover border border-slate-800" 
+                                  />
+                                  <div>
+                                    <span className="block font-bold text-white text-xs leading-tight">{rev.userId?.fullName}</span>
+                                    <span className="text-[9px] text-slate-500">Rated completed #{rev._id.slice(-6)}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded px-1.5 py-0.5 text-[10px] font-bold">
+                                  <Star className="w-3 h-3 mr-1 fill-amber-500 text-amber-500" />
+                                  <span>{rev.review.rating?.toFixed(1)}</span>
+                                </div>
+                              </div>
+                              
+                              <p className="text-xs text-slate-300 italic bg-slate-950/40 p-3 rounded-lg border border-slate-850">
+                                "{rev.review.comment || 'No comment text provided.'}"
+                              </p>
+                            </div>
+
+                            <div className="flex justify-between items-center pt-2 border-t border-slate-950 text-[10px]">
+                              <div>
+                                <span className="text-slate-500">Worker reviewed:</span>
+                                <span className="block font-bold text-slate-300">{rev.workerId?.fullName} ({rev.workerId?.specialty})</span>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteReview(rev._id)}
+                                className="p-1.5 bg-slate-950 border border-slate-850 hover:bg-rose-950/30 hover:border-rose-900/40 text-slate-400 hover:text-rose-500 rounded-lg transition cursor-pointer"
+                                title="Delete & Moderate Review"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                 </div>
               )}
 
@@ -1067,7 +1368,7 @@ const AdminPortal = () => {
               </div>
               <button 
                 onClick={() => setSelectedBooking(null)}
-                className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition"
+                className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1215,6 +1516,206 @@ const AdminPortal = () => {
                 </button>
               )}
             </footer>
+
+          </div>
+        </div>
+      )}
+
+      {/* USER DETAIL EDITOR DRAWER/MODAL */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-slate-950/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-2xl shadow-2xl flex flex-col justify-between text-left animate-fade-in overflow-hidden">
+            
+            {/* Modal Header */}
+            <header className="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-white text-sm">Update Profile Details</h3>
+                <p className="text-[10px] text-slate-500">Operator Edit Console for {editingUser.fullName}</p>
+              </div>
+              <button 
+                onClick={() => setEditingUser(null)}
+                className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </header>
+
+            {/* Modal Scroll Content */}
+            <form onSubmit={handleSaveUserProfile}>
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                
+                {/* Core Particulars */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-extrabold text-primary-400 uppercase tracking-wider">Account Core</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Full Name</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={userForm.fullName}
+                        onChange={(e) => setUserForm({ ...userForm, fullName: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-850 rounded-xl text-xs p-2.5 text-slate-200 outline-none focus:border-slate-700"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Email Address</label>
+                      <input 
+                        type="email" 
+                        required
+                        value={userForm.email}
+                        onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-850 rounded-xl text-xs p-2.5 text-slate-200 outline-none focus:border-slate-700"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Phone Number</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={userForm.phoneNumber}
+                        onChange={(e) => setUserForm({ ...userForm, phoneNumber: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-850 rounded-xl text-xs p-2.5 text-slate-200 outline-none focus:border-slate-700 font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">User Role</label>
+                      <select 
+                        value={userForm.role}
+                        onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-850 rounded-xl text-xs p-2.5 text-slate-200 outline-none focus:border-slate-700"
+                      >
+                        <option value="USER">USER (Client)</option>
+                        <option value="WORKER">WORKER (Partner)</option>
+                        <option value="ADMIN">ADMIN (Operator)</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Verification Status</label>
+                      <select 
+                        value={userForm.status}
+                        onChange={(e) => setUserForm({ ...userForm, status: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-850 rounded-xl text-xs p-2.5 text-slate-200 outline-none focus:border-slate-700"
+                      >
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="BLOCKED">BLOCKED</option>
+                        <option value="PENDING_APPROVAL">PENDING APPROVAL</option>
+                        <option value="APPROVED">APPROVED</option>
+                        <option value="REJECTED">REJECTED</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Worker Specific Attributes */}
+                {userForm.role === 'WORKER' && (
+                  <div className="space-y-3 pt-3 border-t border-slate-800">
+                    <h4 className="text-xs font-extrabold text-sky-400 uppercase tracking-wider">Worker Service Configs</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Specialty Category</label>
+                        <input 
+                          type="text" 
+                          value={userForm.specialty}
+                          onChange={(e) => setUserForm({ ...userForm, specialty: e.target.value })}
+                          className="w-full bg-slate-950 border border-slate-850 rounded-xl text-xs p-2.5 text-slate-200 outline-none focus:border-slate-700"
+                          placeholder="Plumbing, Electrical..."
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Hourly Rate (PHP)</label>
+                        <input 
+                          type="number" 
+                          value={userForm.hourlyRate}
+                          onChange={(e) => setUserForm({ ...userForm, hourlyRate: Number(e.target.value) })}
+                          className="w-full bg-slate-950 border border-slate-850 rounded-xl text-xs p-2.5 text-slate-200 outline-none focus:border-slate-700"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Experience (Years)</label>
+                        <input 
+                          type="number" 
+                          value={userForm.experienceYears}
+                          onChange={(e) => setUserForm({ ...userForm, experienceYears: Number(e.target.value) })}
+                          className="w-full bg-slate-950 border border-slate-850 rounded-xl text-xs p-2.5 text-slate-200 outline-none focus:border-slate-700"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Worker Description / Biography</label>
+                      <textarea 
+                        value={userForm.bio}
+                        onChange={(e) => setUserForm({ ...userForm, bio: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-850 rounded-xl text-xs p-3 text-slate-300 outline-none focus:border-slate-700 h-20"
+                        placeholder="Bio details..."
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Location Coordinates & Address Info */}
+                <div className="space-y-3 pt-3 border-t border-slate-800">
+                  <h4 className="text-xs font-extrabold text-emerald-400 uppercase tracking-wider flex items-center">
+                    <MapPin className="w-3.5 h-3.5 mr-1" />
+                    Dispatch Address coordinates
+                  </h4>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-slate-500 uppercase">Street Address</label>
+                    <input 
+                      type="text" 
+                      value={userForm.address || ''}
+                      onChange={(e) => setUserForm({ ...userForm, address: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-850 rounded-xl text-xs p-2.5 text-slate-200 outline-none focus:border-slate-700"
+                      placeholder="e.g. Quezon City, Manila"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Longitude coordinate</label>
+                      <input 
+                        type="number" 
+                        step="0.000001"
+                        value={userForm.coordinates[0]}
+                        onChange={(e) => setUserForm({ ...userForm, coordinates: [Number(e.target.value), userForm.coordinates[1]] })}
+                        className="w-full bg-slate-950 border border-slate-850 rounded-xl text-xs p-2.5 text-slate-200 outline-none focus:border-slate-700 font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Latitude coordinate</label>
+                      <input 
+                        type="number" 
+                        step="0.000001"
+                        value={userForm.coordinates[1]}
+                        onChange={(e) => setUserForm({ ...userForm, coordinates: [userForm.coordinates[0], Number(e.target.value)] })}
+                        className="w-full bg-slate-950 border border-slate-850 rounded-xl text-xs p-2.5 text-slate-200 outline-none focus:border-slate-700 font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Modal Actions Footer */}
+              <footer className="px-6 py-4 bg-slate-950 border-t border-slate-800 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-850 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-primary-500/10 flex items-center space-x-1 cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5 mr-1" />
+                  <span>Update Profile</span>
+                </button>
+              </footer>
+            </form>
 
           </div>
         </div>

@@ -239,6 +239,121 @@ const updateBookingStatus = async (req, res, next) => {
   }
 };
 
+const updateUserProfile = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const allowedFields = [
+      'fullName', 'email', 'phoneNumber', 'role', 'specialty',
+      'hourlyRate', 'bio', 'experienceYears', 'address', 'coordinates', 'status', 'isAvailable'
+    ];
+
+    const updateData = {};
+    Object.keys(req.body).forEach((key) => {
+      if (allowedFields.includes(key)) {
+        updateData[key] = req.body[key];
+      }
+    });
+
+    if (updateData.coordinates) {
+      if (!Array.isArray(updateData.coordinates) || updateData.coordinates.length !== 2) {
+        return res.status(400).json({ message: 'Coordinates must be an array of [longitude, latitude]' });
+      }
+    }
+
+    const user = await User.findByIdAndUpdate(id, updateData, { new: true })
+      .select('-passwordHash -refreshToken -resetPasswordToken');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({ message: 'User profile updated successfully', user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getPayments = async (req, res, next) => {
+  try {
+    const bookings = await Booking.find()
+      .populate('userId', 'fullName email')
+      .populate('workerId', 'fullName specialty')
+      .select('userId workerId price paymentStatus paymentId serviceType scheduledAt createdAt')
+      .sort({ createdAt: -1 });
+
+    const transactions = bookings.map((b) => ({
+      bookingId: b._id,
+      clientName: b.userId?.fullName || 'Deleted Client',
+      clientEmail: b.userId?.email || 'N/A',
+      workerName: b.workerId?.fullName || 'Deleted Worker',
+      workerSpecialty: b.workerId?.specialty || 'N/A',
+      serviceType: b.serviceType,
+      amount: b.price || 0,
+      paymentStatus: b.paymentStatus || 'UNPAID',
+      paymentId: b.paymentId || 'N/A',
+      scheduledAt: b.scheduledAt,
+      createdAt: b.createdAt
+    }));
+
+    res.status(200).json({ transactions });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getReviews = async (req, res, next) => {
+  try {
+    const bookings = await Booking.find({ 'review.rating': { $ne: null } })
+      .populate('userId', 'fullName avatar')
+      .populate('workerId', 'fullName specialty')
+      .select('userId workerId serviceType review price completedAt')
+      .sort({ 'review.createdAt': -1 });
+
+    res.status(200).json({ bookings });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteReview = async (req, res, next) => {
+  try {
+    const { bookingId } = req.params;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    const workerId = booking.workerId;
+
+    booking.review = {
+      rating: null,
+      comment: null,
+      createdAt: null
+    };
+    await booking.save();
+
+    const completedBookingsWithReviews = await Booking.find({
+      workerId,
+      status: 'COMPLETED',
+      'review.rating': { $exists: true, $ne: null }
+    });
+
+    const totalRatings = completedBookingsWithReviews.length;
+    const sumRatings = completedBookingsWithReviews.reduce((acc, curr) => acc + curr.review.rating, 0);
+    const averageRating = totalRatings > 0 ? sumRatings / totalRatings : 5.0;
+
+    await User.findByIdAndUpdate(workerId, {
+      rating: Math.round(averageRating * 10) / 10,
+      ratingsCount: totalRatings
+    });
+
+    res.status(200).json({ message: 'Review deleted and worker rating recalculated successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getPendingWorkers,
   verifyWorker,
@@ -249,4 +364,8 @@ module.exports = {
   getBookings,
   getBookingDetails,
   updateBookingStatus,
+  updateUserProfile,
+  getPayments,
+  getReviews,
+  deleteReview,
 };
