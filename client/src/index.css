@@ -64,3 +64,27 @@
 @utility btn-primary {
   @apply w-full py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-medium shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0;
 }
+
+/* Custom Scrollbars to align with slate UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1e293b #020617;
+}

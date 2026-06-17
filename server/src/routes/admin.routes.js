@@ -17,5 +17,10 @@ router.patch('/bookings/:id/status', authenticate, authorize('ADMIN'), adminCont
 router.get('/payments', authenticate, authorize('ADMIN'), adminController.getPayments);
 router.get('/reviews', authenticate, authorize('ADMIN'), adminController.getReviews);
 router.delete('/reviews/:bookingId', authenticate, authorize('ADMIN'), adminController.deleteReview);
+router.get('/categories', authenticate, authorize('ADMIN'), adminController.getCategories);
+router.post('/categories', authenticate, authorize('ADMIN'), adminController.createCategory);
+router.put('/categories/:id', authenticate, authorize('ADMIN'), adminController.updateCategory);
+router.delete('/categories/:id', authenticate, authorize('ADMIN'), adminController.deleteCategory);
+router.get('/audit-logs', authenticate, authorize('ADMIN'), adminController.getAuditLogs);
 
 module.exports = router;

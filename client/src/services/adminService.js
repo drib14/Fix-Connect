@@ -64,3 +64,28 @@ export const deleteReview = async (bookingId) => {
   const response = await api.delete(`/admin/reviews/${bookingId}`);
   return response.data;
 };
+
+export const getCategories = async () => {
+  const response = await api.get('/admin/categories');
+  return response.data.categories;
+};
+
+export const createCategory = async (categoryData) => {
+  const response = await api.post('/admin/categories', categoryData);
+  return response.data.category;
+};
+
+export const updateCategory = async (id, categoryData) => {
+  const response = await api.put(`/admin/categories/${id}`, categoryData);
+  return response.data.category;
+};
+
+export const deleteCategory = async (id) => {
+  const response = await api.delete(`/admin/categories/${id}`);
+  return response.data;
+};
+
+export const getAuditLogs = async () => {
+  const response = await api.get('/admin/audit-logs');
+  return response.data.logs;
+};

@@ -1,5 +1,25 @@
 const User = require('../models/user.model');
 const Booking = require('../models/booking.model');
+const AuditLog = require('../models/auditLog.model');
+const ServiceCategory = require('../models/category.model');
+const PromoCode = require('../models/promo.model');
+const PayoutRequest = require('../models/payout.model');
+const Dispute = require('../models/dispute.model');
+const SystemConfig = require('../models/config.model');
+
+// Helper to log administrative actions for compliance trace
+const logAdminAction = async (adminId, actionType, targetEntity, details) => {
+  try {
+    await AuditLog.create({
+      adminId,
+      actionType,
+      targetEntity,
+      details,
+    });
+  } catch (err) {
+    console.error('Failed to write compliance audit log:', err.message);
+  }
+};
 
 const getPendingWorkers = async (req, res, next) => {
   try {
@@ -31,6 +51,13 @@ const verifyWorker = async (req, res, next) => {
 
     worker.status = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
     await worker.save();
+
+    await logAdminAction(
+      req.user._id, 
+      'VERIFY_WORKER', 
+      worker.email, 
+      `Verified worker account: ${worker.fullName}. Action: ${action} -> Set status to ${worker.status}`
+    );
 
     res.status(200).json({
       message: `Worker account status has been updated to ${worker.status}`,
@@ -71,12 +98,10 @@ const getStats = async (req, res, next) => {
       value: specialtiesMap[key],
     }));
 
-    // 4. Monthly Bookings (mocked dynamic mapping based on database or simple defaults)
-    // We can group bookings by month
+    // 4. Monthly Bookings
     const monthlyBookings = {};
     const allBookings = await Booking.find().select('createdAt price paymentStatus');
     
-    // Seed last 6 months with 0
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const currentMonth = new Date().getMonth();
     const last6Months = [];
@@ -142,9 +167,22 @@ const getUsers = async (req, res, next) => {
 const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     await User.findByIdAndDelete(id);
     // Delete related bookings as well to keep db clean
     await Booking.deleteMany({ $or: [{ userId: id }, { workerId: id }] });
+
+    await logAdminAction(
+      req.user._id,
+      'DELETE_USER',
+      user.email,
+      `Permanently deleted user: ${user.fullName} (${user.role}) and associated bookings`
+    );
+
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
     next(error);
@@ -165,8 +203,16 @@ const updateUserStatus = async (req, res, next) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    const oldStatus = user.status;
     user.status = status;
     await user.save();
+
+    await logAdminAction(
+      req.user._id,
+      status === 'BLOCKED' ? 'BLOCK_USER' : 'UNBLOCK_USER',
+      user.email,
+      `Changed block/verification status of ${user.fullName} from ${oldStatus} to ${status}`
+    );
 
     res.status(200).json({
       message: `User account status has been updated to ${status}`,
@@ -227,11 +273,19 @@ const updateBookingStatus = async (req, res, next) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
+    const oldStatus = booking.status;
     booking.status = status;
     if (status === 'COMPLETED') {
       booking.completedAt = new Date();
     }
     await booking.save();
+
+    await logAdminAction(
+      req.user._id,
+      status === 'CANCELLED' ? 'CANCEL_BOOKING' : 'UPDATE_BOOKING_STATUS',
+      booking._id.toString(),
+      `Forced booking status transition from ${oldStatus} to ${status} for booking record`
+    );
 
     res.status(200).json({ message: `Booking status updated to ${status}`, booking });
   } catch (error) {
@@ -260,14 +314,22 @@ const updateUserProfile = async (req, res, next) => {
       }
     }
 
-    const user = await User.findByIdAndUpdate(id, updateData, { new: true })
-      .select('-passwordHash -refreshToken -resetPasswordToken');
-
+    const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.status(200).json({ message: 'User profile updated successfully', user });
+    const updatedUser = await User.findByIdAndUpdate(id, updateData, { new: true })
+      .select('-passwordHash -refreshToken -resetPasswordToken');
+
+    await logAdminAction(
+      req.user._id,
+      'UPDATE_USER_PROFILE',
+      user.email,
+      `Directly modified profile details for user: ${user.fullName}`
+    );
+
+    res.status(200).json({ message: 'User profile updated successfully', user: updatedUser });
   } catch (error) {
     next(error);
   }
@@ -325,7 +387,6 @@ const deleteReview = async (req, res, next) => {
     }
 
     const workerId = booking.workerId;
-
     booking.review = {
       rating: null,
       comment: null,
@@ -348,7 +409,118 @@ const deleteReview = async (req, res, next) => {
       ratingsCount: totalRatings
     });
 
+    await logAdminAction(
+      req.user._id,
+      'DELETE_REVIEW',
+      booking._id.toString(),
+      `Moderated and deleted client review comment on booking #${booking._id} for worker ID: ${workerId}`
+    );
+
     res.status(200).json({ message: 'Review deleted and worker rating recalculated successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- Specialties Categories Controllers ---
+const getCategories = async (req, res, next) => {
+  try {
+    const categories = await ServiceCategory.find().sort({ title: 1 });
+    res.status(200).json({ categories });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createCategory = async (req, res, next) => {
+  try {
+    const { title, description, basePrice, isActive } = req.body;
+    if (!title || !description) {
+      return res.status(400).json({ message: 'Title and description are required' });
+    }
+
+    const existing = await ServiceCategory.findOne({ title: { $regex: new RegExp(`^${title}$`, 'i') } });
+    if (existing) {
+      return res.status(400).json({ message: 'Specialty category title already exists' });
+    }
+
+    const category = await ServiceCategory.create({ title, description, basePrice, isActive });
+
+    await logAdminAction(
+      req.user._id,
+      'CREATE_CATEGORY',
+      title,
+      `Created new specialty category: ${title} (Base Price: PHP ${basePrice}/hr)`
+    );
+
+    res.status(201).json({ message: 'Specialty category created successfully', category });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateCategory = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { title, description, basePrice, isActive } = req.body;
+
+    const category = await ServiceCategory.findById(id);
+    if (!category) {
+      return res.status(404).json({ message: 'Specialty category not found' });
+    }
+
+    const oldTitle = category.title;
+    category.title = title || category.title;
+    category.description = description || category.description;
+    category.basePrice = basePrice !== undefined ? basePrice : category.basePrice;
+    category.isActive = isActive !== undefined ? isActive : category.isActive;
+
+    await category.save();
+
+    await logAdminAction(
+      req.user._id,
+      'UPDATE_CATEGORY',
+      category.title,
+      `Updated details for specialty category: ${oldTitle}`
+    );
+
+    res.status(200).json({ message: 'Specialty category updated successfully', category });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteCategory = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const category = await ServiceCategory.findById(id);
+    if (!category) {
+      return res.status(404).json({ message: 'Specialty category not found' });
+    }
+
+    await ServiceCategory.findByIdAndDelete(id);
+
+    await logAdminAction(
+      req.user._id,
+      'DELETE_CATEGORY',
+      category.title,
+      `Permanently deleted specialty category: ${category.title}`
+    );
+
+    res.status(200).json({ message: 'Specialty category deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- Operator Audit Logs ---
+const getAuditLogs = async (req, res, next) => {
+  try {
+    const logs = await AuditLog.find()
+      .populate('adminId', 'fullName email')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ logs });
   } catch (error) {
     next(error);
   }
@@ -368,4 +540,10 @@ module.exports = {
   getPayments,
   getReviews,
   deleteReview,
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  getAuditLogs,
+  logAdminAction, // exported in case contentController needs to log
 };

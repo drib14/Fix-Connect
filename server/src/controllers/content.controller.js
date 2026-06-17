@@ -1,6 +1,20 @@
 const SystemConfig = require('../models/config.model');
 const Blog = require('../models/blog.model');
+const AuditLog = require('../models/auditLog.model');
 const { z } = require('zod');
+
+const logAdminAction = async (adminId, actionType, targetEntity, details) => {
+  try {
+    await AuditLog.create({
+      adminId,
+      actionType,
+      targetEntity,
+      details,
+    });
+  } catch (err) {
+    console.error('Failed to write compliance audit log from content:', err.message);
+  }
+};
 
 // Schema validations
 const updateConfigSchema = z.object({
@@ -39,6 +53,14 @@ const updateTerms = async (req, res, next) => {
       config.value = value;
     }
     await config.save();
+    
+    await logAdminAction(
+      req.user._id,
+      'UPDATE_LEGAL',
+      'terms_and_conditions',
+      `Updated Terms and Conditions HTML policy document`
+    );
+
     res.status(200).json({ message: 'Terms and Conditions updated successfully', terms: config.value });
   } catch (error) {
     next(error);
@@ -67,6 +89,14 @@ const updatePrivacy = async (req, res, next) => {
       config.value = value;
     }
     await config.save();
+
+    await logAdminAction(
+      req.user._id,
+      'UPDATE_LEGAL',
+      'privacy_policy',
+      `Updated Privacy Policy HTML policy document`
+    );
+
     res.status(200).json({ message: 'Privacy Policy updated successfully', privacy: config.value });
   } catch (error) {
     next(error);
@@ -117,6 +147,13 @@ const createBlog = async (req, res, next) => {
       date: new Date(),
     });
 
+    await logAdminAction(
+      req.user._id,
+      'CREATE_BLOG',
+      blog.slug,
+      `Published new blog post: "${blog.title}"`
+    );
+
     res.status(201).json({ message: 'Blog article created successfully', blog });
   } catch (error) {
     next(error);
@@ -147,6 +184,13 @@ const updateBlog = async (req, res, next) => {
       return res.status(404).json({ message: 'Blog article not found' });
     }
 
+    await logAdminAction(
+      req.user._id,
+      'UPDATE_BLOG',
+      blog.slug,
+      `Modified details for blog post: "${blog.title}"`
+    );
+
     res.status(200).json({ message: 'Blog article updated successfully', blog });
   } catch (error) {
     next(error);
@@ -160,6 +204,14 @@ const deleteBlog = async (req, res, next) => {
     if (!blog) {
       return res.status(404).json({ message: 'Blog article not found' });
     }
+
+    await logAdminAction(
+      req.user._id,
+      'DELETE_BLOG',
+      blog.slug,
+      `Permanently deleted blog post: "${blog.title}"`
+    );
+
     res.status(200).json({ message: 'Blog article deleted successfully' });
   } catch (error) {
     next(error);

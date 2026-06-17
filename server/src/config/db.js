@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const User = require('../models/user.model');
 const SystemConfig = require('../models/config.model');
 const Blog = require('../models/blog.model');
+const ServiceCategory = require('../models/category.model');
 const { hashPassword } = require('../utils/hash');
 
 const seedAdmin = async () => {
@@ -73,6 +74,30 @@ Hashed passwords and authentication tokens are encrypted and handled using indus
       console.log('Seeded default Privacy Policy config.');
     }
 
+    const feeExists = await SystemConfig.findOne({ key: 'platform_fee_percent' });
+    if (!feeExists) {
+      await SystemConfig.create({ key: 'platform_fee_percent', value: '10' });
+      console.log('Seeded default platform fee config.');
+    }
+
+    const taxExists = await SystemConfig.findOne({ key: 'tax_percent' });
+    if (!taxExists) {
+      await SystemConfig.create({ key: 'tax_percent', value: '12' });
+      console.log('Seeded default tax config.');
+    }
+
+    const emergencyExists = await SystemConfig.findOne({ key: 'emergency_contact' });
+    if (!emergencyExists) {
+      await SystemConfig.create({ key: 'emergency_contact', value: '+63 911 000 1111' });
+      console.log('Seeded default emergency contact config.');
+    }
+
+    const broadcastExists = await SystemConfig.findOne({ key: 'alert_broadcast' });
+    if (!broadcastExists) {
+      await SystemConfig.create({ key: 'alert_broadcast', value: 'Welcome to the Fix-Connect Administrative Console. All backend systems operational.' });
+      console.log('Seeded default system broadcast alert.');
+    }
+
     const blogsCount = await Blog.countDocuments();
     if (blogsCount === 0) {
       await Blog.create([
@@ -105,12 +130,31 @@ Hashed passwords and authentication tokens are encrypted and handled using indus
   }
 };
 
+const seedCategories = async () => {
+  try {
+    const count = await ServiceCategory.countDocuments();
+    if (count === 0) {
+      await ServiceCategory.create([
+        { title: 'Plumbing', description: 'Leak repairs, pipe installations, drain cleaning, and general fixing.', basePrice: 150 },
+        { title: 'Electrical', description: 'Wiring diagnostics, light fixture installations, switch fixes, and diagnostics.', basePrice: 200 },
+        { title: 'Cleaning', description: 'Deep room sanitizing, window washing, and general post-construction cleanups.', basePrice: 80 },
+        { title: 'Gardening', description: 'Lawn mowing, pruning, landscaping, and garden maintenance.', basePrice: 90 },
+        { title: 'Appliance Repair', description: 'Air conditioner fixes, refrigerator repairs, washing machines diagnostics.', basePrice: 180 }
+      ]);
+      console.log('Seeded default service categories.');
+    }
+  } catch (err) {
+    console.error('Failed to seed categories:', err.message);
+  }
+};
+
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     await seedAdmin();
     await seedConfigsAndBlogs();
+    await seedCategories();
   } catch (error) {
     console.error(`Error connecting to MongoDB: ${error.message}`);
     process.exit(1);
