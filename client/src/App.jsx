@@ -1,179 +1,186 @@
-import { useState, useEffect, useRef } from 'react';
-import {
-  Mail, Lock, User as UserIcon, Phone, ArrowRight, LogOut,
-  MapPin, Search, Calendar, Clock, DollarSign, Briefcase,
-  Star, ShieldAlert, Sparkles, CheckCircle, Trash2, X, PlusCircle,
-  CreditCard, Wallet, Navigation
-} from 'lucide-react';
-import logo from './assets/logo.png';
-
-// API request helper
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-const apiCall = async (endpoint, method = 'GET', body = null) => {
-  const token = localStorage.getItem('token');
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
-  };
-
-  const config = {
-    method,
-    headers,
-  };
-
-  if (body) {
-    config.body = JSON.stringify(body);
-  }
-
-  const response = await fetch(`${API_URL}${endpoint}`, config);
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message || 'API Error');
-  }
-
-  return result;
-};
-
-// LocationIQ Search Helper
-const searchLocation = async (query) => {
-  const token = import.meta.env.VITE_LOCATIONIQ_ACCESS_TOKEN;
-  if (!token) return [];
-  try {
-    const res = await fetch(`https://us1.locationiq.com/v1/search.php?key=${token}&q=${encodeURIComponent(query)}&format=json&countrycodes=ph`);
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (err) {
-    console.error('LocationIQ search error:', err);
-    return [];
-  }
-};
-
-// LocationIQ Reverse Geocode Helper
-const reverseGeocode = async (lat, lon) => {
-  const token = import.meta.env.VITE_LOCATIONIQ_ACCESS_TOKEN;
-  if (!token) return 'Unknown Location';
-  try {
-    const res = await fetch(`https://us1.locationiq.com/v1/reverse.php?key=${token}&lat=${lat}&lon=${lon}&format=json`);
-    if (!res.ok) return 'Unknown Location';
-    const data = await res.json();
-    return data.display_name || 'Selected coordinates';
-  } catch (err) {
-    console.error('LocationIQ reverse geocode error:', err);
-    return 'Selected coordinates';
-  }
-};
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthScreen from './components/AuthScreen';
+import MobileShell from './components/MobileShell';
+import UserPortal from './components/UserPortal';
+import WorkerPortal from './components/WorkerPortal';
 import AdminPortal from './components/AdminPortal';
-import { BookOpen, Shield, ShieldCheck, ArrowRight, ArrowLeft, Loader } from 'lucide-react';
-import { getTerms, getPrivacy, getBlogs } from './services/contentService';
+import { Shield, Hammer, Users, RefreshCw, Layers } from 'lucide-react';
 
-const renderMarkdown = (text) => {
-  if (!text) return null;
-  return text.split('\n\n').map((block, idx) => {
-    const trimmed = block.trim();
-    if (trimmed.startsWith('## ')) {
-      return <h2 key={idx} className="text-lg font-bold text-white mt-6 mb-2 font-display">{trimmed.replace('## ', '')}</h2>;
-    }
-    if (trimmed.startsWith('# ')) {
-      return <h1 key={idx} className="text-2xl font-extrabold text-white mt-8 mb-4 font-display">{trimmed.replace('# ', '')}</h1>;
-    }
-    return <p key={idx} className="text-slate-300 text-sm leading-relaxed mb-4">{trimmed}</p>;
-  });
-};
+function AppContent() {
+  const { user, loading, login, register, logout } = useAuth();
 
-function App() {
-  const [isLogin, setIsLogin] = useState(true);
+  // Override view toggle for sandbox testing
+  // 'auto' matches user role, or overrides to 'admin', 'user-mobile', 'worker-mobile'
+  const [viewportMode, setViewportMode] = useState('auto');
+  const [activeMode, setActiveMode] = useState('user-mobile');
+
+  // Resolve current active viewport view based on override or user role
+  useEffect(() => {
+    if (user) {
+      if (viewportMode === 'auto') {
+        if (user.role === 'ADMIN') setActiveMode('admin');
+        else if (user.role === 'WORKER') setActiveMode('worker-mobile');
+        else setActiveMode('user-mobile');
+      } else {
+        setActiveMode(viewportMode);
+      }
+    } else {
+      setActiveMode('auth');
+    }
+  }, [user, viewportMode]);
+
+  const handleDemoLogin = async (email, password) => {
+    try {
+      const loggedUser = await login(email, password);
+      // Automatically set viewport to match role on demo login
+      setViewportMode('auto');
+    } catch (err) {
+      // If mock login fails, try to automatically register that seed account on the fly!
+      // This is a super robust failsafe for clean setup.
+      try {
+        let role = 'USER';
+        let fullName = 'Demo Client';
+        let phone = '09123456789';
+
+        if (email.startsWith('admin')) {
+          role = 'ADMIN';
+          fullName = 'System Operator';
+          phone = '09000000000';
+        } else if (email.startsWith('plumber')) {
+          role = 'WORKER';
+          fullName = 'Mario Plumber';
+          phone = '09987654321';
+        }
+
+        await register(fullName, email, phone, password, role);
+        setViewportMode('auto');
+      } catch (regErr) {
+        throw new Error('Demo account login failed. Please register manually.');
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100 p-4">
+        <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <h3 className="text-sm font-bold font-display tracking-widest uppercase">Connecting Fix-Connect...</h3>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Dynamic Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-35 animate-blob"></div>
-      <div className="absolute top-[20%] right-[-10%] w-96 h-96 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000"></div>
-      <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-35 animate-blob animation-delay-4000"></div>
+    <div className="min-h-screen bg-slate-950 flex flex-col relative select-none">
 
-      <div className="w-full max-w-md z-10 animate-fade-in">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white shadow-xl shadow-primary-500/10 mb-6 transform transition hover:scale-105 duration-300 overflow-hidden border-2 border-primary-100">
-            <img src={logo} alt="Fix-Connect Logo" className="w-full h-full object-cover" />
+      {/* Floating Developer Sandbox Toolbar */}
+      {user && (
+        <div className="bg-slate-900 border-b border-slate-800 px-6 py-2 flex items-center justify-between text-xs text-slate-300 z-50 shadow-md">
+          <div className="flex items-center space-x-3 text-left">
+            <span className="flex items-center text-amber-500 font-bold tracking-wide uppercase text-[10px]">
+              <Layers className="w-3.5 h-3.5 mr-1" />
+              Dev Sandbox Switcher
+            </span>
+            <span className="text-slate-600">|</span>
+            <span className="text-slate-400">
+              Active User: <b className="text-slate-200">{user.fullName}</b> ({user.role})
+            </span>
           </div>
-          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Fix-Connect</h1>
-          <p className="text-slate-500 mt-2 font-medium">Your platform for local service workers</p>
-        </div>
 
-        <div className="glass-card p-8 sm:p-10">
-          <h2 className="text-2xl font-bold mb-6 text-center">
-            {isLogin ? 'Welcome back' : 'Create an account'}
-          </h2>
-
-          <form className="space-y-5 animate-slide-up">
-            {!isLogin && (
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-slate-400" />
-                </div>
-                <input
-                  type="text"
-                  className="input-field pl-11"
-                  placeholder="Full Name"
-                />
-              </div>
-            )}
-
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-slate-400" />
-              </div>
-              <input
-                type="email"
-                className="input-field pl-11"
-                placeholder="Email address"
-              />
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-slate-400" />
-              </div>
-              <input
-                type="password"
-                className="input-field pl-11"
-                placeholder="Password"
-              />
-            </div>
-
-            {isLogin && (
-              <div className="flex items-center justify-between">
-                <label className="flex items-center">
-                  <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" />
-                  <span className="ml-2 text-sm text-slate-600">Remember me</span>
-                </label>
-                <a href="#" className="text-sm font-semibold text-accent-600 hover:text-accent-500">
-                  Forgot password?
-                </a>
-              </div>
-            )}
-
-            <button type="button" className="btn-primary group flex items-center justify-center mt-2">
-              <span>{isLogin ? 'Sign in' : 'Sign up'}</span>
-              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </form>
-
-          <p className="mt-8 text-center text-sm text-slate-600">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
+          {/* Selector options */}
+          <div className="flex items-center space-x-2">
             <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="font-semibold text-accent-600 hover:text-accent-500 hover:underline transition-all"
+              onClick={() => setViewportMode('admin')}
+              className={`flex items-center px-2.5 py-1 rounded-lg font-semibold border transition cursor-pointer ${activeMode === 'admin'
+                  ? 'bg-primary-600 text-white border-primary-500'
+                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800'
+                }`}
             >
-              {isLogin ? 'Sign up' : 'Log in'}
+              <Shield className="w-3 h-3 mr-1" />
+              Admin Portal
             </button>
-          </p>
+            <button
+              onClick={() => setViewportMode('user-mobile')}
+              className={`flex items-center px-2.5 py-1 rounded-lg font-semibold border transition cursor-pointer ${activeMode === 'user-mobile'
+                  ? 'bg-primary-600 text-white border-primary-500'
+                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800'
+                }`}
+            >
+              <Users className="w-3 h-3 mr-1" />
+              User App
+            </button>
+            <button
+              onClick={() => setViewportMode('worker-mobile')}
+              className={`flex items-center px-2.5 py-1 rounded-lg font-semibold border transition cursor-pointer ${activeMode === 'worker-mobile'
+                  ? 'bg-primary-600 text-white border-primary-500'
+                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800'
+                }`}
+            >
+              <Hammer className="w-3 h-3 mr-1" />
+              Worker App
+            </button>
+
+            {viewportMode !== 'auto' && (
+              <button
+                onClick={() => setViewportMode('auto')}
+                className="p-1.5 bg-slate-950 border border-slate-800 hover:bg-slate-800 text-amber-500 rounded-lg transition cursor-pointer"
+                title="Reset to role default"
+              >
+                <RefreshCw className="w-3 h-3" />
+              </button>
+            )}
+          </div>
         </div>
+      )}
+
+      {/* Render Viewport Content */}
+      <div className="flex-1 w-full flex items-center justify-center overflow-auto">
+        {!user ? (
+          <div className="w-full flex items-center justify-center min-h-[calc(100vh-40px)] py-12">
+            <AuthScreen onDemoLogin={handleDemoLogin} />
+          </div>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center p-6 min-h-[calc(100vh-40px)]">
+
+            {/* VIEWPORT: ADMIN DASHBOARD */}
+            {activeMode === 'admin' && (
+              <div className="w-full h-[calc(100vh-80px)] rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
+                <AdminPortal />
+              </div>
+            )}
+
+            {/* VIEWPORT: USER MOBILE APP */}
+            {activeMode === 'user-mobile' && (
+              <div className="animate-fade-in py-4">
+                {user.role !== 'USER' && (
+                  <div className="mb-3 p-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] rounded-xl font-bold max-w-sm mx-auto text-center leading-normal">
+                    ⚠️ Simulating Client View as <b>{user.role}</b>. Some functions may be restricted.
+                  </div>
+                )}
+                <MobileShell title="Fix-Connect Client">
+                  <UserPortal />
+                </MobileShell>
+              </div>
+            )}
+
+            {/* VIEWPORT: WORKER MOBILE APP */}
+            {activeMode === 'worker-mobile' && (
+              <div className="animate-fade-in py-4">
+                {user.role !== 'WORKER' && (
+                  <div className="mb-3 p-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] rounded-xl font-bold max-w-sm mx-auto text-center leading-normal">
+                    ⚠️ Simulating Worker View as <b>{user.role}</b>. Some functions may be restricted.
+                  </div>
+                )}
+                <MobileShell title="Fix-Connect Partner">
+                  <WorkerPortal />
+                </MobileShell>
+              </div>
+            )}
+
+          </div>
+        )}
       </div>
+
     </div>
   );
 }
