@@ -6,6 +6,9 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 
 const authRoutes = require('./routes/auth.routes');
+const workerRoutes = require('./routes/worker.routes');
+const bookingRoutes = require('./routes/booking.routes');
+const paymentRoutes = require('./routes/payment.routes');
 const errorHandler = require('./middlewares/error.middleware');
 const connectDB = require('./config/db');
 
@@ -14,9 +17,9 @@ const app = express();
 // Connect to database
 connectDB();
 
-// Middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Middlewares - Increased limit for base64 image uploads
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
 app.use(helmet());
 app.use(morgan('dev'));
@@ -27,6 +30,9 @@ app.use(cors({
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/workers', workerRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Base route
 app.get('/', (req, res) => {
