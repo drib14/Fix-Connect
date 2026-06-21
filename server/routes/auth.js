@@ -44,28 +44,9 @@ router.post('/sync', requireAuth, async (req, res) => {
   }
 });
 
-// Update role (Customer <-> Worker)
+// Update role (Disabled - Role Locking Enforced)
 router.post('/role', requireAuth, async (req, res) => {
-  try {
-    const { role } = req.body;
-    if (!['customer', 'worker'].includes(role)) {
-      return res.status(400).json({ message: 'Invalid role' });
-    }
-
-    const user = await User.findOneAndUpdate(
-      { clerkId: req.auth.userId },
-      { role },
-      { new: true }
-    );
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
+  return res.status(403).json({ message: 'Role switching is disabled on this platform.' });
 });
 
 // Update profile details (phone, bio, skills, category, status, coordinates)
