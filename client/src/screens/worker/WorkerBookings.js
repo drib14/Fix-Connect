@@ -8,6 +8,7 @@ import {
   ActivityIndicator, 
   ScrollView 
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { COLORS, FONTS, SPACING, ROUNDING } from '../../theme';
@@ -25,6 +26,7 @@ const STATUS_STYLING = {
 const WorkerBookings = () => {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
 
   // Query for worker bookings
   const { data: bookings, isLoading, refetch } = useQuery({
@@ -123,7 +125,7 @@ const WorkerBookings = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16), paddingBottom: SPACING.md }]}>
         <Text style={styles.title}>Job Appointments</Text>
         <TouchableOpacity onPress={() => refetch()}>
           <Text style={styles.refreshLink}>Refresh</Text>
@@ -135,7 +137,10 @@ const WorkerBookings = () => {
           <SkeletalLoader type="card" count={3} />
         </View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView 
+          showsVerticalScrollIndicator={false} 
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, SPACING.md) }]}
+        >
           {pendingRequests.length > 0 && (
             <View>
               <Text style={styles.sectionHeader}>Pending Job Requests ({pendingRequests.length})</Text>
@@ -175,7 +180,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
-    paddingTop: 50,
     paddingBottom: SPACING.md,
     backgroundColor: COLORS.secondary,
     borderBottomLeftRadius: ROUNDING.lg,

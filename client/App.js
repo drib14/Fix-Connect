@@ -86,6 +86,7 @@ function AppContent() {
         setSyncing(true);
         try {
           const token = await getToken();
+          console.log('[checkUserSync] Retrieved Clerk token:', token ? `${token.substring(0, 20)}... (length: ${token.length})` : 'NULL/EMPTY');
           const client = getApiClient(token);
           
           try {

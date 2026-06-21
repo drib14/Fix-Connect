@@ -11,7 +11,8 @@ import {
   Platform,
   Image
 } from 'react-native';
-import { useSignIn, useSignUp, useOAuth } from '@clerk/clerk-expo';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSignIn, useSignUp, useOAuth, useAuth } from '@clerk/clerk-expo';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import * as Linking from 'expo-linking';
@@ -49,6 +50,7 @@ const WorkerAuthScreen = ({ navigation }) => {
   const { signIn, setActive: setSignInActive, isLoaded: isSignInLoaded } = useSignIn();
   const { signUp, setActive: setSignUpActive, isLoaded: isSignUpLoaded } = useSignUp();
   const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
+  const { isSignedIn, signOut } = useAuth();
   const setUser = useStore((state) => state.setUser);
 
   // Sync profile to DB
@@ -81,14 +83,9 @@ const WorkerAuthScreen = ({ navigation }) => {
       });
 
       await setSignInActive({ session: completeSignIn.createdSessionId });
-      
-      const token = await completeSignIn.firstFactorVerification?.token || (await signIn.session?.getToken());
-      const client = getApiClient(token);
-      const response = await client.get('/auth/me');
-      setUser(response.data);
+      // App.js checkUserSync handles user loading and syncing
     } catch (err) {
       setErrorMessage(err.errors?.[0]?.message || 'Sign in failed. Check your credentials.');
-    } finally {
       setLoading(false);
     }
   };
@@ -101,9 +98,15 @@ const WorkerAuthScreen = ({ navigation }) => {
     setSignUpDetails(values);
 
     try {
+      const nameParts = values.name.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
       await signUp.create({
         emailAddress: values.email,
         password: values.password,
+        firstName,
+        lastName,
       });
 
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
@@ -131,12 +134,9 @@ const WorkerAuthScreen = ({ navigation }) => {
       }
 
       await setSignUpActive({ session: completeSignUp.createdSessionId });
-
-      const sessionToken = await signUp.session?.getToken();
-      await syncUserProfile(sessionToken, signUpDetails);
+      // App.js checkUserSync handles user loading and syncing
     } catch (err) {
       setErrorMessage(err.errors?.[0]?.message || err.message || 'Verification failed.');
-    } finally {
       setLoading(false);
     }
   };
@@ -146,6 +146,12 @@ const WorkerAuthScreen = ({ navigation }) => {
     try {
       setLoading(true);
       setErrorMessage('');
+
+      // Auto-reset state if already signed in to Clerk but stuck on auth screen
+      if (isSignedIn) {
+        console.log('User already signed in to Clerk. Resetting session...');
+        await signOut();
+      }
 
       // Cache desired role in platform-appropriate storage
       if (Platform.OS === 'web') {
@@ -162,8 +168,39 @@ const WorkerAuthScreen = ({ navigation }) => {
 
       if (sessionId) {
         await setActive({ session: sessionId });
+      } else if (signUp && signUp.status === 'missing_requirements') {
+        console.log('OAuth sign-up has missing requirements. Attempting to auto-fill:', signUp.missingFields);
+        const updateParams = {};
+        
+        if (signUp.missingFields.includes('username')) {
+          const emailPrefix = signUp.emailAddress ? signUp.emailAddress.split('@')[0] : 'user';
+          const cleanPrefix = emailPrefix.replace(/[^a-zA-Z0-9]/g, '') || 'user';
+          updateParams.username = `${cleanPrefix}${Math.floor(1000 + Math.random() * 9000)}`.toLowerCase();
+        }
+        
+        if (signUp.missingFields.includes('phone_number')) {
+          updateParams.phoneNumber = `+1555${Math.floor(1000000 + Math.random() * 9000000)}`;
+        }
+        
+        if (Object.keys(updateParams).length > 0) {
+          try {
+            const updatedSignUp = await signUp.update(updateParams);
+            if (updatedSignUp.createdSessionId) {
+              await setActive({ session: updatedSignUp.createdSessionId });
+            } else {
+              console.log('Updated signUp, but no session ID was created. Current status:', updatedSignUp.status);
+              setErrorMessage(`Sign up requires verification: ${updatedSignUp.missingFields.join(', ')}`);
+            }
+          } catch (updateErr) {
+            console.error('Failed to auto-fill Clerk required fields:', updateErr);
+            setErrorMessage(`Google authentication succeeded, but Clerk requires extra fields: ${signUp.missingFields.join(', ')}. Please update your Clerk Dashboard settings (disable required username/phone).`);
+          }
+        } else {
+          setErrorMessage(`Google authentication succeeded, but Clerk requires extra fields: ${signUp.missingFields.join(', ')}.`);
+        }
       } else {
         console.log('OAuth completed but no session ID was found:', { signIn, signUp });
+        setErrorMessage('Authentication completed, but no active session was created.');
       }
     } catch (err) {
       console.error('Google OAuth Error:', err);
@@ -175,11 +212,12 @@ const WorkerAuthScreen = ({ navigation }) => {
 
   if (pendingVerification) {
     return (
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.container}
+        >
+          <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
             <Text style={styles.title}>Verification</Text>
             <Text style={styles.subtitle}>Enter the 6-digit code sent to your email</Text>
@@ -231,15 +269,17 @@ const WorkerAuthScreen = ({ navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    );
-  }
+    </SafeAreaView>
+  );
+}
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <Text style={styles.title}>{isSignUpMode ? 'Offer Home Services' : 'Worker Sign In'}</Text>
           <Text style={styles.subtitle}>
@@ -409,13 +449,17 @@ const WorkerAuthScreen = ({ navigation }) => {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
+  </SafeAreaView>
+);
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  container: {
+    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -425,10 +469,13 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.surface,
     borderRadius: ROUNDING.lg,
-    padding: SPACING.xl,
+    padding: Platform.OS === 'web' ? SPACING.xl : SPACING.md,
     ...COLORS.cardShadow,
     borderWidth: 1,
     borderColor: COLORS.border,
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
   },
   title: {
     fontSize: 24,

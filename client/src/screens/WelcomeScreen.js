@@ -1,10 +1,12 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, ROUNDING } from '../theme';
 
 const WelcomeScreen = ({ navigation }) => {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Image
           source={require('../../assets/logo.png')}
@@ -54,7 +56,8 @@ const WelcomeScreen = ({ navigation }) => {
       </View>
       
       <Text style={styles.footerText}>Secure authentication powered by Clerk</Text>
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -62,9 +65,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  scrollContainer: {
+    flexGrow: 1,
     padding: SPACING.lg,
     justifyContent: 'space-around',
     alignItems: 'center',
+    paddingVertical: SPACING.xl,
   },
   header: {
     alignItems: 'center',

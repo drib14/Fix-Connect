@@ -7,14 +7,19 @@ import {
   ScrollView, 
   TouchableOpacity 
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, ROUNDING } from '../../theme';
 
 const WorkerProfile = ({ route, navigation }) => {
   const { worker, service } = route.params;
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+      >
         {/* Profile Card */}
         <View style={styles.profileCard}>
           <Image 
@@ -73,7 +78,7 @@ const WorkerProfile = ({ route, navigation }) => {
       </ScrollView>
 
       {/* Footer Booking Bar */}
-      <View style={styles.footerBar}>
+      <View style={[styles.footerBar, { paddingBottom: Math.max(insets.bottom, SPACING.md) }]}>
         <View>
           <Text style={styles.footerPriceLabel}>Total Estimation</Text>
           <Text style={styles.footerPrice}>${service.price}</Text>

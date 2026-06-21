@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView, 
   Platform 
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
@@ -31,6 +32,7 @@ const BookingScreen = ({ route, navigation }) => {
   const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const insets = useSafeAreaInsets();
 
   const handleBookingSubmit = async (values) => {
     setLoading(true);
@@ -62,7 +64,10 @@ const BookingScreen = ({ route, navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView 
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, SPACING.md) }]} 
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Info Card */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>Booking Service</Text>

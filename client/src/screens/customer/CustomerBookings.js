@@ -7,6 +7,7 @@ import {
   TouchableOpacity, 
   ActivityIndicator 
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { COLORS, FONTS, SPACING, ROUNDING } from '../../theme';
@@ -24,6 +25,7 @@ const STATUS_CONFIGS = {
 const CustomerBookings = () => {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
 
   // Query for getting bookings
   const { data: bookings, isLoading, refetch } = useQuery({
@@ -102,7 +104,7 @@ const CustomerBookings = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16), paddingBottom: SPACING.md }]}>
         <Text style={styles.title}>My Appointments</Text>
         <TouchableOpacity onPress={() => refetch()}>
           <Text style={styles.refreshLink}>Refresh</Text>
@@ -118,7 +120,7 @@ const CustomerBookings = () => {
           data={bookings}
           renderItem={renderBookingCard}
           keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[styles.listContainer, { paddingBottom: Math.max(insets.bottom, SPACING.md) }]}
         />
       ) : (
         <View style={styles.emptyContainer}>
@@ -139,7 +141,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
-    paddingTop: 50,
     paddingBottom: SPACING.md,
     backgroundColor: COLORS.secondary,
     borderBottomLeftRadius: ROUNDING.lg,

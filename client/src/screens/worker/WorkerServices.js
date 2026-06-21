@@ -7,8 +7,10 @@ import {
   TouchableOpacity, 
   FlatList, 
   ActivityIndicator, 
-  Alert 
+  Alert,
+  ScrollView
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Formik } from 'formik';
@@ -31,6 +33,7 @@ const WorkerServices = () => {
   const queryClient = useQueryClient();
   const [editingService, setEditingService] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const insets = useSafeAreaInsets();
 
   // Get services offered by this worker
   const { data: services, isLoading } = useQuery({
@@ -136,7 +139,7 @@ const WorkerServices = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16), paddingBottom: SPACING.md }]}>
         <Text style={styles.title}>My Services</Text>
         {!isFormOpen && (
           <TouchableOpacity 
@@ -152,7 +155,7 @@ const WorkerServices = () => {
       </View>
 
       {isFormOpen ? (
-        <ScrollView contentContainerStyle={styles.formContainer}>
+        <ScrollView contentContainerStyle={[styles.formContainer, { paddingBottom: Math.max(insets.bottom, 40) }]}>
           <Text style={styles.formSectionTitle}>
             {editingService ? 'Edit Service' : 'Add New Service Listing'}
           </Text>
@@ -271,7 +274,7 @@ const WorkerServices = () => {
           data={services}
           renderItem={renderServiceItem}
           keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[styles.listContainer, { paddingBottom: Math.max(insets.bottom, SPACING.md) }]}
         />
       ) : (
         <View style={styles.emptyContainer}>
@@ -292,7 +295,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
-    paddingTop: 50,
     paddingBottom: SPACING.md,
     backgroundColor: COLORS.secondary,
     borderBottomLeftRadius: ROUNDING.lg,

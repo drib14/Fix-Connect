@@ -9,6 +9,7 @@ import {
   Image, 
   ScrollView 
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { useQuery } from '@tanstack/react-query';
 import { COLORS, FONTS, SPACING, ROUNDING } from '../../theme';
@@ -31,6 +32,7 @@ const CustomerHome = ({ navigation }) => {
   
   const { getToken, signOut } = useAuth();
   const { user, setRole, logout } = useStore();
+  const insets = useSafeAreaInsets();
 
   // Query for fetching services/workers
   const { data: services, isLoading, refetch } = useQuery({
@@ -112,7 +114,7 @@ const CustomerHome = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16), paddingBottom: SPACING.md }]}>
         <View>
           <Text style={styles.greeting}>Hello, {user?.name || 'Customer'}</Text>
           <Text style={styles.headerSubtitle}>Find a reliable fix today</Text>
@@ -128,7 +130,10 @@ const CustomerHome = ({ navigation }) => {
       </View>
 
       {/* Main view */}
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, SPACING.md) }]}
+      >
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <TextInput
@@ -207,7 +212,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
-    paddingTop: 50,
     paddingBottom: SPACING.md,
     backgroundColor: COLORS.secondary,
     borderBottomLeftRadius: ROUNDING.lg,

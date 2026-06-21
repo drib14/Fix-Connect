@@ -1,9 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 const { clerkMiddleware } = require('@clerk/express');
-require('dotenv').config();
 
 // Initialize app
 const app = express();
@@ -22,7 +22,11 @@ if (!process.env.CLERK_SECRET_KEY) {
 app.use(cors()); // Allow all cross-origins for mobile client development
 app.use(morgan('dev'));
 app.use(express.json());
-app.use(clerkMiddleware());
+app.use(clerkMiddleware({
+  publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
+  secretKey: process.env.CLERK_SECRET_KEY,
+  debug: true
+}));
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
