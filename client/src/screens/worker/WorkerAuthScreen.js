@@ -154,12 +154,16 @@ const WorkerAuthScreen = ({ navigation }) => {
         await SecureStore.setItemAsync('oauth_selected_role', 'worker');
       }
 
-      const { createdSessionId, setActive } = await startOAuthFlow({
+      const { createdSessionId, setActive, signIn, signUp } = await startOAuthFlow({
         redirectUrl: Linking.createURL('/oauth-callback'),
       });
 
-      if (createdSessionId) {
-        await setActive({ session: createdSessionId });
+      const sessionId = createdSessionId || signIn?.createdSessionId || signUp?.createdSessionId;
+
+      if (sessionId) {
+        await setActive({ session: sessionId });
+      } else {
+        console.log('OAuth completed but no session ID was found:', { signIn, signUp });
       }
     } catch (err) {
       console.error('Google OAuth Error:', err);
@@ -243,6 +247,11 @@ const WorkerAuthScreen = ({ navigation }) => {
           </Text>
 
           {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
+          {/* Inline visible clerk-captcha element inside the card */}
+          {Platform.OS === 'web' && (
+            <View nativeID="clerk-captcha" style={styles.captchaContainer} />
+          )}
 
           {/* Social Logins */}
           <TouchableOpacity 
@@ -559,6 +568,17 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontSize: 14,
   },
+  captchaContainer: Platform.select({
+    web: {
+      width: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginVertical: SPACING.xs,
+    },
+    default: {
+      display: 'none',
+    }
+  }),
 });
 
 export default WorkerAuthScreen;
