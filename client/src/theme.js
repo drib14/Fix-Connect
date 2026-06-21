@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 export const COLORS = {
   primary: '#10b981',       // Emerald Green
   primaryDark: '#047857',   // Dark Emerald
@@ -12,20 +14,30 @@ export const COLORS = {
   error: '#ef4444',         // Red
   success: '#10b981',       // Green
   warning: '#f59e0b',       // Amber Gold for stars/warnings
-  cardShadow: {
-    shadowColor: '#0f172a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  glassShadow: {
-    shadowColor: '#10b981',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-  }
+  cardShadow: Platform.select({
+    web: {
+      boxShadow: '0px 4px 10px rgba(15, 23, 42, 0.06)',
+    },
+    default: {
+      shadowColor: '#0f172a',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 10,
+      elevation: 3,
+    },
+  }),
+  glassShadow: Platform.select({
+    web: {
+      boxShadow: '0px 8px 16px rgba(16, 185, 129, 0.15)',
+    },
+    default: {
+      shadowColor: '#10b981',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.15,
+      shadowRadius: 16,
+      elevation: 8,
+    },
+  })
 };
 
 export const FONTS = {

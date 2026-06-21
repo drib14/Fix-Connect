@@ -6,9 +6,11 @@ const WelcomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.logoCircle}>
-          <Text style={styles.logoText}>FC</Text>
-        </View>
+        <Image
+          source={require('../../assets/logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={styles.title}>FixConnect</Text>
         <Text style={styles.subtitle}>Connecting elite home service workers with customers in seconds.</Text>
       </View>
@@ -69,20 +71,15 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xl,
     paddingHorizontal: SPACING.md,
   },
-  logoCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+  logo: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 2.5,
+    borderColor: COLORS.primary,
+    backgroundColor: '#fff',
     marginBottom: SPACING.md,
     ...COLORS.glassShadow,
-  },
-  logoText: {
-    color: '#fff',
-    fontSize: 28,
-    fontFamily: FONTS.bold,
   },
   title: {
     fontSize: 36,
