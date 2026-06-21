@@ -8,52 +8,58 @@ import {
   ScrollView, 
   ActivityIndicator, 
   KeyboardAvoidingView, 
-  Platform 
+  Platform,
+  Image
 } from 'react-native';
-import { useSignIn, useSignUp } from '@clerk/clerk-expo';
+import { useSignIn, useSignUp, useOAuth } from '@clerk/clerk-expo';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { COLORS, FONTS, SPACING, ROUNDING } from '../theme';
-import { getApiClient } from '../utils/api';
-import useStore from '../store/useStore';
+import * as Linking from 'expo-linking';
+import * as SecureStore from 'expo-secure-store';
+import * as WebBrowser from 'expo-web-browser';
+import { COLORS, FONTS, SPACING, ROUNDING } from '../../theme';
+import { getApiClient } from '../../utils/api';
+import useStore from '../../store/useStore';
 
-// Input schemas
+// Warm up the browser for OAuth redirect on native
+WebBrowser.maybeCompleteAuthSession();
+
 const SignInSchema = Yup.object().shape({
   email: Yup.string().email('Invalid email').required('Required'),
-  password: Yup.string().min(6, 'Too short!').required('Required'),
+  password: Yup.string().required('Required'),
 });
 
 const SignUpSchema = Yup.object().shape({
   name: Yup.string().required('Required'),
   email: Yup.string().email('Invalid email').required('Required'),
   password: Yup.string().min(6, 'Too short!').required('Required'),
-  role: Yup.string().oneOf(['customer', 'worker']).required('Required'),
 });
 
 const VerificationSchema = Yup.object().shape({
   code: Yup.string().length(6, 'Code must be 6 digits').required('Required'),
 });
 
-const AuthScreen = () => {
+const WorkerAuthScreen = ({ navigation }) => {
   const [isSignUpMode, setIsSignUpMode] = useState(false);
   const [pendingVerification, setPendingVerification] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [signUpDetails, setSignUpDetails] = useState(null); // cache details for sync
+  const [signUpDetails, setSignUpDetails] = useState(null);
 
   const { signIn, setActive: setSignInActive, isLoaded: isSignInLoaded } = useSignIn();
   const { signUp, setActive: setSignUpActive, isLoaded: isSignUpLoaded } = useSignUp();
+  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
   const setUser = useStore((state) => state.setUser);
 
-  // Sync user profile to MongoDB
+  // Sync profile to DB
   const syncUserProfile = async (clerkToken, details) => {
     try {
       const client = getApiClient(clerkToken);
       const response = await client.post('/auth/sync', {
         email: details.email,
         name: details.name,
-        role: details.role,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(details.name)}&background=10b981&color=fff`
+        role: 'worker',
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(details.name)}&background=0f172a&color=fff`
       });
       setUser(response.data);
     } catch (error) {
@@ -76,7 +82,6 @@ const AuthScreen = () => {
 
       await setSignInActive({ session: completeSignIn.createdSessionId });
       
-      // Get auth token and fetch Mongo DB user details
       const token = await completeSignIn.firstFactorVerification?.token || (await signIn.session?.getToken());
       const client = getApiClient(token);
       const response = await client.get('/auth/me');
@@ -88,7 +93,7 @@ const AuthScreen = () => {
     }
   };
 
-  // Sign Up submit (triggers email verification code)
+  // Sign Up submit
   const handleSignUp = async (values) => {
     if (!isSignUpLoaded) return;
     setLoading(true);
@@ -127,11 +132,38 @@ const AuthScreen = () => {
 
       await setSignUpActive({ session: completeSignUp.createdSessionId });
 
-      // Retrieve session token and sync profile
       const sessionToken = await signUp.session?.getToken();
       await syncUserProfile(sessionToken, signUpDetails);
     } catch (err) {
       setErrorMessage(err.errors?.[0]?.message || err.message || 'Verification failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Google OAuth flow
+  const handleGoogleAuth = async () => {
+    try {
+      setLoading(true);
+      setErrorMessage('');
+
+      // Cache desired role in platform-appropriate storage
+      if (Platform.OS === 'web') {
+        localStorage.setItem('oauth_selected_role', 'worker');
+      } else {
+        await SecureStore.setItemAsync('oauth_selected_role', 'worker');
+      }
+
+      const { createdSessionId, setActive } = await startOAuthFlow({
+        redirectUrl: Linking.createURL('/oauth-callback'),
+      });
+
+      if (createdSessionId) {
+        await setActive({ session: createdSessionId });
+      }
+    } catch (err) {
+      console.error('Google OAuth Error:', err);
+      setErrorMessage(err.message || 'Google authentication failed.');
     } finally {
       setLoading(false);
     }
@@ -143,6 +175,7 @@ const AuthScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
+        <View nativeID="clerk-captcha" style={{ display: 'none' }} />
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
             <Text style={styles.title}>Verification</Text>
@@ -151,6 +184,7 @@ const AuthScreen = () => {
             {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
             <Formik
+              key="verification-form"
               initialValues={{ code: '' }}
               validationSchema={VerificationSchema}
               onSubmit={handleVerify}
@@ -164,7 +198,7 @@ const AuthScreen = () => {
                     placeholderTextColor={COLORS.textMuted}
                     onChangeText={handleChange('code')}
                     onBlur={handleBlur('code')}
-                    value={values.code}
+                    value={values.code || ''}
                     keyboardType="number-pad"
                     maxLength={6}
                   />
@@ -202,23 +236,45 @@ const AuthScreen = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
+      <View nativeID="clerk-captcha" style={{ display: 'none' }} />
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
-          <Text style={styles.title}>{isSignUpMode ? 'Join FixConnect' : 'Welcome Back'}</Text>
+          <Text style={styles.title}>{isSignUpMode ? 'Offer Home Services' : 'Worker Sign In'}</Text>
           <Text style={styles.subtitle}>
-            {isSignUpMode ? 'Register to book or offer home services' : 'Log in to manage bookings'}
+            {isSignUpMode ? 'Register as a professional to find jobs' : 'Log in to manage your jobs'}
           </Text>
 
           {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
+          {/* Social Logins */}
+          <TouchableOpacity 
+            style={styles.googleButton} 
+            onPress={handleGoogleAuth} 
+            disabled={loading}
+          >
+            <Image 
+              source={{ uri: 'https://developers.google.com/static/identity/images/g-logo.png' }} 
+              style={styles.googleIcon} 
+              resizeMode="contain"
+            />
+            <Text style={styles.googleButtonText}>Continue with Google</Text>
+          </TouchableOpacity>
+
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or use email</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
           {isSignUpMode ? (
             // Sign Up Form
             <Formik
-              initialValues={{ name: '', email: '', password: '', role: 'customer' }}
+              key="signup-form"
+              initialValues={{ name: '', email: '', password: '' }}
               validationSchema={SignUpSchema}
               onSubmit={handleSignUp}
             >
-              {({ handleChange, handleBlur, handleSubmit, setFieldValue, values, errors, touched }) => (
+              {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
                 <View style={styles.formContainer}>
                   <Text style={styles.label}>Full Name</Text>
                   <TextInput
@@ -227,7 +283,7 @@ const AuthScreen = () => {
                     placeholderTextColor={COLORS.textMuted}
                     onChangeText={handleChange('name')}
                     onBlur={handleBlur('name')}
-                    value={values.name}
+                    value={values.name || ''}
                   />
                   {errors.name && touched.name && <Text style={styles.fieldError}>{errors.name}</Text>}
 
@@ -238,7 +294,7 @@ const AuthScreen = () => {
                     placeholderTextColor={COLORS.textMuted}
                     onChangeText={handleChange('email')}
                     onBlur={handleBlur('email')}
-                    value={values.email}
+                    value={values.email || ''}
                     autoCapitalize="none"
                     keyboardType="email-address"
                   />
@@ -251,31 +307,11 @@ const AuthScreen = () => {
                     placeholderTextColor={COLORS.textMuted}
                     onChangeText={handleChange('password')}
                     onBlur={handleBlur('password')}
-                    value={values.password}
+                    value={values.password || ''}
                     secureTextEntry
                     autoCapitalize="none"
                   />
                   {errors.password && touched.password && <Text style={styles.fieldError}>{errors.password}</Text>}
-
-                  <Text style={styles.label}>Select Role</Text>
-                  <View style={styles.roleContainer}>
-                    <TouchableOpacity
-                      style={[styles.roleButton, values.role === 'customer' && styles.roleButtonActive]}
-                      onPress={() => setFieldValue('role', 'customer')}
-                    >
-                      <Text style={[styles.roleButtonText, values.role === 'customer' && styles.roleButtonTextActive]}>
-                        Customer
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.roleButton, values.role === 'worker' && styles.roleButtonActive]}
-                      onPress={() => setFieldValue('role', 'worker')}
-                    >
-                      <Text style={[styles.roleButtonText, values.role === 'worker' && styles.roleButtonTextActive]}>
-                        Worker
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
 
                   <TouchableOpacity 
                     style={styles.primaryButton} 
@@ -285,12 +321,12 @@ const AuthScreen = () => {
                     {loading ? (
                       <ActivityIndicator color={COLORS.textLight} />
                     ) : (
-                      <Text style={styles.buttonText}>Register Now</Text>
+                      <Text style={styles.buttonText}>Register Account</Text>
                     )}
                   </TouchableOpacity>
 
                   <View style={styles.toggleContainer}>
-                    <Text style={styles.toggleText}>Already have an account? </Text>
+                    <Text style={styles.toggleText}>Already registered? </Text>
                     <TouchableOpacity onPress={() => setIsSignUpMode(false)}>
                       <Text style={styles.toggleLink}>Sign In</Text>
                     </TouchableOpacity>
@@ -301,6 +337,7 @@ const AuthScreen = () => {
           ) : (
             // Sign In Form
             <Formik
+              key="signin-form"
               initialValues={{ email: '', password: '' }}
               validationSchema={SignInSchema}
               onSubmit={handleSignIn}
@@ -314,7 +351,7 @@ const AuthScreen = () => {
                     placeholderTextColor={COLORS.textMuted}
                     onChangeText={handleChange('email')}
                     onBlur={handleBlur('email')}
-                    value={values.email}
+                    value={values.email || ''}
                     autoCapitalize="none"
                     keyboardType="email-address"
                   />
@@ -327,7 +364,7 @@ const AuthScreen = () => {
                     placeholderTextColor={COLORS.textMuted}
                     onChangeText={handleChange('password')}
                     onBlur={handleBlur('password')}
-                    value={values.password}
+                    value={values.password || ''}
                     secureTextEntry
                     autoCapitalize="none"
                   />
@@ -346,7 +383,7 @@ const AuthScreen = () => {
                   </TouchableOpacity>
 
                   <View style={styles.toggleContainer}>
-                    <Text style={styles.toggleText}>New to FixConnect? </Text>
+                    <Text style={styles.toggleText}>New Worker? </Text>
                     <TouchableOpacity onPress={() => setIsSignUpMode(true)}>
                       <Text style={styles.toggleLink}>Register</Text>
                     </TouchableOpacity>
@@ -355,6 +392,13 @@ const AuthScreen = () => {
               )}
             </Formik>
           )}
+
+          <TouchableOpacity 
+            style={[styles.textButton, { marginTop: SPACING.md }]} 
+            onPress={() => navigation.navigate('Welcome')}
+          >
+            <Text style={styles.textButtonText}>Change Role Profile</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -380,7 +424,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     color: COLORS.secondary,
     fontFamily: FONTS.bold,
     textAlign: 'center',
@@ -395,6 +439,49 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     width: '100%',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    height: 48,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: ROUNDING.md,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  googleIcon: {
+    width: 18,
+    height: 18,
+    marginRight: 12,
+  },
+  googleButtonText: {
+    color: COLORS.textDark,
+    fontSize: 15,
+    fontFamily: FONTS.medium,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.border,
+  },
+  dividerText: {
+    paddingHorizontal: SPACING.sm,
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontFamily: FONTS.regular,
   },
   label: {
     fontSize: 14,
@@ -430,43 +517,13 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     fontSize: 13,
   },
-  roleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  roleButton: {
-    flex: 1,
-    height: 44,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: ROUNDING.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 4,
-    backgroundColor: '#fff',
-  },
-  roleButtonActive: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight,
-  },
-  roleButtonText: {
-    fontSize: 14,
-    fontFamily: FONTS.medium,
-    color: COLORS.textMuted,
-  },
-  roleButtonTextActive: {
-    color: COLORS.primaryDark,
-    fontFamily: FONTS.bold,
-  },
   primaryButton: {
     height: 48,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.secondary,
     borderRadius: ROUNDING.md,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: SPACING.lg,
     ...COLORS.glassShadow,
   },
   buttonText: {
@@ -476,7 +533,6 @@ const styles = StyleSheet.create({
   },
   textButton: {
     alignItems: 'center',
-    marginTop: 16,
   },
   textButtonText: {
     color: COLORS.textMuted,
@@ -500,4 +556,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AuthScreen;
+export default WorkerAuthScreen;

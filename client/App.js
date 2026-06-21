@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
-import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
+import { StyleSheet, View, ActivityIndicator, Platform } from 'react-native';
+import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -11,12 +11,15 @@ import {
   Outfit_600SemiBold, 
   Outfit_700Bold 
 } from '@expo-google-fonts/outfit';
+import * as SecureStore from 'expo-secure-store';
 
 import { tokenCache } from './src/utils/tokenCache';
 import { getApiClient } from './src/utils/api';
 import useStore from './src/store/useStore';
 import Splash from './src/components/Splash';
-import AuthScreen from './src/screens/AuthScreen';
+import WelcomeScreen from './src/screens/WelcomeScreen';
+import CustomerAuthScreen from './src/screens/customer/CustomerAuthScreen';
+import WorkerAuthScreen from './src/screens/worker/WorkerAuthScreen';
 import { COLORS } from './src/theme';
 
 // Customer screens
@@ -32,7 +35,11 @@ import WorkerServices from './src/screens/worker/WorkerServices';
 
 const queryClient = new QueryClient();
 const Stack = createStackNavigator();
+
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+if (!CLERK_PUBLISHABLE_KEY) {
+  throw new Error('CRITICAL ERROR: EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is not defined in environment variables.');
+}
 
 function CustomerStack() {
   return (
@@ -70,26 +77,52 @@ function WorkerStack() {
 function AppContent() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const { user, role, setUser } = useStore();
+  const { user: clerkUser } = useUser();
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     async function checkUserSync() {
-      if (isLoaded && isSignedIn && !user) {
+      if (isLoaded && isSignedIn && !user && clerkUser) {
         setSyncing(true);
         try {
           const token = await getToken();
           const client = getApiClient(token);
-          const response = await client.get('/auth/me');
-          setUser(response.data);
+          
+          try {
+            // Try fetching existing DB profile
+            const response = await client.get('/auth/me');
+            setUser(response.data);
+          } catch (error) {
+            // 404 indicates user exists in Clerk but not synced to MongoDB (e.g. social signup)
+            if (error.response && error.response.status === 404) {
+              console.log('User profile 404 in MongoDB. Auto-syncing profile...');
+              let savedRole = 'customer';
+              if (Platform.OS === 'web') {
+                savedRole = localStorage.getItem('oauth_selected_role') || 'customer';
+              } else {
+                savedRole = await SecureStore.getItemAsync('oauth_selected_role') || 'customer';
+              }
+              
+              const syncResponse = await client.post('/auth/sync', {
+                email: clerkUser.primaryEmailAddress?.emailAddress,
+                name: clerkUser.fullName || clerkUser.username || 'User',
+                role: savedRole,
+                avatar: clerkUser.imageUrl
+              });
+              setUser(syncResponse.data);
+            } else {
+              throw error;
+            }
+          }
         } catch (error) {
-          console.log('User profile not synchronized in DB yet. Waiting for registration...', error.message);
+          console.error('Failed to sync profile to database:', error.message);
         } finally {
           setSyncing(false);
         }
       }
     }
     checkUserSync();
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, clerkUser]);
 
   if (!isLoaded || syncing) {
     return (
@@ -103,7 +136,9 @@ function AppContent() {
     <NavigationContainer>
       {!isSignedIn || !user ? (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Auth" component={AuthScreen} />
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="CustomerAuth" component={CustomerAuthScreen} />
+          <Stack.Screen name="WorkerAuth" component={WorkerAuthScreen} />
         </Stack.Navigator>
       ) : role === 'worker' ? (
         <WorkerStack />
@@ -150,3 +185,4 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
 });
+

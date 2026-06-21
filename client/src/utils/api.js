@@ -1,7 +1,10 @@
 import axios from 'axios';
 
-// Fallback to localhost if EXPO_PUBLIC_API_URL is missing
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+if (!API_URL) {
+  throw new Error('CRITICAL ERROR: EXPO_PUBLIC_API_URL environment variable is missing.');
+}
 
 export const getApiClient = (token) => {
   const headers = {
