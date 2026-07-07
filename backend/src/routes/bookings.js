@@ -1,5 +1,7 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
+const validate = require('../middleware/validate');
+const { createBookingSchema } = require('../validators/booking');
 const {
   createDraft,
   requestProvider,
@@ -10,7 +12,7 @@ const {
   submitReview,
 } = require('../controllers/bookingController');
 
-router.post('/draft', auth, createDraft);
+router.post('/draft', auth, validate(createBookingSchema), createDraft);
 router.post('/:id/request', auth, requestProvider);
 router.get('/active', auth, getActiveBooking);
 router.get('/history', auth, getBookingHistory);

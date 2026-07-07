@@ -20,9 +20,14 @@ if (fs.existsSync(localEnv)) {
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
 const { Server } = require('socket.io');
 const connectDB = require('./src/config/db');
 const { initBookingSocket } = require('./src/sockets/bookingSocket');
+const errorHandler = require('./src/middleware/error');
 
 // Route imports
 const authRoutes = require('./src/routes/auth');
@@ -38,6 +43,15 @@ const messageRoutes = require('./src/routes/messages');
 const app = express();
 const server = http.createServer(app);
 
+// Rate limiter
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests from this IP, please try again after 15 minutes.' }
+});
+
 // Socket.io initialization
 const io = new Server(server, {
   cors: {
@@ -47,7 +61,11 @@ const io = new Server(server, {
 });
 
 // Middleware
+app.use(helmet());
 app.use(cors());
+app.use(compression());
+app.use(morgan('dev'));
+app.use('/api/', limiter); // Apply rate limiter to API routes
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -66,7 +84,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
 
 // Health check
-app.get('/api/health', async (req, res) => {
+app.get('/api/health', async (req, res, next) => {
   try {
     const Service = require('./src/models/Service');
     const totalCount = await Service.countDocuments({});
@@ -79,9 +97,12 @@ app.get('/api/health', async (req, res) => {
       timestamp: new Date().toISOString() 
     });
   } catch (err) {
-    res.status(500).json({ error: err.message, timestamp: new Date().toISOString() });
+    next(err);
   }
 });
+
+// Global Error Handler
+app.use(errorHandler);
 
 // Initialize Socket.io namespaces
 initBookingSocket(io);

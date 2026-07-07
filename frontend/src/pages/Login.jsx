@@ -1,40 +1,46 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { setCredentials } from '../store/authSlice';
 import logo from '../assets/logo.png';
 import api from '../utils/api';
+import toast from 'react-hot-toast';
 
-export default function Login({ onNavigate, onLoginSuccess }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+const loginSchema = z.object({
+  email: z.string().email('Please enter a valid email address.'),
+  password: z.string().min(1, 'Password is required.'),
+});
+
+export default function Login() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      setError('Please fill in all fields.');
-      return;
-    }
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+    resolver: zodResolver(loginSchema),
+  });
 
-    setIsLoading(true);
-    setError('');
-
+  const onSubmit = async (data) => {
     try {
-      const { data } = await api.post('/auth/login', {
-        email: email.trim(),
-        password,
+      const response = await api.post('/auth/login', {
+        email: data.email.trim().toLowerCase(),
+        password: data.password,
       });
 
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      dispatch(setCredentials({
+        user: response.data.user,
+        accessToken: response.data.accessToken,
+        refreshToken: response.data.refreshToken,
+      }));
 
-      setIsLoading(false);
-      onLoginSuccess(data.user);
+      toast.success('Signed in successfully!');
+      navigate('/home');
     } catch (err) {
-      setIsLoading(false);
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      toast.error(err.response?.data?.message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -47,77 +53,75 @@ export default function Login({ onNavigate, onLoginSuccess }) {
           <p style={styles.subtitle}>Sign in to book your next home service</p>
         </div>
 
-        {error && <div style={styles.errorBox}>{error}</div>}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <div className="input-container">
-              <span className="input-icon"><Mail size={18} /></span>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          {/* Email */}
+          <div className="form-group mb-3">
+            <label className="form-label small fw-bold">Email Address</label>
+            <div className="input-group">
+              <span className="input-group-text bg-light"><Mail size={18} /></span>
               <input
                 type="email"
-                className="form-control"
+                className={`form-control bg-light ${errors.email ? 'is-invalid' : ''}`}
                 placeholder="yourname@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                {...register('email')}
               />
+              {errors.email && (
+                <div className="invalid-feedback">{errors.email.message}</div>
+              )}
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <div className="input-container">
-              <span className="input-icon"><Lock size={18} /></span>
+          {/* Password */}
+          <div className="form-group mb-3">
+            <label className="form-label small fw-bold">Password</label>
+            <div className="input-group">
+              <span className="input-group-text bg-light"><Lock size={18} /></span>
               <input
                 type={showPassword ? 'text' : 'password'}
-                className="form-control"
+                className={`form-control bg-light ${errors.password ? 'is-invalid' : ''}`}
                 placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                {...register('password')}
               />
               <button
                 type="button"
-                className="eye-btn"
+                className="btn btn-outline-secondary border-start-0"
                 onClick={() => setShowPassword(!showPassword)}
+                style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
+              {errors.password && (
+                <div className="invalid-feedback">{errors.password.message}</div>
+              )}
             </div>
           </div>
 
-          <div style={styles.forgotRow}>
-            <span
-              style={styles.forgotLink}
-              onClick={() => onNavigate('forgot-password')}
-            >
+          {/* Forgot Password */}
+          <div className="d-flex justify-content-end mb-4">
+            <Link to="/forgot-password" className="text-success small fw-bold text-decoration-none">
               Forgot Password?
-            </span>
+            </Link>
           </div>
 
+          {/* Submit */}
           <button
             type="submit"
-            className="btn btn-primary"
-            style={styles.submitBtn}
-            disabled={isLoading}
+            className="btn btn-success w-100 py-2.5 fw-bold text-white shadow-sm"
+            disabled={isSubmitting}
           >
-            {isLoading ? (
-              <Loader2 className="loader-spin" size={18} />
+            {isSubmitting ? (
+              <Loader2 className="loader-spin mx-auto animate-spin" size={20} />
             ) : (
               'Sign In'
             )}
           </button>
         </form>
 
-        <div style={styles.footer}>
-          <span style={styles.footerText}>Don't have an account? </span>
-          <span
-            style={styles.navigateLink}
-            onClick={() => onNavigate('register')}
-          >
+        <div className="text-center mt-4 small text-secondary">
+          <span>Don't have an account? </span>
+          <Link to="/register" className="text-success fw-bold text-decoration-none ms-1">
             Create Account
-          </span>
+          </Link>
         </div>
       </div>
     </div>
@@ -162,45 +166,5 @@ const styles = {
     fontSize: '14px',
     color: '#64748B',
     marginTop: '6px',
-  },
-  errorBox: {
-    backgroundColor: '#FFF5F5',
-    border: '1.5px solid #FEB2B2',
-    color: '#C53030',
-    borderRadius: '12px',
-    padding: '12px',
-    fontSize: '13px',
-    fontWeight: '600',
-    marginBottom: '20px',
-    textAlign: 'center',
-  },
-  forgotRow: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginBottom: '20px',
-  },
-  forgotLink: {
-    fontSize: '13px',
-    color: '#2E7D32',
-    fontWeight: '700',
-    cursor: 'pointer',
-  },
-  submitBtn: {
-    width: '100%',
-    height: '48px',
-  },
-  footer: {
-    textAlign: 'center',
-    marginTop: '24px',
-    fontSize: '14px',
-  },
-  footerText: {
-    color: '#64748B',
-  },
-  navigateLink: {
-    color: '#2E7D32',
-    fontWeight: '700',
-    cursor: 'pointer',
-    marginLeft: '4px',
   },
 };
