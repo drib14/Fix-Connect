@@ -1,5 +1,25 @@
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+const fs = require('fs');
+const dotenv = require('dotenv');
+
+const localEnv = path.resolve(__dirname, '.env');
+const parentEnv = path.resolve(__dirname, '../.env');
+let loadedEnvPath = '';
+
+if (fs.existsSync(localEnv)) {
+  dotenv.config({ path: localEnv });
+  loadedEnvPath = localEnv;
+} else if (fs.existsSync(parentEnv)) {
+  dotenv.config({ path: parentEnv });
+  loadedEnvPath = parentEnv;
+}
+
+if (loadedEnvPath) {
+  console.log(`✅ Loaded env successfully from: ${loadedEnvPath}`);
+} else {
+  console.error('❌ Failed to locate .env file in backend/ or root!');
+}
+
 const express = require('express');
 const http = require('http');
 const cors = require('cors');

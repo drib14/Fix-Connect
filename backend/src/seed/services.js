@@ -2,7 +2,18 @@
  * Seed script to populate the Services collection with default FixConnect services.
  * Run with: npm run seed
  */
-require('dotenv').config({ path: '../../.env' });
+const path = require('path');
+const fs = require('fs');
+const dotenv = require('dotenv');
+
+const envPath = path.resolve(__dirname, '../../.env');
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+  console.log(`✅ Seeder loaded env from: ${envPath}`);
+} else {
+  console.error(`❌ Seeder failed to find env file at: ${envPath}`);
+}
+
 const mongoose = require('mongoose');
 const Service = require('../models/Service');
 
