@@ -35,6 +35,11 @@ export default function Dashboard({ user, onNavigate }) {
   const [selectedService, setSelectedService] = useState(null);
   const [problemDescription, setProblemDescription] = useState('');
   const [bookingAddress, setBookingAddress] = useState('123 Taft Ave, Manila, Metro Manila');
+  const [bookingLat, setBookingLat] = useState(14.5995);
+  const [bookingLng, setBookingLng] = useState(120.9842);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(null);
 
   // Core Data
@@ -205,8 +210,8 @@ export default function Dashboard({ user, onNavigate }) {
       // 1. Create Draft
       const draftRes = await api.post('/bookings/draft', {
         service_id: selectedService._id,
-        latitude: 14.5995,
-        longitude: 120.9842,
+        latitude: bookingLat,
+        longitude: bookingLng,
         formatted_address: bookingAddress,
         problem_description: problemDescription.trim(),
       });
@@ -229,6 +234,34 @@ export default function Dashboard({ user, onNavigate }) {
     } catch (err) {
       console.error('Booking failed:', err);
     }
+  };
+
+  // LocationIQ Address Suggestions Autocomplete
+  const handleAddressChange = async (val) => {
+    setBookingAddress(val);
+    if (val.trim().length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    try {
+      setLoadingSuggestions(true);
+      const response = await api.get(`/location/search?q=${encodeURIComponent(val)}`);
+      setSuggestions(response.data.results || []);
+      setShowSuggestions(true);
+    } catch (err) {
+      console.error('Error fetching address suggestions:', err);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const handleSelectSuggestion = (suggestion) => {
+    setBookingAddress(suggestion.display_name);
+    setBookingLat(parseFloat(suggestion.lat));
+    setBookingLng(parseFloat(suggestion.lon));
+    setSuggestions([]);
+    setShowSuggestions(false);
   };
 
   // Send Message
@@ -337,7 +370,10 @@ export default function Dashboard({ user, onNavigate }) {
               {/* Live Map Radar Simulation */}
               <div style={styles.mapCard}>
                 <MapView 
-                  userLocation={{ latitude: 14.5995, longitude: 120.9842 }} 
+                  userLocation={{ 
+                    latitude: activeBooking?.location?.coordinates ? activeBooking.location.coordinates[1] : bookingLat, 
+                    longitude: activeBooking?.location?.coordinates ? activeBooking.location.coordinates[0] : bookingLng 
+                  }} 
                   providerLocation={activeBooking?.provider_id ? { bearing: 60 } : null}
                   height={320}
                 />
@@ -665,18 +701,34 @@ export default function Dashboard({ user, onNavigate }) {
           <div style={styles.bookingServiceDetail}>
             <strong>Rate:</strong> ₱{selectedService?.base_rate} ({selectedService?.rate_type})
           </div>
-          <div className="form-group">
+          <div className="form-group" style={{ position: 'relative' }}>
             <label className="form-label">Address Location</label>
             <div className="input-container">
               <span className="input-icon"><MapPin size={18} /></span>
               <input
                 type="text"
                 className="form-control"
+                placeholder="Search Manila address..."
                 value={bookingAddress}
-                onChange={(e) => setBookingAddress(e.target.value)}
+                onChange={(e) => handleAddressChange(e.target.value)}
                 required
               />
+              {loadingSuggestions && <span style={styles.loadingSpinner}>Loading...</span>}
             </div>
+
+            {showSuggestions && suggestions.length > 0 && (
+              <div style={styles.suggestionsDropdown}>
+                {suggestions.map((item) => (
+                  <div
+                    key={item.place_id}
+                    style={styles.suggestionItem}
+                    onClick={() => handleSelectSuggestion(item)}
+                  >
+                    {item.display_name}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className="form-group">
             <label className="form-label">Describe your problem</label>
@@ -1119,6 +1171,35 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     boxShadow: '0 4px 6px rgba(46, 125, 50, 0.2)',
+  },
+  suggestionsDropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    border: '1.5px solid #E2E8F0',
+    borderRadius: '12px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+    zIndex: 1000,
+    maxHeight: '180px',
+    overflowY: 'auto',
+    marginTop: '4px',
+  },
+  suggestionItem: {
+    padding: '10px 16px',
+    fontSize: '13px',
+    cursor: 'pointer',
+    borderBottom: '1px solid #F1F5F9',
+    textAlign: 'left',
+    color: '#1E293B',
+    transition: 'background-color 0.2s',
+  },
+  loadingSpinner: {
+    fontSize: '12px',
+    color: '#2E7D32',
+    marginLeft: 'auto',
+    fontWeight: '700',
   },
 };
 

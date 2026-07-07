@@ -106,7 +106,7 @@ export default function Register({ onNavigate }) {
                 className="form-control"
                 placeholder="+639171234567"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(e.target.value.replace(/(?!^\+)[^\d]/g, ''))}
                 required
               />
             </div>
