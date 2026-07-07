@@ -14,11 +14,7 @@ if (fs.existsSync(localEnv)) {
   loadedEnvPath = parentEnv;
 }
 
-if (loadedEnvPath) {
-  console.log(`✅ Loaded env successfully from: ${loadedEnvPath}`);
-} else {
-  console.error('❌ Failed to locate .env file in backend/ or root!');
-}
+
 
 const express = require('express');
 const http = require('http');
@@ -73,11 +69,8 @@ const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
   server.listen(PORT, () => {
-    console.log(`\n🔧 FixConnect API Gateway running on port ${PORT}`);
-    console.log(`📡 WebSocket server ready on /bookings namespace`);
-    console.log(`🌐 Health check: http://localhost:${PORT}/api/health\n`);
+    console.log(`Server Running on PORT ${PORT}`);
   });
 }).catch((err) => {
-  console.error('❌ Failed to connect to MongoDB:', err.message);
   process.exit(1);
 });
