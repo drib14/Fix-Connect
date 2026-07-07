@@ -169,7 +169,7 @@ export default function Dashboard({ user, onNavigate }) {
     if (!promoCode.trim()) return;
     try {
       const response = await api.post('/promos/validate', { code: promoCode });
-      setPromoMessage({ success: true, text: `Code applied: ₱${response.data.promo.discount_amount} Discount!` });
+      setPromoMessage({ success: true, text: `Code applied: ${user?.currency_symbol || '₱'}${response.data.promo.discount_amount} Discount!` });
     } catch (err) {
       setPromoMessage({ success: false, text: err.response?.data?.message || 'Invalid code.' });
     }
@@ -399,7 +399,7 @@ export default function Dashboard({ user, onNavigate }) {
                         </div>
                         <h3 className="service-card-title">{service.title}</h3>
                         <p className="service-card-desc">{service.description}</p>
-                        <div style={styles.servicePrice}>₱{service.base_rate} base</div>
+                        <div style={styles.servicePrice}>{user?.currency_symbol || '₱'}{service.base_rate} base</div>
                       </div>
                     ))}
                   </div>
@@ -446,7 +446,7 @@ export default function Dashboard({ user, onNavigate }) {
                       </div>
                       <div style={styles.priceRow}>
                         <span>Total Paid:</span>
-                        <span style={styles.priceText}>₱{booking.total_amount}</span>
+                        <span style={styles.priceText}>{user?.currency_symbol || '₱'}{booking.total_amount}</span>
                       </div>
                     </div>
                   ))}
@@ -699,7 +699,7 @@ export default function Dashboard({ user, onNavigate }) {
       >
         <form onSubmit={handlePlaceBooking}>
           <div style={styles.bookingServiceDetail}>
-            <strong>Rate:</strong> ₱{selectedService?.base_rate} ({selectedService?.rate_type})
+            <strong>Rate:</strong> {user?.currency_symbol || '₱'}{selectedService?.base_rate} ({selectedService?.rate_type})
           </div>
           <div className="form-group" style={{ position: 'relative' }}>
             <label className="form-label">Address Location</label>

@@ -26,6 +26,18 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Phone number is required'],
     trim: true,
   },
+  country: {
+    type: String,
+    default: 'Philippines',
+  },
+  currency: {
+    type: String,
+    default: 'PHP',
+  },
+  currency_symbol: {
+    type: String,
+    default: '₱',
+  },
   avatar_url: {
     type: String,
     default: '',

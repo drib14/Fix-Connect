@@ -21,7 +21,7 @@ function generateTokens(user) {
  */
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, country, currency, currency_symbol } = req.body;
 
     if (!name || !email || !password || !phone) {
       return res.status(400).json({ message: 'All fields are required.' });
@@ -40,6 +40,9 @@ exports.register = async (req, res) => {
       email: email.toLowerCase(),
       password: hashedPassword,
       phone,
+      country: country || 'Philippines',
+      currency: currency || 'PHP',
+      currency_symbol: currency_symbol || '₱',
     });
 
     const tokens = generateTokens(user);
@@ -55,6 +58,9 @@ exports.register = async (req, res) => {
         phone: user.phone,
         avatar_url: user.avatar_url,
         role: user.role,
+        country: user.country,
+        currency: user.currency,
+        currency_symbol: user.currency_symbol,
       },
       ...tokens,
     });
@@ -98,6 +104,9 @@ exports.login = async (req, res) => {
         phone: user.phone,
         avatar_url: user.avatar_url,
         role: user.role,
+        country: user.country,
+        currency: user.currency,
+        currency_symbol: user.currency_symbol,
       },
       ...tokens,
     });

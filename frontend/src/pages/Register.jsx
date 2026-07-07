@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Lock, Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
 import logo from '../assets/logo.png';
 import api from '../utils/api';
@@ -15,6 +15,62 @@ export default function Register({ onNavigate }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Countries dropdown states
+  const [countries, setCountries] = useState([
+    { name: 'Philippines', code: 'PH', flag: '🇵🇭', prefix: '+63', currency: 'PHP', symbol: '₱' }
+  ]);
+  const [selectedCountry, setSelectedCountry] = useState({
+    name: 'Philippines',
+    code: 'PH',
+    flag: '🇵🇭',
+    prefix: '+63',
+    currency: 'PHP',
+    symbol: '₱'
+  });
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const response = await fetch('https://restcountries.com/v3.1/all?fields=name,cca2,idd,currencies,flag');
+        const data = await response.json();
+        
+        const parsed = data
+          .map((c) => {
+            const root = c.idd?.root || '';
+            const suffix = c.idd?.suffixes?.[0] || '';
+            const prefix = root + suffix;
+            
+            const currencyCode = c.currencies ? Object.keys(c.currencies)[0] : 'PHP';
+            const currencySymbol = c.currencies?.[currencyCode]?.symbol || '₱';
+
+            return {
+              name: c.name?.common || '',
+              code: c.cca2 || '',
+              flag: c.flag || '',
+              prefix: prefix || '',
+              currency: currencyCode,
+              symbol: currencySymbol,
+            };
+          })
+          .filter((c) => c.name && c.prefix)
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        if (parsed.length > 0) {
+          setCountries(parsed);
+          const ph = parsed.find(c => c.code === 'PH');
+          if (ph) {
+            setSelectedCountry(ph);
+          } else {
+            setSelectedCountry(parsed[0]);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load REST Countries, using default Philippines.', err.message);
+      }
+    };
+    fetchCountries();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,10 +92,14 @@ export default function Register({ onNavigate }) {
     setSuccess('');
 
     try {
+      const fullPhoneNumber = `${selectedCountry.prefix}${phone.trim()}`;
       await api.post('/auth/register', {
         name: name.trim(),
         email: email.trim(),
-        phone: phone.trim(),
+        phone: fullPhoneNumber,
+        country: selectedCountry.name,
+        currency: selectedCountry.currency,
+        currency_symbol: selectedCountry.symbol,
         password,
       });
 
@@ -99,14 +159,28 @@ export default function Register({ onNavigate }) {
 
           <div className="form-group">
             <label className="form-label">Phone Number</label>
-            <div className="input-container">
-              <span className="input-icon"><Phone size={18} /></span>
+            <div className="input-container" style={{ display: 'flex', gap: '8px', padding: '0 12px 0 16px' }}>
+              <span className="input-icon" style={{ marginRight: 4 }}><Phone size={18} /></span>
+              <select
+                value={selectedCountry.code}
+                onChange={(e) => {
+                  const country = countries.find(c => c.code === e.target.value);
+                  if (country) setSelectedCountry(country);
+                }}
+                style={styles.countrySelect}
+              >
+                {countries.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {c.prefix}
+                  </option>
+                ))}
+              </select>
               <input
                 type="tel"
                 className="form-control"
-                placeholder="+639171234567"
+                placeholder="9171234567"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/(?!^\+)[^\d]/g, ''))}
+                onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ''))}
                 required
               />
             </div>
@@ -271,5 +345,15 @@ const styles = {
     fontWeight: '700',
     cursor: 'pointer',
     marginLeft: '4px',
+  },
+  countrySelect: {
+    border: 'none',
+    background: 'none',
+    fontSize: '14px',
+    fontWeight: '700',
+    color: '#1E293B',
+    outline: 'none',
+    cursor: 'pointer',
+    marginRight: '4px',
   },
 };

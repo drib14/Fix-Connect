@@ -1,5 +1,6 @@
 const Transaction = require('../models/Transaction');
 const Booking = require('../models/Booking');
+const User = require('../models/User');
 
 /**
  * POST /api/payments/create-intent
@@ -46,9 +47,49 @@ exports.createPaymentIntent = async (req, res) => {
     }
 
     // For e-wallet / card payments via PayMongo
-    // In production, call PayMongo Create Payment Intent API here
-    // https://developers.paymongo.com/reference/create-a-paymentintent
-    const mockPaymongoIntentId = `pi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const user = await User.findById(req.user.id);
+    const userCurrency = user?.currency || 'PHP';
+
+    const secretKey = process.env.PAYMONGO_SECRET_KEY;
+    const authHeader = `Basic ${Buffer.from(`${secretKey}:`).toString('base64')}`;
+
+    let paymongoIntentId = '';
+    let clientKey = '';
+
+    try {
+      const response = await fetch('https://api.paymongo.com/v1/payment_intents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader,
+        },
+        body: JSON.stringify({
+          data: {
+            attributes: {
+              amount: Math.round(booking.total_amount * 100), // PayMongo accepts centavos
+              payment_method_allowed: ['card', 'gcash', 'paymaya', 'grab_pay'],
+              currency: userCurrency,
+              description: `FixConnect Service Booking payment: ${booking._id}`,
+            }
+          }
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return res.status(response.status).json({
+          message: 'PayMongo Payment Intent creation failed.',
+          error: data,
+        });
+      }
+
+      paymongoIntentId = data.data.id;
+      clientKey = data.data.attributes.client_key;
+    } catch (err) {
+      console.error('PayMongo API call error:', err.message);
+      return res.status(502).json({ message: 'Failed to communicate with PayMongo gateway.' });
+    }
 
     const transaction = await Transaction.create({
       booking_id,
@@ -56,14 +97,14 @@ exports.createPaymentIntent = async (req, res) => {
       provider_id: booking.provider_id,
       payment_method,
       amount: booking.total_amount,
-      paymongo_payment_intent_id: mockPaymongoIntentId,
+      paymongo_payment_intent_id: paymongoIntentId,
       status: 'pending',
     });
 
     res.status(201).json({
-      message: 'Payment intent created.',
+      message: 'Payment intent created successfully via PayMongo.',
       transaction,
-      clientKey: mockPaymongoIntentId,
+      clientKey,
     });
   } catch (error) {
     console.error('Create payment error:', error);
