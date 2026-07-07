@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import logo from '../../assets/logo.png';
+import logo from '../assets/logo.png';
 
 export default function AppSplashScreen({ onFinish, duration = 1500 }) {
   const [isVisible, setIsVisible] = useState(true);

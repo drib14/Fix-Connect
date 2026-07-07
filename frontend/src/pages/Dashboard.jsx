@@ -5,7 +5,7 @@ import {
   Info, LogOut, CheckCircle, AlertCircle, X, Sparkles, Navigation
 } from 'lucide-react';
 import api from '../utils/api';
-import logo from '../../assets/logo.png';
+import logo from '../assets/logo.png';
 import CustomDrawer from '../components/CustomDrawer';
 import CustomModal from '../components/CustomModal';
 import MapView from '../components/MapView';

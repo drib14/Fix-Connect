@@ -10,7 +10,7 @@ import {
   LogOut,
   X
 } from 'lucide-react';
-import logo from '../../assets/logo.png';
+import logo from '../assets/logo.png';
 
 export default function CustomDrawer({ 
   isOpen, 

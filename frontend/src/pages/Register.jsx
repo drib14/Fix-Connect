@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, Lock, Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
-import logo from '../../assets/logo.png';
+import logo from '../assets/logo.png';
 import api from '../utils/api';
 
 export default function Register({ onNavigate }) {
