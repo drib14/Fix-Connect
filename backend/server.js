@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
 
+// Nodemon reload trigger: force database auto-seeding logic on server restart (update 3)
 const localEnv = path.resolve(__dirname, '.env');
 const parentEnv = path.resolve(__dirname, '../.env');
 let loadedEnvPath = '';
@@ -29,6 +30,10 @@ const serviceRoutes = require('./src/routes/services');
 const bookingRoutes = require('./src/routes/bookings');
 const paymentRoutes = require('./src/routes/payments');
 const locationRoutes = require('./src/routes/location');
+const promoRoutes = require('./src/routes/promos');
+const supportRoutes = require('./src/routes/support');
+const notificationRoutes = require('./src/routes/notifications');
+const messageRoutes = require('./src/routes/messages');
 
 const app = express();
 const server = http.createServer(app);
@@ -55,10 +60,27 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/location', locationRoutes);
+app.use('/api/promos', promoRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', platform: 'FixConnect', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  try {
+    const Service = require('./src/models/Service');
+    const totalCount = await Service.countDocuments({});
+    const activeCount = await Service.countDocuments({ is_active: true });
+    res.json({ 
+      status: 'ok', 
+      totalServices: totalCount, 
+      activeServices: activeCount, 
+      platform: 'FixConnect', 
+      timestamp: new Date().toISOString() 
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message, timestamp: new Date().toISOString() });
+  }
 });
 
 // Initialize Socket.io namespaces
