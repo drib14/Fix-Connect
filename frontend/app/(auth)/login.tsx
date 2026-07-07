@@ -50,7 +50,7 @@ export default function LoginScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Image
-            source={require('../../../assets/logo.png')}
+            source={require('../../assets/logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -195,3 +195,4 @@ const styles = StyleSheet.create({
     color: COLORS.primary[600],
   },
 });
+// Trigger compilation to run babel.config.js logo copier
