@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, TextInput, Text, StyleSheet, TextInputProps } from 'react-native';
+import React, { useState } from 'react';
+import { View, TextInput, Text, StyleSheet, TextInputProps, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '@/constants/theme';
 
@@ -15,8 +15,12 @@ export function FormInput({
   icon,
   error,
   containerStyle,
+  secureTextEntry,
   ...props
 }: FormInputProps) {
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const isPasswordField = secureTextEntry !== undefined;
+
   return (
     <View style={[styles.container, containerStyle]}>
       <Text style={styles.label}>{label}</Text>
@@ -32,8 +36,22 @@ export function FormInput({
         <TextInput
           style={styles.input}
           placeholderTextColor={COLORS.text.light}
+          secureTextEntry={isPasswordField ? !isPasswordVisible : undefined}
           {...props}
         />
+        {isPasswordField && (
+          <Pressable 
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)} 
+            style={styles.eyeBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons
+              name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color={COLORS.text.secondary}
+            />
+          </Pressable>
+        )}
       </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
@@ -72,6 +90,11 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: COLORS.text.primary,
+  },
+  eyeBtn: {
+    marginLeft: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   errorText: {
     fontSize: 12,

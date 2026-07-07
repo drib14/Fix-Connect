@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Pressable,
   Image,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +21,9 @@ import { useServices, useActiveBooking } from '@/hooks/useBookingQuery';
 import { SERVICE_CATEGORIES, ServiceCategory } from '@/constants/services';
 import { COLORS, SHADOWS } from '@/constants/theme';
 import { STATUS_LABELS } from '@/constants/theme';
+import CustomDrawer from '@/components/CustomDrawer';
+import CustomModal from '@/components/CustomModal';
+import { FormInput } from '@/components/FormInput';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -27,12 +31,46 @@ export default function HomeScreen() {
   const { data: services, isLoading: servicesLoading, refetch } = useServices();
   const { data: activeBooking } = useActiveBooking();
 
-  const [refreshing, setRefreshing] = React.useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Modal display states
+  const [isPromoOpen, setIsPromoOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+
+  // Form states
+  const [promoCode, setPromoCode] = useState('');
+  const [supportMessage, setSupportMessage] = useState('');
 
   const onRefresh = async () => {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
+  };
+
+  const handleApplyPromo = () => {
+    if (!promoCode.trim()) {
+      Alert.alert('Missing Code', 'Please enter a promo code.');
+      return;
+    }
+    if (promoCode.trim().toUpperCase() === 'FIX50') {
+      Alert.alert('Promo Code Applied', 'Success! You have saved ₱50 on your next booking.');
+      setIsPromoOpen(false);
+      setPromoCode('');
+    } else {
+      Alert.alert('Invalid Code', 'The promo code you entered is invalid or expired.');
+    }
+  };
+
+  const handleSendSupport = () => {
+    if (!supportMessage.trim()) {
+      Alert.alert('Empty Message', 'Please describe your request.');
+      return;
+    }
+    Alert.alert('Request Sent', 'Thank you! A customer support representative will reach out to you shortly.');
+    setIsHelpOpen(false);
+    setSupportMessage('');
   };
 
   const handleServicePress = (service: ServiceCategory) => {
@@ -68,9 +106,14 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>{greeting()} 👋</Text>
-            <Text style={styles.userName}>{user?.name || 'User'}</Text>
+          <View style={styles.headerLeft}>
+            <Pressable onPress={() => setIsDrawerOpen(true)} style={styles.menuBtn}>
+              <Ionicons name="menu-outline" size={24} color={COLORS.text.primary} />
+            </Pressable>
+            <View>
+              <Text style={styles.greeting}>{greeting()} 👋</Text>
+              <Text style={styles.userName}>{user?.name || 'User'}</Text>
+            </View>
           </View>
           <Pressable style={styles.notifBtn}>
             <Ionicons name="notifications-outline" size={24} color={COLORS.text.primary} />
@@ -181,6 +224,78 @@ export default function HomeScreen() {
           <Ionicons name="gift" size={50} color="rgba(255,255,255,0.3)" />
         </LinearGradient>
       </ScrollView>
+
+      {/* Custom Navigation Drawer */}
+      <CustomDrawer
+        visible={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        onPromoPress={() => setIsPromoOpen(true)}
+        onHelpPress={() => setIsHelpOpen(true)}
+        onAboutPress={() => setIsAboutOpen(true)}
+      />
+
+      {/* Dynamic Promo Code Modal */}
+      <CustomModal
+        visible={isPromoOpen}
+        onClose={() => setIsPromoOpen(false)}
+        title="Apply Promo Code"
+      >
+        <View style={styles.modalBody}>
+          <Text style={styles.modalText}>Enter your discount coupon code below to unlock savings on your next booking (Hint: enter "FIX50").</Text>
+          <FormInput
+            label="Coupon Code"
+            placeholder="e.g. FIX50"
+            value={promoCode}
+            onChangeText={setPromoCode}
+            autoCapitalize="characters"
+          />
+          <Pressable style={styles.modalSubmitBtn} onPress={handleApplyPromo}>
+            <Text style={styles.modalSubmitBtnText}>Apply Code</Text>
+          </Pressable>
+        </View>
+      </CustomModal>
+
+      {/* Dynamic Help & Support Modal */}
+      <CustomModal
+        visible={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        title="Help & Support"
+      >
+        <View style={styles.modalBody}>
+          <Text style={styles.modalText}>Got questions or issues with a service? Write a message and our support agents will respond quickly.</Text>
+          <FormInput
+            label="Describe your concern"
+            placeholder="Type your message here..."
+            value={supportMessage}
+            onChangeText={setSupportMessage}
+            multiline
+            numberOfLines={4}
+            style={styles.modalTextarea}
+          />
+          <Pressable style={styles.modalSubmitBtn} onPress={handleSendSupport}>
+            <Text style={styles.modalSubmitBtnText}>Submit Support Request</Text>
+          </Pressable>
+        </View>
+      </CustomModal>
+
+      {/* Dynamic About Platform Modal */}
+      <CustomModal
+        visible={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
+        title="About FixConnect"
+      >
+        <View style={styles.modalBody}>
+          <View style={styles.aboutHeader}>
+            <Image source={require('../../assets/logo.png')} style={styles.aboutLogo} />
+            <Text style={styles.aboutTitle}>FixConnect App</Text>
+            <Text style={styles.aboutVersion}>v1.0.0 (Production Build)</Text>
+          </View>
+          <Text style={styles.aboutDescription}>
+            FixConnect is a premium, on-demand home service booking platform designed to connect you with verified local professional technicians, plumbers, cleaners, and carpenters in your area.
+          </Text>
+          <Text style={styles.aboutCopyright}>&copy; 2026 FixConnect. All rights reserved.</Text>
+        </View>
+      </CustomModal>
     </SafeAreaView>
   );
 }
@@ -200,13 +315,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  menuBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
   greeting: {
     fontSize: 13,
     color: COLORS.text.secondary,
     fontWeight: '500',
   },
   userName: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
     color: COLORS.text.primary,
     marginTop: 2,
@@ -350,5 +479,63 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FFF',
     letterSpacing: 1,
+  },
+  modalBody: {
+    paddingTop: 8,
+  },
+  modalText: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  modalSubmitBtn: {
+    backgroundColor: COLORS.primary[600],
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginTop: 16,
+    ...SHADOWS.small,
+  },
+  modalSubmitBtnText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  modalTextarea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  aboutHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  aboutLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 12,
+  },
+  aboutTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.text.primary,
+  },
+  aboutVersion: {
+    fontSize: 13,
+    color: COLORS.text.light,
+    marginTop: 4,
+  },
+  aboutDescription: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  aboutCopyright: {
+    fontSize: 12,
+    color: COLORS.text.light,
+    textAlign: 'center',
   },
 });

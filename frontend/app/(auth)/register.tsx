@@ -98,24 +98,30 @@ export default function RegisterScreen() {
             onChangeText={setPhone}
             keyboardType="phone-pad"
           />
-          <FormInput
-            label="Password"
-            icon="lock-closed-outline"
-            placeholder="Min. 6 characters"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-          />
-          <FormInput
-            label="Confirm Password"
-            icon="shield-checkmark-outline"
-            placeholder="Re-enter your password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            autoCapitalize="none"
-          />
+          <View style={styles.row}>
+            <View style={styles.halfInput}>
+              <FormInput
+                label="Password"
+                icon="lock-closed-outline"
+                placeholder="Min. 6 chars"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.halfInput}>
+              <FormInput
+                label="Confirm Password"
+                icon="shield-checkmark-outline"
+                placeholder="Re-enter password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
         </View>
 
         {/* Register Button */}
@@ -184,6 +190,13 @@ const styles = StyleSheet.create({
   },
   form: {
     marginBottom: 8,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  halfInput: {
+    flex: 1,
   },
   registerBtn: {
     backgroundColor: COLORS.primary[600],

@@ -54,6 +54,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  reset_otp: {
+    type: String,
+    default: null,
+  },
+  reset_otp_expires: {
+    type: Date,
+    default: null,
+  },
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
 });

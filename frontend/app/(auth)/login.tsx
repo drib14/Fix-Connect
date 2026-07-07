@@ -22,7 +22,6 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -78,18 +77,15 @@ export default function LoginScreen() {
             placeholder="Enter your password"
             value={password}
             onChangeText={(text) => { setPassword(text); clearError(); }}
-            secureTextEntry={!showPassword}
+            secureTextEntry
             autoCapitalize="none"
           />
 
-          <Pressable
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.showPasswordBtn}
-          >
-            <Text style={styles.showPasswordText}>
-              {showPassword ? 'Hide' : 'Show'} Password
-            </Text>
-          </Pressable>
+          <Link href="/(auth)/forgot-password" asChild>
+            <Pressable style={styles.forgotBtn}>
+              <Text style={styles.forgotText}>Forgot Password?</Text>
+            </Pressable>
+          </Link>
         </View>
 
         {/* Login Button */}
@@ -158,12 +154,13 @@ const styles = StyleSheet.create({
   form: {
     marginBottom: 8,
   },
-  showPasswordBtn: {
+  forgotBtn: {
     alignSelf: 'flex-end',
-    marginTop: -10,
-    marginBottom: 8,
+    marginTop: 2,
+    marginBottom: 16,
+    paddingVertical: 4,
   },
-  showPasswordText: {
+  forgotText: {
     fontSize: 13,
     color: COLORS.primary[600],
     fontWeight: '600',
