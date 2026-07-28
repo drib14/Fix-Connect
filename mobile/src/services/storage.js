@@ -5,7 +5,7 @@ import { Platform } from "react-native";
 export const setSecureItem = async (key, value) => {
   try {
     if (Platform.OS === "web") {
-      localStorage.setItem(key, value);
+      sessionStorage.setItem(key, value);
     } else {
       await SecureStore.setItemAsync(key, value);
     }
@@ -17,7 +17,7 @@ export const setSecureItem = async (key, value) => {
 export const getSecureItem = async (key) => {
   try {
     if (Platform.OS === "web") {
-      return localStorage.getItem(key);
+      return sessionStorage.getItem(key);
     } else {
       return await SecureStore.getItemAsync(key);
     }
@@ -30,7 +30,7 @@ export const getSecureItem = async (key) => {
 export const deleteSecureItem = async (key) => {
   try {
     if (Platform.OS === "web") {
-      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
     } else {
       await SecureStore.deleteItemAsync(key);
     }

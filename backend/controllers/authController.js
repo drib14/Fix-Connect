@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const sendEmail = require("../utils/sendEmail");
 
 // Generate JWT tokens with short-lived access and longer refresh
 const generateTokens = (id) => {
@@ -368,5 +369,121 @@ exports.logout = async (req, res) => {
       success: false,
       message: "Error during logout",
     });
+  }
+};
+
+// @desc Forgot Password - sends recovery token email
+// @route POST /api/auth/forgot-password
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Please provide an email address" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      // Return 200 success for obfuscation to prevent user enumeration
+      return res.status(200).json({
+        success: true,
+        message: "If that email address exists, a reset code has been sent.",
+      });
+    }
+
+    // Generate cryptographically secure random token (6-digit numeric string for easy mobile entry)
+    const resetToken = crypto.randomInt(100000, 1000000).toString();
+
+    // Hash token and save to database with 10 minute expiry
+    const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    await user.save();
+
+    // Construct recovery email
+    const subject = "Fix-Connect Secure Password Reset Code";
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #1E3A2F; background-color: #0B1510; color: #F1F5F9; border-radius: 12px;">
+        <h2 style="color: #22C55E; border-bottom: 2px solid #16A34A; padding-bottom: 10px;">Password Reset Request</h2>
+        <p>A request was received to reset the password for your Fix-Connect account.</p>
+        <p>Your secure one-time verification code is:</p>
+        <div style="background-color: #11221A; border: 1px solid #22C55E; color: #22C55E; padding: 15px; text-align: center; font-size: 28px; font-weight: bold; letter-spacing: 5px; border-radius: 8px; margin: 20px 0;">
+          ${resetToken}
+        </div>
+        <p style="color: #F97316; font-weight: 600;">This code is only valid for 10 minutes.</p>
+        <p style="font-size: 12px; color: #64748B; margin-top: 30px; border-top: 1px solid #1E3A2F; padding-top: 10px;">
+          If you did not request this reset, please ignore this email. Your password will remain unchanged.
+        </p>
+      </div>
+    `;
+
+    try {
+      await sendEmail({ email: user.email, subject, html });
+      res.status(200).json({
+        success: true,
+        message: "If that email address exists, a reset code has been sent.",
+      });
+    } catch (emailError) {
+      console.error("[Email Sending Failed]:", emailError.message);
+      // Clean database fields on failure
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save();
+
+      return res.status(500).json({
+        success: false,
+        message: "Could not send verification email. Try again later.",
+      });
+    }
+  } catch (error) {
+    console.error("[Forgot Password Error]:", error.message);
+    res.status(500).json({ success: false, message: "Server error processing request" });
+  }
+};
+
+// @desc Reset Password using verification code
+// @route PUT /api/auth/reset-password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ success: false, message: "Token and password are required" });
+    }
+
+    // Hash token to match database record
+    const hashedToken = crypto.createHash("sha256").update(token.trim()).digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired reset code",
+      });
+    }
+
+    // Set new password
+    user.password = password;
+
+    // Invalidate reset tokens and active refresh tokens (force session invalidation globally)
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    user.refreshToken = undefined;
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successful. Please sign in with your new password.",
+    });
+  } catch (error) {
+    console.error("[Reset Password Error]:", error.message);
+    res.status(500).json({ success: false, message: "Server error updating password" });
   }
 };

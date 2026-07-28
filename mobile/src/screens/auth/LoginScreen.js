@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -9,9 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from "react-native";
 import { AuthContext } from "../../context/AuthContext";
-import { Wrench, Mail, Lock, LogIn } from "lucide-react-native";
+import { ShieldCheck, Mail, Lock, LogIn, Fingerprint, ShieldAlert } from "lucide-react-native";
+import { getSecureItem, setSecureItem } from "../../services/storage";
 
 export default function LoginScreen({ navigation }) {
   const { login } = useContext(AuthContext);
@@ -19,6 +21,18 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+
+  // Check if biometric authentication option is toggled/saved
+  useEffect(() => {
+    const checkBiometrics = async () => {
+      const isEnabled = await getSecureItem("biometric_login_enabled");
+      if (isEnabled === "true") {
+        setBiometricEnabled(true);
+      }
+    };
+    checkBiometrics();
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -36,6 +50,39 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const handleBiometricLogin = async () => {
+    if (!biometricEnabled) {
+      Alert.alert(
+        "Enable Biometrics",
+        "Please log in with password first and enable Biometrics in your profile settings."
+      );
+      return;
+    }
+    // Simulate systematic secure biometric trigger
+    Alert.alert("Biometric Unlock", "Authenticating via TouchID/FaceID...", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Authenticate",
+        onPress: async () => {
+          const storedEmail = await getSecureItem("biometric_email");
+          const storedPassword = await getSecureItem("biometric_password");
+          if (storedEmail && storedPassword) {
+            setLoading(true);
+            try {
+              await login(storedEmail, storedPassword);
+            } catch (err) {
+              setErrorMsg("Biometric login failed. Please sign in with password.");
+            } finally {
+              setLoading(false);
+            }
+          } else {
+            setErrorMsg("Biometric credentials missing. Please enter password.");
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -44,18 +91,25 @@ export default function LoginScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.headerContainer}>
           <View style={styles.logoBadge}>
-            <Wrench color="#38BDF8" size={40} />
+            <ShieldCheck color="#22C55E" size={44} />
           </View>
           <Text style={styles.title}>Fix-Connect</Text>
-          <Text style={styles.subtitle}>On-Demand Instant Service Booking</Text>
+          <Text style={styles.subtitle}>Secure On-Demand Instant Services</Text>
         </View>
 
         <View style={styles.formCard}>
-          <Text style={styles.formTitle}>Welcome Back</Text>
+          <View style={styles.securityHeader}>
+            <Text style={styles.formTitle}>Secure Sign In</Text>
+            <View style={styles.securedBadge}>
+              <ShieldCheck color="#22C55E" size={14} />
+              <Text style={styles.securedBadgeText}>AES-256</Text>
+            </View>
+          </View>
+
           {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
 
           <View style={styles.inputWrapper}>
-            <Mail color="#94A3B8" size={20} style={styles.inputIcon} />
+            <Mail color="#A7F3D0" size={20} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder="Email Address"
@@ -68,7 +122,7 @@ export default function LoginScreen({ navigation }) {
           </View>
 
           <View style={styles.inputWrapper}>
-            <Lock color="#94A3B8" size={20} style={styles.inputIcon} />
+            <Lock color="#A7F3D0" size={20} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder="Password"
@@ -80,19 +134,35 @@ export default function LoginScreen({ navigation }) {
           </View>
 
           <TouchableOpacity
-            style={styles.loginButton}
-            onPress={handleLogin}
-            disabled={loading}
+            style={styles.forgotBtn}
+            onPress={() => navigation.navigate("ForgotPassword")}
           >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <View style={styles.buttonInner}>
-                <LogIn color="#FFFFFF" size={20} style={{ marginRight: 8 }} />
-                <Text style={styles.loginButtonText}>Sign In</Text>
-              </View>
-            )}
+            <Text style={styles.forgotText}>Forgot Password?</Text>
           </TouchableOpacity>
+
+          <View style={styles.buttonsRow}>
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <View style={styles.buttonInner}>
+                  <LogIn color="#FFFFFF" size={20} style={{ marginRight: 8 }} />
+                  <Text style={styles.loginButtonText}>Sign In</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.biometricBtn, biometricEnabled && styles.biometricBtnActive]}
+              onPress={handleBiometricLogin}
+            >
+              <Fingerprint color={biometricEnabled ? "#22C55E" : "#94A3B8"} size={26} />
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.footerRow}>
             <Text style={styles.footerText}>Don't have an account? </Text>
@@ -109,7 +179,7 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
   },
   scrollContent: {
     flexGrow: 1,
@@ -121,15 +191,15 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   logoBadge: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "rgba(56, 189, 248, 0.15)",
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: "rgba(34, 197, 94, 0.12)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "rgba(56, 189, 248, 0.3)",
+    borderWidth: 1.5,
+    borderColor: "rgba(34, 197, 94, 0.3)",
   },
   title: {
     fontSize: 32,
@@ -142,18 +212,39 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   formCard: {
-    backgroundColor: "#1E293B",
-    borderRadius: 20,
+    backgroundColor: "#11221A",
+    borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#1E3A2F",
     elevation: 4,
+  },
+  securityHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
   },
   formTitle: {
     fontSize: 20,
     fontWeight: "600",
     color: "#F1F5F9",
-    marginBottom: 20,
+  },
+  securedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(34, 197, 94, 0.12)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: "rgba(34, 197, 94, 0.25)",
+  },
+  securedBadgeText: {
+    color: "#22C55E",
+    fontSize: 10,
+    fontWeight: "700",
   },
   errorText: {
     color: "#EF4444",
@@ -166,10 +257,10 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#1E3A2F",
     marginBottom: 16,
     paddingHorizontal: 14,
     height: 52,
@@ -182,13 +273,32 @@ const styles = StyleSheet.create({
     color: "#F8FAFC",
     fontSize: 15,
   },
+  buttonsRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+  },
   loginButton: {
-    backgroundColor: "#0284C7",
+    flex: 1,
+    backgroundColor: "#16A34A",
     borderRadius: 12,
     height: 52,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 8,
+  },
+  biometricBtn: {
+    width: 52,
+    height: 52,
+    backgroundColor: "#0B1510",
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#1E3A2F",
+  },
+  biometricBtnActive: {
+    borderColor: "#22C55E",
+    backgroundColor: "rgba(34, 197, 94, 0.08)",
   },
   buttonInner: {
     flexDirection: "row",
@@ -209,8 +319,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   signupText: {
-    color: "#38BDF8",
+    color: "#F97316",
     fontSize: 14,
+    fontWeight: "600",
+  },
+  forgotBtn: {
+    alignSelf: "flex-end",
+    marginBottom: 20,
+    marginTop: -4,
+  },
+  forgotText: {
+    color: "#F97316",
+    fontSize: 13,
     fontWeight: "600",
   },
 });

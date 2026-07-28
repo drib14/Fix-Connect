@@ -48,7 +48,7 @@ export default function ProviderJobScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       {/* Active Job Header Banner */}
       <View style={styles.bannerCard}>
-        <Text style={styles.bannerStatusLabel}>ACTIVE JOB WORKFLOW</Text>
+        <Text style={styles.bannerStatusLabel}>ACTIVE JOB WORKFLOW (SECURED)</Text>
         <Text style={styles.serviceTitle}>{activeBooking.serviceName}</Text>
         <Text style={styles.bookingCode}>{activeBooking.bookingCode}</Text>
       </View>
@@ -56,7 +56,7 @@ export default function ProviderJobScreen() {
       {/* Navigation & Address Card */}
       <View style={styles.card}>
         <View style={styles.cardHeaderRow}>
-          <MapPin color="#EF4444" size={20} />
+          <MapPin color="#F97316" size={20} />
           <Text style={styles.cardTitle}>Client Service Location</Text>
         </View>
         <Text style={styles.addressText}>{activeBooking.location?.address}</Text>
@@ -69,7 +69,7 @@ export default function ProviderJobScreen() {
         ) : null}
 
         <TouchableOpacity style={styles.mapsBtn} onPress={handleOpenMaps}>
-          <Navigation color="#38BDF8" size={18} />
+          <Navigation color="#22C55E" size={18} />
           <Text style={styles.mapsBtnText}>Open GPS Navigation</Text>
         </TouchableOpacity>
       </View>
@@ -77,7 +77,7 @@ export default function ProviderJobScreen() {
       {/* Client Profile Card */}
       <View style={styles.card}>
         <View style={styles.cardHeaderRow}>
-          <User color="#38BDF8" size={20} />
+          <User color="#22C55E" size={20} />
           <Text style={styles.cardTitle}>Client Information</Text>
         </View>
         <Text style={styles.clientName}>{activeBooking.customer?.name || "Client"}</Text>
@@ -184,7 +184,7 @@ export default function ProviderJobScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
   },
   scrollContent: {
     padding: 20,
@@ -192,15 +192,15 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   bannerCard: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 20,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#0284C7",
+    borderColor: "#16A34A",
   },
   bannerStatusLabel: {
-    color: "#38BDF8",
+    color: "#22C55E",
     fontSize: 11,
     fontWeight: "bold",
     letterSpacing: 0.5,
@@ -217,12 +217,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   card: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#1E3A2F",
   },
   cardHeaderRow: {
     flexDirection: "row",
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   notesBox: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
@@ -260,13 +260,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(56, 189, 248, 0.12)",
+    backgroundColor: "rgba(34, 197, 94, 0.12)",
     borderRadius: 10,
     paddingVertical: 10,
     gap: 6,
   },
   mapsBtnText: {
-    color: "#38BDF8",
+    color: "#22C55E",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0284C7",
+    backgroundColor: "#16A34A",
     borderRadius: 10,
     paddingVertical: 10,
     gap: 6,
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0284C7",
+    backgroundColor: "#16A34A",
     borderRadius: 16,
     height: 56,
     gap: 8,

@@ -47,6 +47,7 @@ app.use(
       },
     },
     crossOriginEmbedderPolicy: false, // Allow mobile clients
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     hsts: {
       maxAge: 31536000, // 1 year
       includeSubDomains: true,

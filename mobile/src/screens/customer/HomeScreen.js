@@ -88,16 +88,16 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.headerTitle}>Need a Quick Repair?</Text>
           </View>
           <View style={styles.badgeContainer}>
-            <ShieldCheck color="#38BDF8" size={18} />
-            <Text style={styles.badgeText}>Instant Pro</Text>
+            <ShieldCheck color="#22C55E" size={18} />
+            <Text style={styles.badgeText}>Secured Pro</Text>
           </View>
         </View>
 
         {/* Location Picker Banner */}
         <View style={styles.locationCard}>
-          <MapPin color="#EF4444" size={22} style={styles.locationIcon} />
+          <MapPin color="#F97316" size={22} style={styles.locationIcon} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.locationLabel}>SERVICE LOCATION</Text>
+            <Text style={styles.locationLabel}>SERVICE LOCATION (SECURED)</Text>
             <TextInput
               style={styles.locationInput}
               value={address}
@@ -132,7 +132,7 @@ export default function HomeScreen({ navigation }) {
                   ]}
                 >
                   <IconComponent
-                    color={isSelected ? "#0284C7" : "#38BDF8"}
+                    color={isSelected ? "#11221A" : "#22C55E"}
                     size={28}
                   />
                 </View>
@@ -148,7 +148,7 @@ export default function HomeScreen({ navigation }) {
         {selectedService ? (
           <View style={styles.bookingBox}>
             <Text style={styles.bookingBoxTitle}>
-              Instant Booking: {selectedService.name}
+              Instant Dispatch: {selectedService.name}
             </Text>
             <Text style={styles.bookingBoxSubtitle}>
               Dispatches nearest available provider in 30 seconds
@@ -186,7 +186,7 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
   },
   scrollContent: {
     padding: 20,
@@ -211,28 +211,28 @@ const styles = StyleSheet.create({
   badgeContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(56, 189, 248, 0.12)",
+    backgroundColor: "rgba(34, 197, 94, 0.12)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     gap: 6,
     borderWidth: 1,
-    borderColor: "rgba(56, 189, 248, 0.3)",
+    borderColor: "rgba(34, 197, 94, 0.3)",
   },
   badgeText: {
-    color: "#38BDF8",
+    color: "#22C55E",
     fontSize: 12,
     fontWeight: "600",
   },
   locationCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#1E3A2F",
   },
   locationIcon: {
     marginRight: 12,
@@ -264,27 +264,27 @@ const styles = StyleSheet.create({
   },
   serviceCard: {
     width: "48%",
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#1E3A2F",
   },
   serviceCardSelected: {
-    borderColor: "#38BDF8",
-    backgroundColor: "rgba(56, 189, 248, 0.08)",
+    borderColor: "#22C55E",
+    backgroundColor: "rgba(34, 197, 94, 0.08)",
   },
   iconBox: {
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: "rgba(56, 189, 248, 0.15)",
+    backgroundColor: "rgba(34, 197, 94, 0.15)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
   },
   iconBoxSelected: {
-    backgroundColor: "#38BDF8",
+    backgroundColor: "#22C55E",
   },
   serviceName: {
     color: "#F8FAFC",
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   servicePrice: {
-    color: "#38BDF8",
+    color: "#22C55E",
     fontSize: 13,
     fontWeight: "700",
   },
@@ -303,11 +303,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   bookingBox: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
-    borderColor: "#0284C7",
+    borderColor: "#16A34A",
   },
   bookingBoxTitle: {
     color: "#F8FAFC",
@@ -321,19 +321,19 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   notesInput: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
     borderRadius: 12,
     padding: 14,
     color: "#F8FAFC",
     fontSize: 14,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#1E3A2F",
     marginBottom: 16,
     height: 70,
     textAlignVertical: "top",
   },
   requestButton: {
-    backgroundColor: "#0284C7",
+    backgroundColor: "#16A34A",
     borderRadius: 14,
     height: 52,
     flexDirection: "row",

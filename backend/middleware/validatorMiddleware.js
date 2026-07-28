@@ -37,11 +37,11 @@ const validateRegister = [
     .trim()
     .notEmpty()
     .withMessage("Phone number is required")
-    .matches(/^[\d+\-() ]{7,20}$/)
-    .withMessage("Phone number format is invalid"),
+    .matches(/^\+[1-9]\d{7,14}$/)
+    .withMessage("Phone number must be in international format (e.g. +639171234567) without spaces or hyphens"),
   body("password")
-    .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters")
+    .isLength({ min: 8, max: 72 })
+    .withMessage("Password must be between 8 and 72 characters")
     .matches(/[A-Z]/)
     .withMessage("Password must contain at least one uppercase letter")
     .matches(/[a-z]/)
@@ -74,8 +74,38 @@ const validateLogin = [
   body("password")
     .notEmpty()
     .withMessage("Password is required")
-    .isLength({ max: 128 })
+    .isLength({ max: 72 })
     .withMessage("Password too long"),
+  handleValidationErrors,
+];
+
+// Validation rules for Forgot Password
+const validateForgotPassword = [
+  body("email")
+    .trim()
+    .isEmail()
+    .withMessage("Please provide a valid email address")
+    .normalizeEmail(),
+  handleValidationErrors,
+];
+
+// Validation rules for Reset Password
+const validateResetPassword = [
+  body("token")
+    .trim()
+    .notEmpty()
+    .withMessage("Reset token is required")
+    .isLength({ min: 6, max: 6 })
+    .withMessage("Reset token must be a 6-digit code"),
+  body("password")
+    .isLength({ min: 8, max: 72 })
+    .withMessage("Password must be between 8 and 72 characters")
+    .matches(/[A-Z]/)
+    .withMessage("Password must contain at least one uppercase letter")
+    .matches(/[a-z]/)
+    .withMessage("Password must contain at least one lowercase letter")
+    .matches(/\d/)
+    .withMessage("Password must contain at least one number"),
   handleValidationErrors,
 ];
 
@@ -162,6 +192,8 @@ const validateToggleOnline = [
 module.exports = {
   validateRegister,
   validateLogin,
+  validateForgotPassword,
+  validateResetPassword,
   validateBooking,
   validateStatusUpdate,
   validateToggleOnline,

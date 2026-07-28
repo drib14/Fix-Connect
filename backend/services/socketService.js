@@ -26,9 +26,13 @@ const checkSocketRateLimit = (socketId) => {
 };
 
 const initSocket = (server) => {
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",")
+    : ["*"];
+
   io = socketIO(server, {
     cors: {
-      origin: "*",
+      origin: allowedOrigins.includes("*") ? true : allowedOrigins,
       methods: ["GET", "POST", "PUT"],
     },
     // Limit payload size to prevent memory abuse

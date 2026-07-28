@@ -79,7 +79,7 @@ export default function ActivityScreen() {
         renderItem={renderBookingItem}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#38BDF8" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#22C55E" />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -98,7 +98,7 @@ export default function ActivityScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
     paddingTop: 50,
   },
   headerTitle: {
@@ -113,12 +113,12 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   bookingCard: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#1E3A2F",
   },
   cardHeader: {
     flexDirection: "row",
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   statusBadge: {
-    backgroundColor: "rgba(56, 189, 248, 0.12)",
+    backgroundColor: "rgba(34, 197, 94, 0.12)",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(239, 68, 68, 0.15)",
   },
   statusText: {
-    color: "#38BDF8",
+    color: "#22C55E",
     fontSize: 11,
     fontWeight: "700",
   },
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: "#334155",
+    borderTopColor: "#1E3A2F",
   },
   timeRow: {
     flexDirection: "row",

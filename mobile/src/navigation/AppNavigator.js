@@ -7,6 +7,8 @@ import { AuthContext } from "../context/AuthContext";
 
 import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
+import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
+import ResetPasswordScreen from "../screens/auth/ResetPasswordScreen";
 
 import HomeScreen from "../screens/customer/HomeScreen";
 import ActivityScreen from "../screens/customer/ActivityScreen";
@@ -25,7 +27,7 @@ function CustomerTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: "#38BDF8",
+        tabBarActiveTintColor: "#22C55E", // Green theme for Customer
         tabBarInactiveTintColor: "#64748B",
       }}
     >
@@ -64,7 +66,7 @@ function ProviderTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: "#22C55E",
+        tabBarActiveTintColor: "#F97316", // Accent Orange theme for Provider
         tabBarInactiveTintColor: "#64748B",
       }}
     >
@@ -102,7 +104,7 @@ export default function AppNavigator() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#38BDF8" />
+        <ActivityIndicator size="large" color="#22C55E" />
       </View>
     );
   }
@@ -115,6 +117,8 @@ export default function AppNavigator() {
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           </>
         ) : activeRole === "provider" ? (
           // Provider Stack
@@ -131,14 +135,14 @@ export default function AppNavigator() {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
     alignItems: "center",
     justifyContent: "center",
   },
   tabBar: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderTopWidth: 1,
-    borderTopColor: "#334155",
+    borderTopColor: "#1E3A2F",
     height: 60,
     paddingBottom: 8,
     paddingTop: 6,

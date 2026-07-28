@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Phone number is required"],
       trim: true,
-      match: [/^[\d+\-() ]{7,20}$/, "Please provide a valid phone number"],
+      match: [/^\+[1-9]\d{7,14}$/, "Please provide a valid E.164 phone number"],
     },
     password: {
       type: String,
@@ -100,6 +100,14 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+    resetPasswordToken: {
+      type: String,
+      select: false,
+    },
+    resetPasswordExpire: {
+      type: Date,
+      select: false,
+    },
   },
   {
     timestamps: true,
@@ -110,6 +118,8 @@ const userSchema = new mongoose.Schema(
         delete ret.refreshToken;
         delete ret.loginAttempts;
         delete ret.lockUntil;
+        delete ret.resetPasswordToken;
+        delete ret.resetPasswordExpire;
         delete ret.__v;
         return ret;
       },

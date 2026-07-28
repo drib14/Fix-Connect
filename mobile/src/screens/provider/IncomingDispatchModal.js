@@ -53,7 +53,7 @@ export default function IncomingDispatchModal() {
         <View style={styles.dispatchCard}>
           {/* Header Badge */}
           <View style={styles.headerBadge}>
-            <BellRing color="#38BDF8" size={24} />
+            <BellRing color="#22C55E" size={24} />
             <Text style={styles.headerTitle}>INCOMING JOB DISPATCH</Text>
           </View>
 
@@ -79,7 +79,7 @@ export default function IncomingDispatchModal() {
             </View>
 
             <View style={styles.infoRow}>
-              <MapPin color="#EF4444" size={18} />
+              <MapPin color="#F97316" size={18} />
               <Text style={styles.infoText} numberOfLines={2}>
                 {incomingDispatch.location?.address}
               </Text>
@@ -117,30 +117,30 @@ export default function IncomingDispatchModal() {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.95)",
+    backgroundColor: "rgba(11, 21, 16, 0.96)",
     justifyContent: "center",
     padding: 20,
   },
   dispatchCard: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 24,
     padding: 24,
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#0284C7",
+    borderColor: "#16A34A",
   },
   headerBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "rgba(56, 189, 248, 0.15)",
+    backgroundColor: "rgba(34, 197, 94, 0.15)",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     marginBottom: 20,
   },
   headerTitle: {
-    color: "#38BDF8",
+    color: "#22C55E",
     fontSize: 14,
     fontWeight: "bold",
     letterSpacing: 0.5,
@@ -149,11 +149,11 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,
-    borderColor: "#38BDF8",
+    borderColor: "#22C55E",
     marginBottom: 16,
   },
   timerText: {
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   },
   infoBox: {
     width: "100%",
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
     borderRadius: 16,
     padding: 16,
     gap: 12,

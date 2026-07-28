@@ -132,12 +132,12 @@ export default function LiveTrackingScreen() {
 
           <View style={styles.actionButtonsRow}>
             <TouchableOpacity style={styles.contactBtn} onPress={handleCall}>
-              <Phone color="#38BDF8" size={18} />
+              <Phone color="#22C55E" size={18} />
               <Text style={styles.contactBtnText}>Call Technician</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.chatBtn}>
-              <MessageSquare color="#F8FAFC" size={18} />
+              <MessageSquare color="#FFFFFF" size={18} />
               <Text style={styles.chatBtnText}>In-App Chat</Text>
             </TouchableOpacity>
           </View>
@@ -185,19 +185,19 @@ export default function LiveTrackingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
   },
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
   },
   mapSimCard: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#0284C7",
+    borderColor: "#16A34A",
   },
   livePulseBadge: {
     flexDirection: "row",
@@ -234,12 +234,12 @@ const styles = StyleSheet.create({
   stepperContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#1E3A2F",
   },
   stepItem: {
     alignItems: "center",
@@ -249,16 +249,16 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 6,
   },
   stepIconActive: {
-    backgroundColor: "#0284C7",
+    backgroundColor: "#16A34A",
   },
   stepIconCurrent: {
-    backgroundColor: "#38BDF8",
+    backgroundColor: "#22C55E",
   },
   stepLabel: {
     color: "#64748B",
@@ -269,12 +269,12 @@ const styles = StyleSheet.create({
     color: "#F8FAFC",
   },
   providerCard: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#1E3A2F",
   },
   providerHeader: {
     flexDirection: "row",
@@ -286,12 +286,12 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: "#38BDF8",
+    backgroundColor: "#22C55E",
     alignItems: "center",
     justifyContent: "center",
   },
   avatarInitials: {
-    color: "#0F172A",
+    color: "#0B1510",
     fontSize: 22,
     fontWeight: "bold",
   },
@@ -320,15 +320,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(56, 189, 248, 0.12)",
+    backgroundColor: "rgba(34, 197, 94, 0.12)",
     borderRadius: 12,
     paddingVertical: 12,
     gap: 8,
     borderWidth: 1,
-    borderColor: "rgba(56, 189, 248, 0.3)",
+    borderColor: "rgba(34, 197, 94, 0.3)",
   },
   contactBtnText: {
-    color: "#38BDF8",
+    color: "#22C55E",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0284C7",
+    backgroundColor: "#16A34A",
     borderRadius: 12,
     paddingVertical: 12,
     gap: 8,
@@ -348,12 +348,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   detailsCard: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#1E3A2F",
   },
   cardHeaderTitle: {
     color: "#F8FAFC",
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   totalFareText: {
-    color: "#38BDF8",
+    color: "#22C55E",
     fontSize: 16,
     fontWeight: "bold",
   },

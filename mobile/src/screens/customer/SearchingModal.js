@@ -46,7 +46,7 @@ export default function SearchingModal() {
           <View style={styles.pulseContainer}>
             <View style={styles.pulseOuter}>
               <View style={styles.pulseInner}>
-                <Radio color="#38BDF8" size={40} />
+                <Radio color="#22C55E" size={40} />
               </View>
             </View>
           </View>
@@ -57,7 +57,7 @@ export default function SearchingModal() {
           </Text>
 
           <View style={styles.timerBadge}>
-            <ActivityIndicator color="#38BDF8" size="small" />
+            <ActivityIndicator color="#22C55E" size="small" />
             <Text style={styles.timerText}>00:{seconds < 10 ? `0${seconds}` : seconds}</Text>
           </View>
 
@@ -65,7 +65,7 @@ export default function SearchingModal() {
             <View style={styles.detailsCard}>
               <Text style={styles.serviceName}>{activeBooking.serviceName}</Text>
               <View style={styles.locationRow}>
-                <MapPin color="#EF4444" size={16} />
+                <MapPin color="#F97316" size={16} />
                 <Text style={styles.locationText} numberOfLines={1}>
                   {activeBooking.location?.address}
                 </Text>
@@ -86,17 +86,17 @@ export default function SearchingModal() {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.92)",
+    backgroundColor: "rgba(11, 21, 16, 0.94)",
     justifyContent: "center",
     padding: 24,
   },
   contentCard: {
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 24,
     padding: 28,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#1E3A2F",
     elevation: 8,
   },
   closeBtn: {
@@ -114,17 +114,17 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: "rgba(56, 189, 248, 0.12)",
+    backgroundColor: "rgba(34, 197, 94, 0.12)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(56, 189, 248, 0.3)",
+    borderColor: "rgba(34, 197, 94, 0.3)",
   },
   pulseInner: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "rgba(56, 189, 248, 0.25)",
+    backgroundColor: "rgba(34, 197, 94, 0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   timerBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -152,13 +152,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   timerText: {
-    color: "#38BDF8",
+    color: "#22C55E",
     fontSize: 16,
     fontWeight: "700",
   },
   detailsCard: {
     width: "100%",
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fareText: {
-    color: "#38BDF8",
+    color: "#22C55E",
     fontSize: 14,
     fontWeight: "700",
   },

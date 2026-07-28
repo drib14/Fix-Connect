@@ -12,12 +12,10 @@ import { BookingContext } from "../../context/BookingContext";
 import IncomingDispatchModal from "./IncomingDispatchModal";
 import ProviderJobScreen from "./ProviderJobScreen";
 import {
-  Wrench,
-  Power,
   DollarSign,
   Briefcase,
   Star,
-  ShieldCheck,
+  Power,
   TrendingUp,
 } from "lucide-react-native";
 
@@ -56,8 +54,8 @@ export default function ProviderDashboardScreen() {
             <Switch
               value={isOnline}
               onValueChange={handleToggleOnline}
-              trackColor={{ false: "#334155", true: "#0284C7" }}
-              thumbColor={isOnline ? "#38BDF8" : "#94A3B8"}
+              trackColor={{ false: "#1E3A2F", true: "#16A34A" }}
+              thumbColor={isOnline ? "#22C55E" : "#94A3B8"}
             />
           </View>
         </View>
@@ -97,8 +95,8 @@ export default function ProviderDashboardScreen() {
           </View>
 
           <View style={styles.metricCard}>
-            <View style={[styles.iconBadge, { backgroundColor: "rgba(56, 189, 248, 0.15)" }]}>
-              <Briefcase color="#38BDF8" size={24} />
+            <View style={[styles.iconBadge, { backgroundColor: "rgba(34, 197, 94, 0.15)" }]}>
+              <Briefcase color="#22C55E" size={24} />
             </View>
             <Text style={styles.metricValue}>4 Jobs</Text>
             <Text style={styles.metricLabel}>Completed</Text>
@@ -113,8 +111,8 @@ export default function ProviderDashboardScreen() {
           </View>
 
           <View style={styles.metricCard}>
-            <View style={[styles.iconBadge, { backgroundColor: "rgba(168, 85, 247, 0.15)" }]}>
-              <TrendingUp color="#A855F7" size={24} />
+            <View style={[styles.iconBadge, { backgroundColor: "rgba(249, 115, 22, 0.15)" }]}>
+              <TrendingUp color="#F97316" size={24} />
             </View>
             <Text style={styles.metricValue}>95%</Text>
             <Text style={styles.metricLabel}>Acceptance Rate</Text>
@@ -131,22 +129,23 @@ export default function ProviderDashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0B1510",
   },
   scrollContent: {
     padding: 20,
     paddingTop: 50,
+    paddingBottom: 40,
   },
   headerCard: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 20,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#1E3A2F",
   },
   welcomeText: {
     color: "#94A3B8",
@@ -227,11 +226,11 @@ const styles = StyleSheet.create({
   },
   metricCard: {
     width: "48%",
-    backgroundColor: "#1E293B",
+    backgroundColor: "#11221A",
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#334155",
+    borderColor: "#1E3A2F",
   },
   iconBadge: {
     width: 44,
