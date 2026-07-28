@@ -36,11 +36,60 @@ const userSchema = new mongoose.Schema(
       enum: ["customer", "provider", "admin"],
       default: "customer",
     },
-    activeRole: {
-      type: String,
-      enum: ["customer", "provider"],
-      default: "customer",
+    isOnboarded: {
+      type: Boolean,
+      default: false,
     },
+    verificationStatus: {
+      type: String,
+      enum: ["NOT_SUBMITTED", "PENDING_VERIFICATION", "VERIFIED", "REJECTED"],
+      default: "NOT_SUBMITTED",
+    },
+    yearsExperience: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 60,
+    },
+    bio: {
+      type: String,
+      default: "",
+      maxLength: 1000,
+    },
+    documents: [
+      {
+        docType: {
+          type: String,
+          enum: [
+            "GOVERNMENT_ID",
+            "DEGREE_CERTIFICATE",
+            "TESDA_NC2_CERTIFICATE",
+            "VOCATIONAL_CERTIFICATE",
+            "WORK_LICENSE",
+            "OTHER",
+          ],
+          required: true,
+        },
+        title: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        fileUrl: {
+          type: String,
+          required: true,
+        },
+        status: {
+          type: String,
+          enum: ["PENDING", "APPROVED", "REJECTED"],
+          default: "PENDING",
+        },
+        uploadedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     isOnline: {
       type: Boolean,
       default: false,

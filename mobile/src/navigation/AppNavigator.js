@@ -15,6 +15,9 @@ import ActivityScreen from "../screens/customer/ActivityScreen";
 import ProfileScreen from "../screens/common/ProfileScreen";
 import ProviderDashboardScreen from "../screens/provider/ProviderDashboardScreen";
 
+import CustomerOnboardingScreen from "../screens/auth/CustomerOnboardingScreen";
+import ProviderOnboardingScreen from "../screens/auth/ProviderOnboardingScreen";
+
 import { Home, Clock, User, Wrench } from "lucide-react-native";
 
 const Stack = createNativeStackNavigator();
@@ -109,6 +112,10 @@ export default function AppNavigator() {
     );
   }
 
+  // Determine user role and onboarding status
+  const role = user?.role || activeRole || "customer";
+  const needsOnboarding = user && user.isOnboarded === false;
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -120,11 +127,18 @@ export default function AppNavigator() {
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           </>
-        ) : activeRole === "provider" ? (
-          // Provider Stack
+        ) : needsOnboarding ? (
+          // Onboarding Stack
+          role === "provider" ? (
+            <Stack.Screen name="ProviderOnboarding" component={ProviderOnboardingScreen} />
+          ) : (
+            <Stack.Screen name="CustomerOnboarding" component={CustomerOnboardingScreen} />
+          )
+        ) : role === "provider" ? (
+          // Provider Main Stack
           <Stack.Screen name="ProviderMain" component={ProviderTabs} />
         ) : (
-          // Customer Stack
+          // Customer Main Stack
           <Stack.Screen name="CustomerMain" component={CustomerTabs} />
         )}
       </Stack.Navigator>

@@ -8,6 +8,7 @@ import {
   Alert,
   Switch,
   TextInput,
+  Platform,
 } from "react-native";
 import { AuthContext } from "../../context/AuthContext";
 import {
@@ -15,17 +16,15 @@ import {
   Mail,
   Phone,
   Shield,
-  Repeat,
   LogOut,
-  ChevronRight,
   Star,
   Fingerprint,
-  Lock,
+  FileCheck,
 } from "lucide-react-native";
 import { getSecureItem, setSecureItem, deleteSecureItem } from "../../services/storage";
 
 export default function ProfileScreen() {
-  const { user, activeRole, switchRole, logout } = useContext(AuthContext);
+  const { user, activeRole, logout } = useContext(AuthContext);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [promptPasswordModal, setPromptPasswordModal] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -40,29 +39,10 @@ export default function ProfileScreen() {
     loadBiometricSetting();
   }, []);
 
-  const handleSwitchMode = async () => {
-    const targetMode = activeRole === "customer" ? "Service Provider / Technician" : "Customer";
-    Alert.alert(
-      "Switch Mode",
-      `Are you sure you want to switch to ${targetMode} mode?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Switch Mode",
-          onPress: async () => {
-            await switchRole();
-          },
-        },
-      ]
-    );
-  };
-
   const handleToggleBiometrics = async (value) => {
     if (value) {
-      // Prompt user to enter password to securely store it
       setPromptPasswordModal(true);
     } else {
-      // Disable biometrics
       await deleteSecureItem("biometric_login_enabled");
       await deleteSecureItem("biometric_email");
       await deleteSecureItem("biometric_password");
@@ -78,7 +58,6 @@ export default function ProfileScreen() {
     }
 
     try {
-      // Securely store credentials in SecureStore (encrypted storage)
       await setSecureItem("biometric_login_enabled", "true");
       await setSecureItem("biometric_email", user.email);
       await setSecureItem("biometric_password", confirmPassword);
@@ -93,14 +72,20 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: () => logout(),
-      },
-    ]);
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined" && window.confirm("Are you sure you want to log out?")) {
+        logout();
+      }
+    } else {
+      Alert.alert("Logout", "Are you sure you want to log out?", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: () => logout(),
+        },
+      ]);
+    }
   };
 
   return (
@@ -118,30 +103,19 @@ export default function ProfileScreen() {
         <View style={styles.roleBadge}>
           <Shield color="#22C55E" size={14} />
           <Text style={styles.roleBadgeText}>
-            Active Mode: {activeRole.toUpperCase()}
+            ACCOUNT TYPE: {(user?.role || activeRole).toUpperCase()}
           </Text>
         </View>
-      </View>
 
-      {/* Mode Switcher Action */}
-      <TouchableOpacity style={styles.switchModeCard} onPress={handleSwitchMode}>
-        <View style={styles.switchLeft}>
-          <View style={styles.switchIconBox}>
-            <Repeat color="#22C55E" size={20} />
-          </View>
-          <View>
-            <Text style={styles.switchTitle}>
-              Switch to {activeRole === "customer" ? "Provider" : "Customer"} Mode
-            </Text>
-            <Text style={styles.switchSubtitle}>
-              {activeRole === "customer"
-                ? "Start receiving repair dispatches"
-                : "Book on-demand services as client"}
+        {user?.role === "provider" && (
+          <View style={[styles.roleBadge, { marginTop: 8, backgroundColor: "rgba(249, 115, 22, 0.15)" }]}>
+            <FileCheck color="#F97316" size={14} />
+            <Text style={[styles.roleBadgeText, { color: "#F97316" }]}>
+              STATUS: {(user?.verificationStatus || "PENDING").replace("_", " ")}
             </Text>
           </View>
-        </View>
-        <ChevronRight color="#64748B" size={20} />
-      </TouchableOpacity>
+        )}
+      </View>
 
       {/* Security settings Card */}
       <View style={styles.sectionCard}>

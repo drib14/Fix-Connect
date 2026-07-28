@@ -10,6 +10,8 @@ const {
   logout,
   forgotPassword,
   resetPassword,
+  onboardCustomer,
+  onboardProvider,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
 const { authLimiter } = require("../middleware/securityMiddleware");
@@ -27,6 +29,8 @@ router.post("/refresh-token", authLimiter, refreshToken);
 router.post("/logout", protect, logout);
 router.post("/forgot-password", authLimiter, validateForgotPassword, forgotPassword);
 router.post("/reset-password", authLimiter, validateResetPassword, resetPassword);
+router.post("/onboard/customer", protect, onboardCustomer);
+router.post("/onboard/provider", protect, onboardProvider);
 router.get("/me", protect, getMe);
 router.put("/switch-role", protect, switchRole);
 router.put("/toggle-online", protect, validateToggleOnline, toggleOnline);

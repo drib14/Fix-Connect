@@ -32,7 +32,11 @@ const sanitizeUser = (user) => ({
   email: user.email,
   phone: user.phone,
   role: user.role,
-  activeRole: user.activeRole,
+  isOnboarded: user.isOnboarded,
+  verificationStatus: user.verificationStatus,
+  yearsExperience: user.yearsExperience,
+  bio: user.bio,
+  documents: user.documents || [],
   isOnline: user.isOnline,
   rating: user.rating,
   serviceCategories: user.serviceCategories,
@@ -71,7 +75,8 @@ exports.register = async (req, res) => {
       phone,
       password,
       role: assignedRole,
-      activeRole: assignedRole,
+      isOnboarded: false,
+      verificationStatus: "NOT_SUBMITTED",
       serviceCategories: cleanCategories,
     });
 
@@ -86,7 +91,7 @@ exports.register = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Registration successful",
+      message: "Registration successful. Please complete account onboarding.",
       token: accessToken,
       refreshToken,
       user: sanitizeUser(user),
@@ -262,39 +267,120 @@ exports.getMe = async (req, res) => {
   }
 };
 
-// @desc Switch active role (Customer <-> Provider)
-// @route PUT /api/auth/switch-role
-exports.switchRole = async (req, res) => {
+// @desc Customer Onboarding
+// @route POST /api/auth/onboard/customer
+exports.onboardCustomer = async (req, res) => {
   try {
+    const { address, coordinates } = req.body;
     const user = await User.findById(req.user.id);
+
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    const newActiveRole =
-      user.activeRole === "customer" ? "provider" : "customer";
-
-    user.activeRole = newActiveRole;
-    // Force offline when switching away from provider mode
-    if (newActiveRole === "customer") {
-      user.isOnline = false;
+    if (address && typeof address === "string") {
+      user.location.address = address.slice(0, 500);
     }
+    if (coordinates && Array.isArray(coordinates) && coordinates.length === 2) {
+      user.location.coordinates = coordinates;
+    }
+
+    user.isOnboarded = true;
     await user.save();
 
     res.status(200).json({
       success: true,
-      message: `Switched active mode to ${newActiveRole}`,
-      activeRole: user.activeRole,
+      message: "Customer onboarding completed successfully",
+      user: sanitizeUser(user),
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error switching role",
-    });
+    console.error("[Customer Onboarding Error]:", error.message);
+    res.status(500).json({ success: false, message: "Server error during customer onboarding" });
   }
+};
+
+// @desc Service Provider / Worker Onboarding with Document Submission (Degree, TESDA/NCII, ID, Licenses)
+// @route POST /api/auth/onboard/provider
+exports.onboardProvider = async (req, res) => {
+  try {
+    const { serviceCategories, yearsExperience, bio, documents, address, coordinates } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (user.role !== "provider") {
+      return res.status(403).json({ success: false, message: "Only provider accounts can perform provider onboarding" });
+    }
+
+    if (Array.isArray(serviceCategories) && serviceCategories.length > 0) {
+      user.serviceCategories = serviceCategories
+        .filter((c) => typeof c === "string")
+        .map((c) => c.trim().slice(0, 50))
+        .slice(0, 10);
+    }
+
+    if (typeof yearsExperience === "number") {
+      user.yearsExperience = Math.max(0, Math.min(60, yearsExperience));
+    }
+
+    if (typeof bio === "string") {
+      user.bio = bio.slice(0, 1000);
+    }
+
+    if (address && typeof address === "string") {
+      user.location.address = address.slice(0, 500);
+    }
+    if (coordinates && Array.isArray(coordinates) && coordinates.length === 2) {
+      user.location.coordinates = coordinates;
+    }
+
+    if (Array.isArray(documents) && documents.length > 0) {
+      const validDocTypes = [
+        "GOVERNMENT_ID",
+        "DEGREE_CERTIFICATE",
+        "TESDA_NC2_CERTIFICATE",
+        "VOCATIONAL_CERTIFICATE",
+        "WORK_LICENSE",
+        "OTHER",
+      ];
+
+      const cleanDocs = documents
+        .filter((doc) => doc && doc.title && doc.fileUrl && validDocTypes.includes(doc.docType))
+        .map((doc) => ({
+          docType: doc.docType,
+          title: doc.title.trim().slice(0, 100),
+          fileUrl: doc.fileUrl,
+          status: "PENDING",
+          uploadedAt: new Date(),
+        }));
+
+      user.documents = cleanDocs;
+    }
+
+    user.verificationStatus = "PENDING_VERIFICATION";
+    user.isOnboarded = true;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Provider onboarding and certification documents submitted for review",
+      user: sanitizeUser(user),
+    });
+  } catch (error) {
+    console.error("[Provider Onboarding Error]:", error.message);
+    res.status(500).json({ success: false, message: "Server error during provider onboarding" });
+  }
+};
+
+// @desc Switch active role - DISABLED
+// @route PUT /api/auth/switch-role
+exports.switchRole = async (req, res) => {
+  return res.status(400).json({
+    success: false,
+    message: "Role switching is disabled. Accounts are permanently registered as Customer or Service Provider.",
+  });
 };
 
 // @desc Toggle Online / Offline status for Service Providers

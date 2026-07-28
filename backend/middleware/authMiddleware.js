@@ -89,9 +89,7 @@ const authorizeRoles = (...roles) => {
       });
     }
 
-    // Check both assigned role and active role
-    const hasRole =
-      roles.includes(req.user.role) || roles.includes(req.user.activeRole);
+    const hasRole = roles.includes(req.user.role);
 
     if (!hasRole) {
       return res.status(403).json({

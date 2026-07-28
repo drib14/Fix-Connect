@@ -11,7 +11,6 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
-  const [activeRole, setActiveRole] = useState("customer");
   const [isOnline, setIsOnline] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -25,16 +24,11 @@ export const AuthProvider = ({ children }) => {
           const res = await api.get("/auth/me");
           if (res.data.success) {
             setUser(res.data.user);
-            setActiveRole(
-              res.data.user.activeRole || res.data.user.role
-            );
             setIsOnline(res.data.user.isOnline || false);
           }
         }
       } catch (err) {
         console.warn("Session restore failed:", err.message);
-        // The API interceptor will try refresh automatically;
-        // if that also fails, it clears tokens. Clean up local state.
         await deleteSecureItem("token");
         await deleteSecureItem("refreshToken");
       } finally {
@@ -45,7 +39,7 @@ export const AuthProvider = ({ children }) => {
     restoreSession();
   }, []);
 
-  // Login handler — store both access and refresh tokens securely
+  // Login handler
   const login = async (email, password) => {
     const res = await api.post("/auth/login", { email, password });
     if (res.data.success) {
@@ -60,14 +54,13 @@ export const AuthProvider = ({ children }) => {
 
       setToken(newToken);
       setUser(userData);
-      setActiveRole(userData.activeRole || userData.role);
       setIsOnline(userData.isOnline || false);
       return userData;
     }
     throw new Error(res.data.message);
   };
 
-  // Register handler — store both access and refresh tokens securely
+  // Register handler
   const register = async (userData) => {
     const res = await api.post("/auth/register", userData);
     if (res.data.success) {
@@ -82,19 +75,37 @@ export const AuthProvider = ({ children }) => {
 
       setToken(newToken);
       setUser(newUser);
-      setActiveRole(newUser.activeRole || newUser.role);
       setIsOnline(newUser.isOnline || false);
       return newUser;
     }
     throw new Error(res.data.message);
   };
 
-  // Logout handler — invalidate server-side session and clear local storage
+  // Customer Onboarding handler
+  const onboardCustomer = async (data) => {
+    const res = await api.post("/auth/onboard/customer", data);
+    if (res.data.success) {
+      setUser(res.data.user);
+      return res.data.user;
+    }
+    throw new Error(res.data.message || "Customer onboarding failed");
+  };
+
+  // Provider Onboarding handler
+  const onboardProvider = async (data) => {
+    const res = await api.post("/auth/onboard/provider", data);
+    if (res.data.success) {
+      setUser(res.data.user);
+      return res.data.user;
+    }
+    throw new Error(res.data.message || "Provider onboarding failed");
+  };
+
+  // Logout handler
   const logout = async () => {
     try {
       await api.post("/auth/logout");
     } catch (err) {
-      // Logout request may fail if token is already expired; ignore
       console.warn("Server logout failed:", err.message);
     }
 
@@ -103,24 +114,6 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     setIsOnline(false);
-  };
-
-  // Toggle mode (Customer <-> Provider)
-  const switchRole = async () => {
-    try {
-      const res = await api.put("/auth/switch-role");
-      if (res.data.success) {
-        const newRole = res.data.activeRole;
-        setActiveRole(newRole);
-        setUser((prev) => ({ ...prev, activeRole: newRole }));
-        // Force offline when switching to customer mode
-        if (newRole === "customer") {
-          setIsOnline(false);
-        }
-      }
-    } catch (err) {
-      console.error("Role switch error:", err.message);
-    }
   };
 
   // Provider toggle online/offline availability
@@ -143,6 +136,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const activeRole = user?.role || "customer";
+
   return (
     <AuthContext.Provider
       value={{
@@ -153,8 +148,9 @@ export const AuthProvider = ({ children }) => {
         isLoading,
         login,
         register,
+        onboardCustomer,
+        onboardProvider,
         logout,
-        switchRole,
         toggleOnlineStatus,
       }}
     >
