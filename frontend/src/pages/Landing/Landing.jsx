@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Sparkles, Water, Flash, Snow, Hammer, Bug,
+import { 
+  Sparkles, Water, Flash, Snow, Hammer, Bug, 
   ChevronRight, Star, ShieldCheck, HeartPulse
 } from 'lucide-react';
 import logo from '../../assets/logo.png';
