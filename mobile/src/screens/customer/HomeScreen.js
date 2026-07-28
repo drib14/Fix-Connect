@@ -24,6 +24,8 @@ import {
   ShieldCheck,
 } from "lucide-react-native";
 
+import LocationPicker from "../../components/LocationPicker";
+
 const ICON_MAP = {
   Wrench: Wrench,
   Zap: Zap,
@@ -43,9 +45,17 @@ export default function HomeScreen({ navigation }) {
   } = useContext(BookingContext);
 
   const [selectedService, setSelectedService] = useState(null);
-  const [address, setAddress] = useState("123 Rizal Avenue, Metro Manila");
+  const [address, setAddress] = useState(user?.location?.address || "Manila, Metro Manila");
+  const [coordinates, setCoordinates] = useState(user?.location?.coordinates || [120.9842, 14.5995]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const handleLocationSelect = (loc) => {
+    setAddress(loc.address);
+    if (loc.coordinates) {
+      setCoordinates(loc.coordinates);
+    }
+  };
 
   // If user has an active non-searching booking, render Live Tracking View
   if (activeBooking && activeBooking.status !== "SEARCHING") {
@@ -68,7 +78,7 @@ export default function HomeScreen({ navigation }) {
         serviceName: selectedService.name,
         category: selectedService.slug,
         address,
-        coordinates: [120.9842, 14.5995], // Current location
+        coordinates: coordinates && coordinates.length === 2 ? coordinates : [120.9842, 14.5995],
         notes,
       });
     } catch (err) {
@@ -153,6 +163,13 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.bookingBoxSubtitle}>
               Dispatches nearest available provider in 30 seconds
             </Text>
+
+            <LocationPicker
+              initialAddress={address}
+              onLocationSelect={handleLocationSelect}
+              placeholder="Search pickup address..."
+              label="Service Pickup Location:"
+            />
 
             <TextInput
               style={styles.notesInput}

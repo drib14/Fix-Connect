@@ -26,6 +26,8 @@ import {
   Sparkles,
 } from "lucide-react-native";
 
+import LocationPicker from "../../components/LocationPicker";
+
 const AVAILABLE_CATEGORIES = [
   "Plumbing",
   "Electrical",
@@ -76,9 +78,17 @@ export default function ProviderOnboardingScreen() {
 
   // Step 3: Location
   const [address, setAddress] = useState(user?.location?.address || "");
+  const [coordinates, setCoordinates] = useState(user?.location?.coordinates || [120.9842, 14.5995]);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const handleLocationSelect = (loc) => {
+    setAddress(loc.address);
+    if (loc.coordinates) {
+      setCoordinates(loc.coordinates);
+    }
+  };
 
   const toggleCategory = (cat) => {
     if (selectedCategories.includes(cat)) {
@@ -151,7 +161,7 @@ export default function ProviderOnboardingScreen() {
         bio: bio.trim(),
         documents,
         address: address.trim(),
-        coordinates: [120.9842, 14.5995],
+        coordinates: coordinates && coordinates.length === 2 ? coordinates : [120.9842, 14.5995],
       });
     } catch (err) {
       setErrorMsg(err.message || "Failed to submit provider onboarding.");
@@ -351,18 +361,12 @@ export default function ProviderOnboardingScreen() {
           <View style={styles.formCard}>
             <Text style={styles.cardTitle}>Step 3: Operating Location & Final Review</Text>
 
-            <Text style={styles.inputLabel}>Primary Operating Service Address:</Text>
-            <View style={[styles.inputWrapper, { height: 80, alignItems: "flex-start", paddingTop: 10 }]}>
-              <MapPin color="#F97316" size={20} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. 456 Taft Avenue, Malate, Manila"
-                placeholderTextColor="#64748B"
-                value={address}
-                onChangeText={setAddress}
-                multiline
-              />
-            </View>
+            <LocationPicker
+              initialAddress={address}
+              onLocationSelect={handleLocationSelect}
+              placeholder="Search operating city, barangay, or street address..."
+              label="Primary Operating Service Address:"
+            />
 
             {/* Summary Review */}
             <View style={styles.reviewCard}>

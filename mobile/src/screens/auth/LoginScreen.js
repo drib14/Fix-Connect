@@ -102,7 +102,7 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.formTitle}>Secure Sign In</Text>
             <View style={styles.securedBadge}>
               <ShieldCheck color="#22C55E" size={14} />
-              <Text style={styles.securedBadgeText}>AES-256</Text>
+              <Text style={styles.securedBadgeText}>Secured</Text>
             </View>
           </View>
 

@@ -3,7 +3,6 @@ import {
   StyleSheet,
   Text,
   View,
-  TextInput,
   TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,13 +10,22 @@ import {
   ScrollView,
 } from "react-native";
 import { AuthContext } from "../../context/AuthContext";
-import { MapPin, ShieldCheck, ArrowRight, UserCheck } from "lucide-react-native";
+import { ShieldCheck, ArrowRight, UserCheck } from "lucide-react-native";
+import LocationPicker from "../../components/LocationPicker";
 
 export default function CustomerOnboardingScreen() {
   const { onboardCustomer, user } = useContext(AuthContext);
   const [address, setAddress] = useState(user?.location?.address || "");
+  const [coordinates, setCoordinates] = useState(user?.location?.coordinates || [120.9842, 14.5995]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const handleLocationSelect = (loc) => {
+    setAddress(loc.address);
+    if (loc.coordinates) {
+      setCoordinates(loc.coordinates);
+    }
+  };
 
   const handleCompleteOnboarding = async () => {
     if (!address.trim()) {
@@ -28,10 +36,9 @@ export default function CustomerOnboardingScreen() {
     setErrorMsg("");
     setLoading(true);
     try {
-      const defaultCoordinates = [120.9842, 14.5995];
       await onboardCustomer({
         address: address.trim(),
-        coordinates: defaultCoordinates,
+        coordinates: coordinates && coordinates.length === 2 ? coordinates : [120.9842, 14.5995],
       });
     } catch (err) {
       setErrorMsg(err.message || "Failed to complete customer onboarding.");
@@ -57,23 +64,17 @@ export default function CustomerOnboardingScreen() {
         <View style={styles.formCard}>
           <Text style={styles.stepTitle}>Primary Service Location</Text>
           <Text style={styles.instructions}>
-            Please provide your default home or office address where service technicians and providers will be dispatched.
+            Provide your home or office address. Use real-time location search or press the current location button to auto-fill.
           </Text>
 
           {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
 
-          <View style={styles.inputWrapper}>
-            <MapPin color="#22C55E" size={20} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. 123 Quezon Ave, Barangay South, Quezon City"
-              placeholderTextColor="#64748B"
-              value={address}
-              onChangeText={setAddress}
-              multiline
-              numberOfLines={3}
-            />
-          </View>
+          <LocationPicker
+            initialAddress={address}
+            onLocationSelect={handleLocationSelect}
+            placeholder="Type city, barangay, or street address..."
+            label="Primary Address:"
+          />
 
           <View style={styles.infoBox}>
             <ShieldCheck color="#22C55E" size={18} />
