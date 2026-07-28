@@ -1,119 +1,132 @@
-const path = require('path');
-const fs = require('fs');
-const dotenv = require('dotenv');
+const path = require("path");
+const http = require("http");
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const mongoSanitize = require("express-mongo-sanitize");
+const dotenv = require("dotenv");
 
-// Nodemon reload trigger: force database auto-seeding logic on server restart (update 3)
-const localEnv = path.resolve(__dirname, '.env');
-const parentEnv = path.resolve(__dirname, '../.env');
-let loadedEnvPath = '';
+// Load environment variables from parent root directory .env or local
+dotenv.config({ path: path.join(__dirname, "../.env") });
+dotenv.config();
 
-if (fs.existsSync(localEnv)) {
-  dotenv.config({ path: localEnv });
-  loadedEnvPath = localEnv;
-} else if (fs.existsSync(parentEnv)) {
-  dotenv.config({ path: parentEnv });
-  loadedEnvPath = parentEnv;
-}
+const connectDB = require("./config/db.js");
+const { initSocket } = require("./services/socketService.js");
+const { apiLimiter } = require("./middleware/securityMiddleware.js");
 
-
-
-const express = require('express');
-const http = require('http');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const compression = require('compression');
-const rateLimit = require('express-rate-limit');
-const { Server } = require('socket.io');
-const connectDB = require('./src/config/db');
-const { initBookingSocket } = require('./src/sockets/bookingSocket');
-const errorHandler = require('./src/middleware/error');
-
-// Route imports
-const authRoutes = require('./src/routes/auth');
-const serviceRoutes = require('./src/routes/services');
-const bookingRoutes = require('./src/routes/bookings');
-const paymentRoutes = require('./src/routes/payments');
-const locationRoutes = require('./src/routes/location');
-const promoRoutes = require('./src/routes/promos');
-const supportRoutes = require('./src/routes/support');
-const notificationRoutes = require('./src/routes/notifications');
-const messageRoutes = require('./src/routes/messages');
+const authRoutes = require("./routes/authRoutes.js");
+const serviceRoutes = require("./routes/serviceRoutes.js");
+const bookingRoutes = require("./routes/bookingRoutes.js");
 
 const app = express();
 const server = http.createServer(app);
 
-// Rate limiter
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: 'Too many requests from this IP, please try again after 15 minutes.' }
+// Initialize Socket.IO Server
+initSocket(server);
+
+// Connect Database
+connectDB();
+
+// ── Security Middleware Stack ──────────────────────────────────────────
+
+// Secure HTTP headers with hardened Helmet configuration
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false, // Allow mobile clients
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+);
+
+// CORS — restrict to known origins in production
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",")
+  : ["*"];
+app.use(
+  cors({
+    origin: allowedOrigins.includes("*") ? true : allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+    maxAge: 86400, // Preflight cache: 24 hours
+  })
+);
+
+// Body parsing with strict payload limits
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: false, limit: "1mb" }));
+
+// Prevent NoSQL query operator injection ($gt, $ne, $or attacks)
+app.use(
+  mongoSanitize({
+    replaceWith: "_",
+    onSanitize: ({ req, key }) => {
+      console.warn(`[Sanitize] Blocked NoSQL injection attempt on key: ${key}`);
+    },
+  })
+);
+
+// Apply global API rate limiter
+app.use("/api", apiLimiter);
+
+// Disable X-Powered-By (defense-in-depth, also covered by Helmet)
+app.disable("x-powered-by");
+
+// ── API Routes ────────────────────────────────────────────────────────
+app.use("/api/auth", authRoutes);
+app.use("/api/services", serviceRoutes);
+app.use("/api/bookings", bookingRoutes);
+
+// Health Check Endpoint (does not leak server internals)
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    status: "Healthy",
+    service: "Fix-Connect",
+  });
 });
 
-// Socket.io initialization
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-  },
+// Global 404 Handler — do NOT reflect user input to prevent XSS
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    message: "The requested resource was not found",
+  });
 });
 
-// Middleware
-app.use(helmet());
-app.use(cors());
-app.use(compression());
-app.use(morgan('dev'));
-app.use('/api/', limiter); // Apply rate limiter to API routes
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+// Global Error Handler — suppress stack traces in production
+app.use((err, req, res, next) => {
+  console.error("[Unhandled Error]:", err.stack);
 
-// Make io accessible to routes
-app.set('io', io);
+  const statusCode = err.status || 500;
+  const isProduction = process.env.NODE_ENV === "production";
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/services', serviceRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/location', locationRoutes);
-app.use('/api/promos', promoRoutes);
-app.use('/api/support', supportRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/messages', messageRoutes);
-
-// Health check
-app.get('/api/health', async (req, res, next) => {
-  try {
-    const Service = require('./src/models/Service');
-    const totalCount = await Service.countDocuments({});
-    const activeCount = await Service.countDocuments({ is_active: true });
-    res.json({ 
-      status: 'ok', 
-      totalServices: totalCount, 
-      activeServices: activeCount, 
-      platform: 'FixConnect', 
-      timestamp: new Date().toISOString() 
-    });
-  } catch (err) {
-    next(err);
-  }
+  res.status(statusCode).json({
+    success: false,
+    message: isProduction ? "Internal Server Error" : err.message,
+  });
 });
 
-// Global Error Handler
-app.use(errorHandler);
-
-// Initialize Socket.io namespaces
-initBookingSocket(io);
-
-// Connect to MongoDB and start server
 const PORT = process.env.PORT || 5000;
 
-connectDB().then(() => {
-  server.listen(PORT, () => {
-    console.log(`Server Running on PORT ${PORT}`);
-  });
-}).catch((err) => {
-  process.exit(1);
+server.listen(PORT, () => {
+  console.log(`[Fix-Connect Backend Running]: http://localhost:${PORT}`);
+  console.log(`[Environment]: ${process.env.NODE_ENV || "development"}`);
 });
